@@ -1,0 +1,17 @@
+Package: PAMmisc
+Title: A Collection of Miscellaneous Functions for Passive Acoustics
+Version: 0.1.0
+Authors@R: c(
+  TS = person("Taiki", "Sakai", email = "taiki.sakai@noaa.gov", role = c("aut", "cre")))
+Description: A collection of miscellaneous functions for passive acoustics. 
+    Much of the content here is adapted to R from code written by other people.
+    If you have any ideas of functions to add, please contact Taiki Sakai.
+License: GNU General Public License
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.1.0
+Imports:
+    ggplot2,
+    tuneR,
+    ggmap,
+    seewave
