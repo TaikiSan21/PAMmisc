@@ -25,3 +25,11 @@ from Google Maps or uses coastline shape files in offline mode.
 
 * decimateWavFiles - Decimate .wav files to a new sample rate and write them
 to a new folder. Works on either a single .wav file or an entire folder.
+
+* squishList - A utility for compressing a list that has elements with the same
+name. See examples.
+
+* peakTrough - Find multiple peaks and the troughs / valleys between those peaks
+in the spectrum of a click. Also has a plotting feature so that you can easily
+see the values being chosen as peaks / troughs in the spectrum and adjust the 
+search parameters. See help file for algorithm details.
