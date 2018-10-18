@@ -16,4 +16,5 @@ Imports:
     ggmap,
     seewave,
     dplyr,
-    magrittr
+    magrittr,
+    RcppRoll

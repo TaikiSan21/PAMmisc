@@ -51,6 +51,7 @@
 #'
 #' @importFrom dplyr filter mutate
 #' @importFrom magrittr %>%
+#' @importFrom RcppRoll roll_mean
 #' @import ggplot2
 #' @export
 #'
@@ -63,38 +64,47 @@ peakTrough <- function(spec, freqBounds=c(10, 30), dbMin=-15, smooth=5, plot=FAL
 
     # normalizing dB level
     spec[,2] <- spec[,2] - max(spec[,2])
-    specDf <- data.frame(Freq=spec[,1], dB=runAvg(spec[,2], l=smooth)) # Smooth with local average, nearest 5
-    wherePeak <- which.max(specDf$dB)
-    peak <- specDf$Freq[wherePeak]
-    peakdB <- specDf$dB[wherePeak]
+    extend <- floor(smooth/2)
+    spec[,2] <- roll_mean(c(rep(spec[1,2], extend), spec[,2], rep(spec[nrow(spec), 2], extend)), smooth)
+
+    wherePeak <- which.max(spec[,2])
+    peak <- spec[wherePeak, 1]
+    peakdB <- spec[wherePeak, 2]
 
     if(length(peak)==0) { # Not sure how this would happen, just in case
         peak <- 0; peakdB <- dbMin
     }
+    before <- spec[c(1, 1:nrow(spec)-1), 2]
+    after <- spec[c(2:nrow(spec), nrow(spec)), 2]
+    isPeak <- (spec[, 2] > before) & (spec[, 2] >= after)
+    inRange1 <- ((spec[, 1] >= (peak + freqBounds[1])) & (spec[, 1] <= (peak + freqBounds[2]))) |
+        ((spec[, 1] <= (peak - freqBounds[1])) & (spec[, 1] >= (peak - freqBounds[2])))
+    notPeak <- spec[, 1] != peak
+    inDbRange <- spec[, 2] >= dbMin
 
-    peak2Df <- specDf %>%
-        mutate(before = c(specDf$dB[1], specDf$dB[1:(nrow(specDf)-1)]),
-               after = c(specDf$dB[2:nrow(specDf)], specDf$dB[nrow(specDf)]),
-               isPeak = (dB > before) & (dB >= after)) %>%
-        filter(isPeak,
-               ((Freq >= (peak + freqBounds[1])) & (Freq <= (peak + freqBounds[2]))) |
-                   ((Freq <= (peak - freqBounds[1])) & (Freq >= (peak - freqBounds[2]))),
-               Freq != peak,
-               dB >= dbMin)
+    peak2Spec <- spec[isPeak & inRange1 & notPeak & inDbRange, ]
+    if(length(peak2Spec)==2) {
+        peak2Spec <- matrix(peak2Spec, ncol=2)
+    }
 
-    if(nrow(peak2Df) > 0) {
-        wherePeak2 <- which.max(peak2Df$dB)
-        peak2 <- peak2Df$Freq[wherePeak2]
-        peak2dB <- peak2Df$dB[wherePeak2]
-        peak3Df <- peak2Df %>%
-            filter((Freq >= (peak2 + freqBounds[1])) |
-                       (Freq <= (peak2 - freqBounds[1])),
-                   Freq != peak2)
 
-        if(nrow(peak3Df) > 0) {
-            wherePeak3 <- which.max(peak3Df$dB)
-            peak3 <- peak3Df$Freq[wherePeak3]
-            peak3dB <- peak3Df$dB[wherePeak3]
+    if(nrow(peak2Spec) > 0) {
+        wherePeak2 <- which.max(peak2Spec[, 2])
+        peak2 <- peak2Spec[wherePeak2, 1]
+        peak2dB <- peak2Spec[wherePeak2, 2]
+
+        inRange2 <- (peak2Spec[, 1] >= (peak2 + freqBounds[1])) |
+            (peak2Spec[, 1] <= (peak2 - freqBounds[1]))
+        notPeak2 <- peak2Spec[, 1] != peak2
+        peak3Spec <- peak2Spec[inRange2 & notPeak2, ]
+        if(length(peak3Spec)==2) {
+            peak3Spec <- matrix(peak3Spec, ncol=2)
+        }
+
+        if(nrow(peak3Spec) > 0) {
+            wherePeak3 <- which.max(peak3Spec[, 2])
+            peak3 <- peak3Spec[wherePeak3, 1]
+            peak3dB <- peak3Spec[wherePeak3, 2]
         }
     }
     allPeaks <- sort(c(peak, peak2, peak3))
@@ -102,19 +112,24 @@ peakTrough <- function(spec, freqBounds=c(10, 30), dbMin=-15, smooth=5, plot=FAL
 
     # Find troughs based on num of non-zero peaks. Change nothing if only 1.
     if(length(allPeaks)==2) {
-        troughDf <- filter(specDf, Freq > allPeaks[1], Freq < allPeaks[2])
-        whereTrough <- which.min(troughDf$dB)
-        trough <- troughDf$Freq[whereTrough]
-        troughdB <- troughDf$dB[whereTrough]
+        inTrough <- (spec[, 1] > allPeaks[1]) & (spec[, 1] < allPeaks[2])
+        troughMat <- spec[inTrough, ]
+        whereTrough <- which.min(troughMat[, 2])
+        trough <- troughMat[whereTrough, 1]
+        troughdB <- troughMat[whereTrough, 2]
     } else if(length(allPeaks)==3) {
-        troughDf <- filter(specDf, Freq > allPeaks[1], Freq < allPeaks[2])
-        whereFirst <- which.min(troughDf$dB)
-        first <- troughDf$Freq[whereFirst]
-        firstdB <- troughDf$dB[whereFirst]
-        troughDf <- filter(specDf, Freq > allPeaks[2], Freq < allPeaks[3])
-        whereSecond <- which.min(troughDf$dB)
-        second <- troughDf$Freq[whereSecond]
-        seconddB <- troughDf$dB[whereSecond]
+        inTrough <- (spec[, 1] > allPeaks[1]) & (spec[, 1] < allPeaks[2])
+        troughMat <- spec[inTrough, ]
+        whereFirst <- which.min(troughMat[, 2])
+        first <- troughMat[whereFirst, 1]
+        firstdB <- troughMat[whereFirst, 2]
+
+        inTrough2 <- (spec[, 1] > allPeaks[2]) & (spec[, 1] < allPeaks[3])
+        troughMat <- spec[inTrough2, ]
+
+        whereSecond <- which.min(troughMat[, 2])
+        second <- troughMat[whereSecond, 1]
+        seconddB <- troughMat[whereSecond, 2]
         # Want lowest trough to be labelled "trough", not "trough2"
         if(firstdB <= seconddB) {
             trough <- first
@@ -133,8 +148,10 @@ peakTrough <- function(spec, freqBounds=c(10, 30), dbMin=-15, smooth=5, plot=FAL
     peakToPeak3 <- ifelse(peak3==0, 0, abs(peak-peak3))
     peak2ToPeak3 <- ifelse((peak3==0) | (peak2==0), 0, abs(peak2-peak3))
 
+
     if(plot) {
         # I DONT THINK THIS WORKS WITH RECTS - CHECK LOGIC LATER
+        specDf <- data.frame(Freq = spec[, 1], dB = spec[, 2])
         freqLines <- sort(peak + c(freqBounds, -1*freqBounds))
         graphDf <- data.frame(Freq = c(peak, peak2, peak3, trough, trough2),
                               dB = c(max(specDf$dB), peak2dB, peak3dB, troughdB, trough2dB),
@@ -156,22 +173,6 @@ peakTrough <- function(spec, freqBounds=c(10, 30), dbMin=-15, smooth=5, plot=FAL
         suppressWarnings(print(g))
     }
     data.frame(peak = peak, peak2 = peak2, peak3 = peak3,
-               trough = trough, trough2 = trough2,
-               peakToPeak2 = peakToPeak2, peakToPeak3 = peakToPeak3, peak2ToPeak3 = peak2ToPeak3)
-}
-
-runAvg <- function(x, l=5) {
-    if(l > length(x)) {
-        rep(mean(x, na.rm=TRUE), length(x))
-    } else {
-        sapply(seq_along(x), function(s) {
-            if(s <= (l-1)/2) {
-                mean(x[1:(s+(l-1)/2)], na.rm=TRUE)
-            } else if((s+(l-1)/2) > length(x)) {
-                mean(x[(s-(l-1)/2):length(x)], na.rm=TRUE)
-            } else {
-                mean(x[(s-(l-1)/2):(s+(l-1)/2)], na.rm=TRUE)
-            }
-        })
-    }
+                      trough = trough, trough2 = trough2,
+                      peakToPeak2 = peakToPeak2, peakToPeak3 = peakToPeak3, peak2ToPeak3 = peak2ToPeak3)
 }
