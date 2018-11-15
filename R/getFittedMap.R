@@ -28,12 +28,12 @@
 #'
 #' library(ggplot2)
 #' data <- data.frame(Longitude = c(-117, -118), Latitude = c(32, 33.5))
-#'
+#' \donttest{
 #' # Online mode, gets smallest Google Map that fits data
 #' map <- getFittedMap(data)
 #' map
 #' map + geom_point(data = data, aes(x = Longitude, y = Latitude))
-#'
+#' }
 #' # Offline mode, fits map closely to data
 #' map <- getFittedMap(data, offline = TRUE)
 #' map
@@ -82,11 +82,17 @@ getFittedMap <- function(positions, offline=FALSE, bounds=NULL, zoom=14, force=F
         suppressMessages(
             for(t in 1:nTries) {
                 try(
-                    map <- get_map(location = center, zoom=zoom)
+                    map <- get_map(location = center, zoom=zoom),
+                    silent = TRUE
                 )
                 if(!is.null(map)) break
             }
         )
+        # If still null we couldnt download, so switch to offline mode
+        if(is.null(map)) {
+            warning('Unable to download map, switching to offline mode.')
+            return(getFittedMap(positions, zoom=zoom, quiet=quiet, offline=TRUE))
+        }
         # Checking if all points are within map range. If not, zoom out 1.
         mapRange <- attr(map, 'bb')
         if(!force & (
