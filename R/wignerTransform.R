@@ -69,6 +69,8 @@ toAnalytic <- function(signal) {
 }
 
 nextExp2 <- function(x) {
+    # Take either the length as an int, or length of thingy
+    if(length(x) != 1) x <- length(x)
     logTwo <- log2(x)
     ceil <- ceiling(logTwo)
     # bitwShiftL(1, ceil)

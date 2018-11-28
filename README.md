@@ -41,5 +41,7 @@ with the NxN matrix, as well as the values for the time and frequency axes.
 
 ### Versions
 
+**1.0.2** - bug fixed in `decimateWavFiles` when trying to write a folder of files
+
 **1.0.1** - `wignerTransform` added
 

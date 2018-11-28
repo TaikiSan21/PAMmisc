@@ -1,6 +1,6 @@
 Package: PAMmisc
 Title: A Collection of Miscellaneous Functions for Passive Acoustics
-Version: 1.0.1
+Version: 1.0.2
 Authors@R: c(
   TS = person("Taiki", "Sakai", email = "taiki.sakai@noaa.gov", role = c("aut", "cre")))
 Description: A collection of miscellaneous functions for passive acoustics. 

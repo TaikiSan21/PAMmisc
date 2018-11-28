@@ -13,7 +13,7 @@
 #'
 #' @importFrom tuneR readWave writeWave
 #' @importFrom seewave bwfilter resamp
-#' @importFrom utils choose.dir
+#' @importFrom utils choose.dir setTxtProgressBar txtProgressBar
 #' @export
 #'
 decimateWavFiles <- function(inDir, outDir, newSr) {
@@ -41,6 +41,8 @@ decimateWavFiles <- function(inDir, outDir, newSr) {
         files <- list.files(inDir, pattern='\\.wav$', recursive=FALSE, full.names=TRUE)
     }
     error <- rep(FALSE, length(files))
+    cat('Decimating', length(files), 'wav files...\n')
+    pb <- txtProgressBar(min = 0, max = length(files), style = 3)
     for(i in seq_along(files)) {
         inWave <- try(tuneR::readWave(files[i]), silent=TRUE)
         if(length(inWave)==1) {
@@ -49,7 +51,8 @@ decimateWavFiles <- function(inDir, outDir, newSr) {
         }
         outWave <- seewave::bwfilter(inWave, n=2, from=5, to=1.2*(newSr/2), output='Wave')
         outWave <- seewave::resamp(outWave, g=newSr, output='Wave')
-        tuneR::writeWave(outWave, filename=paste0(outDir, '/LF_', files[i]), extensible=FALSE)
+        tuneR::writeWave(outWave, filename=paste0(outDir, '/LF_', basename(files[i])), extensible=FALSE)
+        setTxtProgressBar(pb, value = i)
     }
     if(sum(error) > 0) {
         warning('Error trying to decimate file(s):\n',
