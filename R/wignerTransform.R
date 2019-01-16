@@ -22,17 +22,21 @@
 #' @author Taiki Sakai \email{taiki.sakai@@noaa.gov}
 #'
 #' @importFrom stats fft
+#' @importFrom graphics axis image
 #' @export
 #'
 wignerTransform <- function(signal, n, sr, plot=FALSE) {
-    analytic <- toAnalytic(signal) # note size will change
+    analytic <- toAnalytic(signal)[1:length(signal)] # size changed during toAnalytic function
     conjAnalytic <- Conj(analytic)
     if(missing(n)) {
         n <- length(analytic)
     }
-    tfr <- matrix(0, n, n)
-    nCol <- n # nTime steps
+    
     nRow <- n # nFreq bins
+    nCol <- length # nTimesteps
+    
+    tfr <- matrix(0, nRow, nCol)
+    
     for(iCol in 1:nCol) {
         taumax <- min(iCol-1, nCol-iCol, round(nRow/2)-1)
         tau <- -taumax:taumax
@@ -49,7 +53,7 @@ wignerTransform <- function(signal, n, sr, plot=FALSE) {
         }
     }
     tfr <- apply(tfr, 2, fft)
-    result <- list(tfr=Re(tfr), t=1:n/sr, f=sr/2*1:n/n)
+    result <- list(tfr=Re(tfr), t=1:nCol/sr, f=sr/2*1:nRow/nRow)
     if(plot) {
         image(t(result$tfr), xaxt='n', yaxt='n', ylab='Frequency (kHz)', xlab = 'Time (ms)')
         axis(1, at = 1:4/4, labels = round(1e3*max(result$t)*1:4/4, 3))
