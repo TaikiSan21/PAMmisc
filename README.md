@@ -41,6 +41,9 @@ with the NxN matrix, as well as the values for the time and frequency axes.
 
 ### Versions
 
+**1.0.3** - minor change to output of `wignerTransform`, resizes back to length of
+original signal
+
 **1.0.2** - bug fixed in `decimateWavFiles` when trying to write a folder of files
 
 **1.0.1** - `wignerTransform` added
