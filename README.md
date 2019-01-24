@@ -41,6 +41,8 @@ with the NxN matrix, as well as the values for the time and frequency axes.
 
 ### Versions
 
+**1.0.4** - fixed typo that broke `wignerTransform`
+
 **1.0.3** - minor change to output of `wignerTransform`, resizes back to length of
 original signal
 

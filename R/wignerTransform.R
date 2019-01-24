@@ -33,7 +33,7 @@ wignerTransform <- function(signal, n, sr, plot=FALSE) {
     }
     
     nRow <- n # nFreq bins
-    nCol <- length # nTimesteps
+    nCol <- length(analytic) # nTimesteps
     
     tfr <- matrix(0, nRow, nCol)
     
