@@ -55,6 +55,11 @@ modify or remove existing entries in the database.
 
 * `addPgEvent` function added to add new events to an existing Pamguard database by
 providing a vector of UIDs
+=======
+**1.0.4** - fixed typo that broke `wignerTransform`
+
+**1.0.3** - minor change to output of `wignerTransform`, resizes back to length of
+original signal
 
 **1.0.2** - bug fixed in `decimateWavFiles` when trying to write a folder of files
 
