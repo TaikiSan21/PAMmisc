@@ -4,11 +4,13 @@
 \alias{fixDateline}
 \title{Fix Longitude Data Across the Dateline for Plotting}
 \usage{
-fixDateline(data)
+fixDateline(data, lonName)
 }
 \arguments{
 \item{data}{data frame with a \code{Longitude} column to adjust for
 cross-dateline plotting}
+
+\item{lonName}{name of the Longitude column}
 }
 \description{
 Returns a dataframe identical to the input after checking

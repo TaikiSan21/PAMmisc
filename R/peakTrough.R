@@ -172,7 +172,12 @@ peakTrough <- function(spec, freqBounds=c(10, 30), dbMin=-15, smooth=5, plot=FAL
             theme(plot.title=element_text(hjust=.5))
         suppressWarnings(print(g))
     }
-    data.frame(peak = peak, peak2 = peak2, peak3 = peak3,
-                      trough = trough, trough2 = trough2,
-                      peakToPeak2 = peakToPeak2, peakToPeak3 = peakToPeak3, peak2ToPeak3 = peak2ToPeak3)
+    tryCatch({
+        data.frame(peak = peak, peak2 = peak2, peak3 = peak3,
+                   trough = trough, trough2 = trough2,
+                   peakToPeak2 = peakToPeak2, peakToPeak3 = peakToPeak3, peak2ToPeak3 = peak2ToPeak3)
+    },
+    error = function(e) {
+        browser()
+    })
 }

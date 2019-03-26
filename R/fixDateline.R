@@ -7,16 +7,17 @@
 #'
 #' @param data data frame with a \code{Longitude} column to adjust for
 #'    cross-dateline plotting
+#' @param lonName name of the Longitude column
 #'
 #' @author Taiki Sakai \email{taiki.sakai@@noaa.gov}
 #'
-fixDateline <- function(data) {
-    boundLong <- range(data$Longitude)
+fixDateline <- function(data, lonName) {
+    boundLong <- range(data[[lonName]])
     if(boundLong[2]-boundLong[1] > 180) {
         if(sum(boundLong) < 0) {
-            data$Longitude <- (data$Longitude %% 360)
+            data[[lonName]] <- (data[[lonName]] %% 360)
         } else {
-            data$Longitude <- (data$Longitude %% 360) - 360
+            data[[lonName]] <- (data[[lonName]] %% 360) - 360
         }
     }
     data
