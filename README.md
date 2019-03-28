@@ -24,6 +24,8 @@ now requires configuring a Google Maps API key!!!
 
 * `writeClickWave` - Create synthetic delphinid click wav files
 
+* `writeAMWave` - Create synthetic amplitude modulated wav files
+
 * `decimateWavFiles` - Decimate .wav files to a new sample rate and write them
 to a new folder. Works on either a single .wav file or an entire folder. Currently
 only works with single channel data, if multi-channel wav files are fed in it will
@@ -51,9 +53,9 @@ modify or remove existing entries in the database.
 
 ### Versions
 
-**1.1.0**
+**1.2.0** - `writeAMWave` function added to create synthetic amplitude modulated waves
 
-* `addPgEvent` function added to add new events to an existing Pamguard database by
+**1.1.0** - `addPgEvent` function added to add new events to an existing Pamguard database by
 providing a vector of UIDs
 
 **1.0.4** - fixed typo that broke `wignerTransform`
