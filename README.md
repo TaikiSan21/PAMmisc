@@ -53,6 +53,9 @@ modify or remove existing entries in the database.
 
 ### Versions
 
+**1.2.1** - minor change in error handling for `peakTrough`
+- `writeClickWave` can handle vectors for CPS and frequency
+
 **1.2.0** - `writeAMWave` function added to create synthetic amplitude modulated waves
 
 **1.1.0** - `addPgEvent` function added to add new events to an existing Pamguard database by

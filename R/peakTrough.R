@@ -63,7 +63,7 @@ peakTrough <- function(spec, freqBounds=c(10, 30), dbMin=-15, smooth=5, plot=FAL
     trough2 <- 0; trough2dB <- dbMin
 
     # normalizing dB level
-    spec[,2] <- spec[,2] - max(spec[,2])
+    spec[,2] <- spec[,2] - max(spec[,2], na.rm = TRUE)
     extend <- floor(smooth/2)
     spec[,2] <- roll_mean(c(rep(spec[1,2], extend), spec[,2], rep(spec[nrow(spec), 2], extend)), smooth)
 
@@ -161,7 +161,7 @@ peakTrough <- function(spec, freqBounds=c(10, 30), dbMin=-15, smooth=5, plot=FAL
             geom_hline(yintercept=dbMin, color='blue') +
             geom_point(data=graphDf, aes(x=Freq, y=dB, color=Type), size=3) +
             coord_cartesian(xlim=range(specDf$Freq), ylim=range(specDf$dB)) +
-            scale_x_continuous(breaks=seq(0,140,20)) +
+            scale_x_continuous(breaks=seq(0,500,20)) +
             labs(title='Finding Peaks and Troughs', x='Frequency (kHz)', y='Relative dB') +
             ## FIX ME
             geom_rect(aes(xmin=c(freqLines[1], freqLines[3]), xmax=c(freqLines[2], freqLines[4]), ymin=dbMin, ymax=0, fill='a'), alpha=.1) +
@@ -178,6 +178,9 @@ peakTrough <- function(spec, freqBounds=c(10, 30), dbMin=-15, smooth=5, plot=FAL
                    peakToPeak2 = peakToPeak2, peakToPeak3 = peakToPeak3, peak2ToPeak3 = peak2ToPeak3)
     },
     error = function(e) {
-        browser()
+        cat('peakTrough failed with error:\n', e)
+        data.frame(peak = NA, peak2 = NA, peak3 = NA,
+                   trough = NA, trough2 = NA,
+                   peakToPeak2 = NA, peakToPeak3 = NA, peak2ToPeak3 = NA)
     })
 }

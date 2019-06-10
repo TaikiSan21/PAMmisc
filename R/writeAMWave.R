@@ -54,6 +54,7 @@ writeAMWave <- function(fileName, outDir, signalLength, modFrequency, frequency,
 }
 
 #' @rdname writeAMWave
+#' @export
 #'
 createAMWave <- function(signalLength, modFrequency, frequency, sampleRate,
                          window = c(.55, .45), silence=c(0,0), gainFactor = .1) {

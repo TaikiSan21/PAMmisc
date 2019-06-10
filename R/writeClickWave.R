@@ -18,17 +18,20 @@
 #'
 #' @author Taiki Sakai \email{taiki.sakai@@noaa.gov}
 #'
-#' @importFrom tuneR Wave writeWave normalize
+#' @importFrom tuneR Wave writeWave normalize bind
 #' @export
 #'
 writeClickWave <- function(fileName, outDir, signalLength, clickLength, clicksPerSecond,
                            frequency, sampleRate, silence=c(0,0), gainFactor = .1) {
+
     wav <- createClickWave(signalLength, clickLength, clicksPerSecond, frequency,
                            sampleRate, silence, gainFactor)
     if(missing(fileName)) {
-        clickLength <- clickLength / 1e6 # convert from micros
-        fileName <- paste0(signalLength, 's_', clickLength * 1e6, 'cl_', clicksPerSecond, 'cps_',
-                           round(frequency / 1000, 0), 'khz_', round(sampleRate / 1000, 0), 'khzsr.wav')
+        fileName <- paste0(sum(signalLength, silence) * length(frequency), 's_',
+                           round(clickLength, 0), 'cl_',
+                           paste0(clicksPerSecond, collapse = '-'), 'cps_',
+                           paste0(round(frequency / 1000, 0), collapse = '-'), 'khz_',
+                           round(sampleRate / 1000, 0), 'khzsr.wav')
     }
     if(missing(outDir)) {
         return(writeWave(wav, fileName, extensible = FALSE))
@@ -47,19 +50,34 @@ writeClickWave <- function(fileName, outDir, signalLength, clickLength, clicksPe
 #'
 createClickWave <- function(signalLength, clickLength, clicksPerSecond,
                             frequency, sampleRate, silence=c(0,0), gainFactor = .1) {
-  clickLength <- clickLength / 1e6 # convert from micros
-  clickPeriod <- 1 / clicksPerSecond
-  if(clickPeriod < clickLength) {
-    stop('Click Period is longer than Click Length')
-  }
-  t <- 0 : (clickLength * sampleRate)
-  tone <- sin(2 * pi * frequency * t / sampleRate)
-  gain <- exp(-t/16)
-  tone <- tone * gain
-  iciSilence <- clickPeriod - clickLength
-  iciSilence <- rep(0, iciSilence * sampleRate)
-  tone <- rep(c(tone, iciSilence), signalLength/clickPeriod)
-  tone <- c(rep(0, silence[1]*sampleRate), tone, rep(0, silence[2]*sampleRate))
-  wav <- normalize(Wave(left=tone, samp.rate=sampleRate, bit=16), unit='16', level=gainFactor)
-  wav
+    nFreq <- length(frequency)
+    nCps <- length(clicksPerSecond)
+    if(nCps == 1 &&
+       nFreq == 1) {
+        clickLength <- clickLength / 1e6 # convert from micros
+        clickPeriod <- 1 / clicksPerSecond
+        if(clickPeriod < clickLength) {
+            stop('Click Period is longer than Click Length')
+        }
+        t <- 0 : ((round(clickLength * sampleRate, 0)) - 1)
+        tone <- sin(2 * pi * frequency * t / sampleRate)
+        gain <- exp(-t/16)
+        tone <- tone * gain
+        # iciSilence <- clickPeriod - clickLength
+        iciSilence <- rep(0, clickPeriod * sampleRate - length(tone))
+        tone <- rep_len(c(tone, iciSilence), sampleRate * signalLength)
+        tone <- c(rep(0, silence[1]*sampleRate), tone, rep(0, silence[2]*sampleRate))
+        wav <- normalize(Wave(left=tone, samp.rate=sampleRate, bit=16), unit='16', level=gainFactor)
+        return(wav)
+    }
+    if(nCps < nFreq) {
+        clicksPerSecond <- rep_len(clicksPerSecond, nFreq)
+    }
+    if(nFreq < nCps) {
+        frequency <- rep_len(frequency, nCps)
+    }
+    do.call(bind, lapply(seq_along(frequency), function(i) {
+        createClickWave(signalLength, clickLength, clicksPerSecond[i],
+                        frequency[i], sampleRate, silence, gainFactor)
+    }))
 }
