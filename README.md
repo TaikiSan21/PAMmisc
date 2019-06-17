@@ -53,6 +53,8 @@ modify or remove existing entries in the database.
 
 ### Versions
 
+**1.3.0** - added `formatURL` functions for making ERDDAP downloading URLs automatically
+
 **1.2.1** - minor change in error handling for `peakTrough`
 - `writeClickWave` can handle vectors for CPS and frequency
 
