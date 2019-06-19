@@ -79,14 +79,13 @@ peakTrough <- function(spec, freqBounds=c(10, 30), dbMin=-15, smooth=5, plot=FAL
     isPeak <- (spec[, 2] > before) & (spec[, 2] >= after)
     inRange1 <- ((spec[, 1] >= (peak + freqBounds[1])) & (spec[, 1] <= (peak + freqBounds[2]))) |
         ((spec[, 1] <= (peak - freqBounds[1])) & (spec[, 1] >= (peak - freqBounds[2])))
-    notPeak <- spec[, 1] != peak
+    notPeak1 <- spec[, 1] != peak
     inDbRange <- spec[, 2] >= dbMin
 
-    peak2Spec <- spec[isPeak & inRange1 & notPeak & inDbRange, ]
+    peak2Spec <- spec[isPeak & inRange1 & notPeak1 & inDbRange, ]
     if(length(peak2Spec)==2) {
         peak2Spec <- matrix(peak2Spec, ncol=2)
     }
-
 
     if(nrow(peak2Spec) > 0) {
         wherePeak2 <- which.max(peak2Spec[, 2])
@@ -114,19 +113,27 @@ peakTrough <- function(spec, freqBounds=c(10, 30), dbMin=-15, smooth=5, plot=FAL
     if(length(allPeaks)==2) {
         inTrough <- (spec[, 1] > allPeaks[1]) & (spec[, 1] < allPeaks[2])
         troughMat <- spec[inTrough, ]
+        if(length(troughMat) == 2) {
+            troughMat <- matrix(troughMat, ncol = 2)
+        }
         whereTrough <- which.min(troughMat[, 2])
         trough <- troughMat[whereTrough, 1]
         troughdB <- troughMat[whereTrough, 2]
     } else if(length(allPeaks)==3) {
         inTrough <- (spec[, 1] > allPeaks[1]) & (spec[, 1] < allPeaks[2])
         troughMat <- spec[inTrough, ]
+        if(length(troughMat) == 2) {
+            troughMat <- matrix(troughMat, ncol = 2)
+        }
         whereFirst <- which.min(troughMat[, 2])
         first <- troughMat[whereFirst, 1]
         firstdB <- troughMat[whereFirst, 2]
 
         inTrough2 <- (spec[, 1] > allPeaks[2]) & (spec[, 1] < allPeaks[3])
         troughMat <- spec[inTrough2, ]
-
+        if(length(troughMat) == 2) {
+            troughMat <- matrix(troughMat, ncol = 2)
+        }
         whereSecond <- which.min(troughMat[, 2])
         second <- troughMat[whereSecond, 1]
         seconddB <- troughMat[whereSecond, 2]
@@ -147,7 +154,6 @@ peakTrough <- function(spec, freqBounds=c(10, 30), dbMin=-15, smooth=5, plot=FAL
     peakToPeak2 <- ifelse(peak2==0, 0, abs(peak-peak2))
     peakToPeak3 <- ifelse(peak3==0, 0, abs(peak-peak3))
     peak2ToPeak3 <- ifelse((peak3==0) | (peak2==0), 0, abs(peak2-peak3))
-
 
     if(plot) {
         # I DONT THINK THIS WORKS WITH RECTS - CHECK LOGIC LATER
