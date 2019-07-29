@@ -27,7 +27,7 @@
     gps$timeDiff <- gps$UTC - c(gps$UTC[1], gps$UTC[1:(nrow(gps)-1)])
     gps$timeGroup <- as.factor(cumsum(gps$timeDiff > 10))
     gps$headDiff <- bigLag - smallLag
-    gps$straight <- gps$headDiff < thresh
+    gps$straight <- abs(gps$headDiff) < thresh
     gps <- gps[-c(1:(nLarge-1)),]
     if(plot) {
         # strt <- gps[gps$straight, ]
