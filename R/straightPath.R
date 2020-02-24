@@ -45,11 +45,22 @@ straightPath<- function(gps, nSmall = 10, nLarge = 60, thresh = 10, plot = FALSE
     # it was doing in the first place
     # its for the colors in geom_path to work, bruh
     if(plot) {
+        # myPlot <- ggplot(gps, aes(x=Longitude, y=Latitude)) +
+        #     geom_path(aes(group=timeGroup, col=straight), size = 1.3) +
+        #     scale_color_manual(values = c('red', 'darkgreen'))
+        gpsEnds <- gps[c(1, nrow(gps)), ]
+        gpsEnds$Type <- c('Start', 'End')
         myPlot <- ggplot(gps, aes(x=Longitude, y=Latitude)) +
+            geom_point(data=gpsEnds, aes(x=Longitude, y=Latitude, shape=Type, col=straight), size=4) +
+            geom_path() +
             geom_path(aes(group=timeGroup, col=straight), size = 1.3) +
-            scale_color_manual(values = c('red', 'darkgreen'))
-        # scale_size_manual(values = c(2, 1))
+            # geom_path(aes(col=straight), arrow=arrow()) +
+            scale_color_manual(limits=c(TRUE, FALSE), values = c('darkgreen','red')) +
+            scale_shape_manual(limits=c('Start', 'End'), values = c(16,7)) +
+            guides(color=guide_legend(override.aes=list(shape=32), title='Straight'),
+                   shape=guide_legend(title='Endpoint', override.aes=list(color=ifelse(gpsEnds$straight, 'darkgreen', 'red'))))
         print(myPlot)
+
     }
     gps
 }
