@@ -6,14 +6,19 @@
 \alias{formatURL_hycom}
 \title{Format URL for Downloading Environmental Data}
 \usage{
-formatURL(base = NULL, dataset, fileType, vars, source = c("erddap",
-  "hycom"), bounds, stride = 1)
+formatURL(
+  base = NULL,
+  dataset,
+  fileType,
+  vars,
+  source = c("erddap", "hycom"),
+  bounds,
+  stride = 1
+)
 
-formatURL_erddap(base, dataset, fileType = "nc", vars, bounds,
-  stride = 1)
+formatURL_erddap(base, dataset, fileType = "nc", vars, bounds, stride = 1)
 
-formatURL_hycom(base, dataset, fileType = "netcdf", vars, bounds,
-  stride = 1)
+formatURL_hycom(base, dataset, fileType = "netcdf", vars, bounds, stride = 1)
 }
 \arguments{
 \item{base}{the base URL to download from}

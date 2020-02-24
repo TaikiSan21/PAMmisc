@@ -5,12 +5,27 @@
 \alias{createClickWave}
 \title{Write Click Waveform}
 \usage{
-writeClickWave(fileName, outDir, signalLength, clickLength,
-  clicksPerSecond, frequency, sampleRate, silence = c(0, 0),
-  gainFactor = 0.1)
+writeClickWave(
+  fileName,
+  outDir,
+  signalLength,
+  clickLength,
+  clicksPerSecond,
+  frequency,
+  sampleRate,
+  silence = c(0, 0),
+  gainFactor = 0.1
+)
 
-createClickWave(signalLength, clickLength, clicksPerSecond, frequency,
-  sampleRate, silence = c(0, 0), gainFactor = 0.1)
+createClickWave(
+  signalLength,
+  clickLength,
+  clicksPerSecond,
+  frequency,
+  sampleRate,
+  silence = c(0, 0),
+  gainFactor = 0.1
+)
 }
 \arguments{
 \item{fileName}{name of the file to write. If missing, the file be named

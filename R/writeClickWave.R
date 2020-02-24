@@ -57,7 +57,7 @@ createClickWave <- function(signalLength, clickLength, clicksPerSecond,
         clickLength <- clickLength / 1e6 # convert from micros
         clickPeriod <- 1 / clicksPerSecond
         if(clickPeriod < clickLength) {
-            stop('Click Period is longer than Click Length')
+            stop('Click Period is less than Click Length')
         }
         t <- 0 : ((round(clickLength * sampleRate, 0)) - 1)
         tone <- sin(2 * pi * frequency * t / sampleRate)

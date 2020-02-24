@@ -12,6 +12,8 @@ Install the latest version from GitHub:
 # make sure you have Rtools installed
 if(!require('devtools')) install.packages('devtools')
 # install from GitHub
+# PamBinaries must be installed first because it is not yet on CRAN
+devtools::install_github('TaikiSan21/PamBinaries')
 devtools::install_github('TaikiSan21/PAMmisc')
 
 ```
@@ -52,6 +54,9 @@ at the same time. This function should only add to an existing database, it will
 modify or remove existing entries in the database. 
 
 ### Versions
+
+**1.3.1** - bug fix where `straightPath` was not properly averaging angles. Changed to
+polar coordinate style averaging, will now handle angles near the 0-360 border properly
 
 **1.3.0** - added `formatURL` functions for making ERDDAP downloading URLs automatically
 

@@ -10,7 +10,9 @@ wignerTransform(signal, n, sr, plot = FALSE)
 \item{signal}{input signal waveform}
 
 \item{n}{the size of the output, if missing will be the next power of two
-from the length of the input signal (recommended)}
+from the length of the input signal (recommended)
+## NO ITS NOT ITS THE LENGTH OF THE SIGNAL AND CHANGING N DOESNT CHAGNE T
+## TIME LENGTH ONLY FREQUENCY LENGTH}
 
 \item{sr}{the sample rate of the data}
 

@@ -4,11 +4,10 @@
 \alias{straightPath}
 \title{Mark Straight Path Segments in GPS Track}
 \usage{
-straightPath(gps, nSmall = 10, nLarge = 60, thresh = 10,
-  plot = FALSE)
+straightPath(gps, nSmall = 10, nLarge = 60, thresh = 10, plot = FALSE)
 }
 \arguments{
-\item{gps}{gps data with column Heading}
+\item{gps}{gps data with columns Heading and UTC (POSIX format)}
 
 \item{nSmall}{number of points to average to get ship's current heading}
 
@@ -17,7 +16,8 @@ straightPath(gps, nSmall = 10, nLarge = 60, thresh = 10,
 \item{thresh}{the amount which \code{nSmall} and \code{nBig} should differ by to
 call this a turn}
 
-\item{plot}{logical flag to plot result}
+\item{plot}{logical flag to plot result, \code{gps} must also have columns
+Latitude and Longitude}
 }
 \description{
 This function attempts to mark portions of a GPS track where a

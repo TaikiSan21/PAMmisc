@@ -4,8 +4,7 @@
 \alias{peakTrough}
 \title{Find Peaks and Troughs in a Spectrum}
 \usage{
-peakTrough(spec, freqBounds = c(10, 30), dbMin = -15, smooth = 5,
-  plot = FALSE)
+peakTrough(spec, freqBounds = c(10, 30), dbMin = -15, smooth = 5, plot = FALSE)
 }
 \arguments{
 \item{spec}{the spectrum of a signal, the first column must be frequency in

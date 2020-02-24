@@ -179,12 +179,16 @@ peakTrough <- function(spec, freqBounds=c(10, 30), dbMin=-15, smooth=5, plot=FAL
         suppressWarnings(print(g))
     }
     tryCatch({
-        data.frame(peak = peak, peak2 = peak2, peak3 = peak3,
+        # data.frame(peak = peak, peak2 = peak2, peak3 = peak3,
+        #            trough = trough, trough2 = trough2,
+        #            peakToPeak2 = peakToPeak2, peakToPeak3 = peakToPeak3, peak2ToPeak3 = peak2ToPeak3)
+        structure(list(peak = peak, peak2 = peak2, peak3 = peak3,
                    trough = trough, trough2 = trough2,
-                   peakToPeak2 = peakToPeak2, peakToPeak3 = peakToPeak3, peak2ToPeak3 = peak2ToPeak3)
+                   peakToPeak2 = peakToPeak2, peakToPeak3 = peakToPeak3, peak2ToPeak3 = peak2ToPeak3),
+                  row.names=c(NA, -1), class='data.frame')
     },
     error = function(e) {
-        cat('peakTrough failed with error:\n', e)
+        cat('peakTrough failed with error:\n', e$message)
         data.frame(peak = NA, peak2 = NA, peak3 = NA,
                    trough = NA, trough2 = NA,
                    peakToPeak2 = NA, peakToPeak3 = NA, peak2ToPeak3 = NA)

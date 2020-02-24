@@ -4,14 +4,24 @@
 \alias{getFittedMap}
 \title{Get a Map Fitted to Data}
 \usage{
-getFittedMap(positions, offline = FALSE, bounds = NULL, zoom = 14,
-  force = FALSE, center = NULL, quiet = TRUE)
+getFittedMap(
+  positions,
+  source = "stamen",
+  bounds = NULL,
+  zoom = 14,
+  force = FALSE,
+  center = NULL,
+  quiet = TRUE
+)
 }
 \arguments{
 \item{positions}{data frame containing columns \code{Latitude} and \code{Longitude}}
 
-\item{offline}{flag whether or not to run in offline mode. Offline mode will use coastline
-files from naturalearthdata.com and a mercator projection.}
+\item{source}{the source for the map. Can be either \code{google}, \code{stamen}, or
+\code{offline}. \code{google} will load the smallest Google Map that fits the data.
+\code{stamen} will load a 'toner-lite' style stamen map. Both \code{stamen} and
+\code{offline} will load a map slightly larger than the range of the data. Google
+Maps option requires setting up a Google API, please search ggmap help for more info.}
 
 \item{bounds}{optional, the boundaries of a box that must be within the output plot.
 Used to extend the plotted area, especially useful for the offline mode. Specified as
@@ -48,17 +58,17 @@ data <- data.frame(Longitude = c(-117, -118), Latitude = c(32, 33.5))
 map <- getFittedMap(data)
 map
 map + geom_point(data = data, aes(x = Longitude, y = Latitude))
-}
+
 # Offline mode, fits map closely to data
-map <- getFittedMap(data, offline = TRUE)
+map <- getFittedMap(data, mode = 'offline')
 map
 map + geom_point(data = data, aes(x = Longitude, y = Latitude))
 
 # Offline mode, expand bounds for nicer looking map
-map <- getFittedMap(data, offline = TRUE, bounds = c(32, -120, 34, -117))
+map <- getFittedMap(data, mode = 'offline', bounds = c(32, -120, 34, -117))
 map
 map + geom_point(data = data, aes(x = Longitude, y = Latitude))
-
+}
 }
 \author{
 Taiki Sakai \email{taiki.sakai@noaa.gov}

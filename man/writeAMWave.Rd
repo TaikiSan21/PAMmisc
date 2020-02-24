@@ -5,12 +5,27 @@
 \alias{createAMWave}
 \title{Write Amplitude Modulated Waveform}
 \usage{
-writeAMWave(fileName, outDir, signalLength, modFrequency, frequency,
-  sampleRate, window = c(0.55, 0.45), silence = c(0, 0),
-  gainFactor = 0.1)
+writeAMWave(
+  fileName,
+  outDir,
+  signalLength,
+  modFrequency,
+  frequency,
+  sampleRate,
+  window = c(0.55, 0.45),
+  silence = c(0, 0),
+  gainFactor = 0.1
+)
 
-createAMWave(signalLength, modFrequency, frequency, sampleRate,
-  window = c(0.55, 0.45), silence = c(0, 0), gainFactor = 0.1)
+createAMWave(
+  signalLength,
+  modFrequency,
+  frequency,
+  sampleRate,
+  window = c(0.55, 0.45),
+  silence = c(0, 0),
+  gainFactor = 0.1
+)
 }
 \arguments{
 \item{fileName}{name of the file to write. If missing, the file be named
