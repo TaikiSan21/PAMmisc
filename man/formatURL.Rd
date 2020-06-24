@@ -2,54 +2,43 @@
 % Please edit documentation in R/formatURL.R
 \name{formatURL}
 \alias{formatURL}
-\alias{formatURL_erddap}
-\alias{formatURL_hycom}
-\title{Format URL for Downloading Environmental Data}
+\title{Format URL for Environmental Data Download}
 \usage{
 formatURL(
-  base = NULL,
+  base,
   dataset,
   fileType,
   vars,
-  source = c("erddap", "hycom"),
-  bounds,
-  stride = 1
+  ranges,
+  stride = 1,
+  style = c("erddap", "hycom")
 )
-
-formatURL_erddap(base, dataset, fileType = "nc", vars, bounds, stride = 1)
-
-formatURL_hycom(base, dataset, fileType = "netcdf", vars, bounds, stride = 1)
 }
 \arguments{
 \item{base}{the base URL to download from}
 
-\item{dataset}{the dataset identifier to download}
+\item{dataset}{the specific datased ID to download}
 
-\item{fileType}{the fileType to download}
+\item{fileType}{the type of file to download, usually a netcdf}
 
-\item{vars}{a vector of the names of variables to download}
+\item{vars}{a vector of variables to download}
 
-\item{source}{the source from which the data will be downloaded. This argument
-is used for formatting purposes and does not affect the base URL.}
+\item{ranges}{a list of three vectors specifying the range of data to download,
+must a list with named vectors \code{Longitude}, \code{Latitude}, and \code{UTC}
+where each vector is \code{c(min, max)} (Note: even if the time is something like
+"dayOfYear" this should still be called 'UTC' for the purpose of this list).
+(see \link{dataToRanges}).}
 
-\item{bounds}{a list of the bounds for the data to download. For erddap and
-hycom data this should be a list with three vectors containing the min/max
-values for time, latitude, and longitude in that order. For example:
-\code{list(c(timeMin, timeMax), c(latMin, latMax), c(lonMin, lonMax))}. All
-time values must be POSIXct.}
+\item{stride}{the stride for all dimensions, a value of 1 gets every data point,
+2 gets every other, etc.}
 
-\item{stride}{stride interval for downloading data. A value of 1 (default)
-gets every data point, 2 gets every other data point, etc. The same value
-is applied to all dimensions.}
+\item{style}{either \code{'erddap'} or \code{'hycom'}}
 }
 \description{
-This function creates a properly formatted URL for downloading
-  environmental data. Users can either provide the base URL, dataset ID, and
-  other parameters on their own or select from a list of curated options (see
-  ?CHECKMYDATASHITYO for details on this list).
-}
-\details{
-
+This creates a properly formatted URL for downloading environmental
+  data either from an ERDDAP or HYCOM server. This URL can be pasted into a browser
+  or submitted to something like httr::GET to actually download the data. Also see
+  \link{edinfoToURL}
 }
 \author{
 Taiki Sakai \email{taiki.sakai@noaa.gov}

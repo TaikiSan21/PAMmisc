@@ -12,6 +12,8 @@
 #' @param signal input signal waveform
 #' @param n the size of the output, if missing will be the next power of two
 #'   from the length of the input signal (recommended)
+#'   ## NO ITS NOT ITS THE LENGTH OF THE SIGNAL AND CHANGING N DOESNT CHAGNE T
+#'   ## TIME LENGTH ONLY FREQUENCY LENGTH
 #' @param sr the sample rate of the data
 #' @param plot logical flag whether or not to plot the result
 #'
@@ -31,12 +33,12 @@ wignerTransform <- function(signal, n, sr, plot=FALSE) {
     if(missing(n)) {
         n <- length(analytic)
     }
-    
+
     nRow <- n # nFreq bins
     nCol <- length(analytic) # nTimesteps
-    
+
     tfr <- matrix(0, nRow, nCol)
-    
+
     for(iCol in 1:nCol) {
         taumax <- min(iCol-1, nCol-iCol, round(nRow/2)-1)
         tau <- -taumax:taumax

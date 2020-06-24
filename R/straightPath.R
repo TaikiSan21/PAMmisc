@@ -31,7 +31,8 @@ straightPath<- function(gps, nSmall = 10, nLarge = 60, thresh = 10, plot = FALSE
                           imaginary=roll_sumr(gps$imHead, n = nLarge, fill = NA))) * 180 / pi
 
     gps$timeDiff <- gps$UTC - c(gps$UTC[1], gps$UTC[1:(nrow(gps)-1)])
-
+    # 1 knot = .51444 m/s
+    gps$distApprox <- as.numeric(gps$timeDiff) * gps$Speed * .51444
     # this >10 is so that we dont connect big jumps if there's a disconnect in the gps track
     # trying >30 because 10 broke i tup too much
     # so if theres ever a jump of more than 30 seconds it wont connect those 30s apart pieces

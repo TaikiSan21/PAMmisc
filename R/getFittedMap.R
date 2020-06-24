@@ -7,8 +7,11 @@
 #'    positions data.
 #'
 #' @param positions data frame containing columns \code{Latitude} and \code{Longitude}
-#' @param offline flag whether or not to run in offline mode. Offline mode will use coastline
-#'   files from naturalearthdata.com and a mercator projection.
+#' @param source the source for the map. Can be either \code{google}, \code{stamen}, or
+#'   \code{offline}. \code{google} will load the smallest Google Map that fits the data.
+#'   \code{stamen} will load a 'toner-lite' style stamen map. Both \code{stamen} and
+#'   \code{offline} will load a map slightly larger than the range of the data. Google
+#'   Maps option requires setting up a Google API, please search ggmap help for more info.
 #' @param bounds optional, the boundaries of a box that must be within the output plot.
 #'   Used to extend the plotted area, especially useful for the offline mode. Specified as
 #'   the lat / long coordinates of the lower left and upper right corners.
@@ -33,29 +36,34 @@
 #' map <- getFittedMap(data)
 #' map
 #' map + geom_point(data = data, aes(x = Longitude, y = Latitude))
-#' }
+#'
 #' # Offline mode, fits map closely to data
-#' map <- getFittedMap(data, offline = TRUE)
+#' map <- getFittedMap(data, mode = 'offline')
 #' map
 #' map + geom_point(data = data, aes(x = Longitude, y = Latitude))
 #'
 #' # Offline mode, expand bounds for nicer looking map
-#' map <- getFittedMap(data, offline = TRUE, bounds = c(32, -120, 34, -117))
+#' map <- getFittedMap(data, mode = 'offline', bounds = c(32, -120, 34, -117))
 #' map
 #' map + geom_point(data = data, aes(x = Longitude, y = Latitude))
-#'
+#' }
 #' @import ggplot2
-#' @importFrom ggmap get_map ggmap
+#' @importFrom ggmap get_map ggmap get_stamenmap
 #' @export
 #'
-getFittedMap <- function(positions, offline=FALSE, bounds=NULL, zoom=14, force=FALSE, center=NULL, quiet=TRUE) {
-    if(!all(c('Latitude', 'Longitude') %in% colnames(positions))) {
-        stop('positions data must have "Latitude" and "Longitude" columns.')
+getFittedMap <- function(positions, source = 'stamen', bounds=NULL, zoom=14, force=FALSE, center=NULL, quiet=TRUE) {
+    latOptions <- c('Latitude', 'latitude', 'lat')
+    lonOptions <- c('Longitude', 'longitude', 'lon')
+    hasLat <- latOptions[which(latOptions %in% colnames(positions))]
+    hasLon <- lonOptions[which(lonOptions %in% colnames(positions))]
+    if(length(hasLat) != 1 ||
+       length(hasLon) != 1) {
+        stop('positions data must have one "Latitude" and one "Longitude" column.')
     }
-    positions <- positions[, c('Latitude', 'Longitude')]
+    positions <- positions[, c(hasLat, hasLon)]
     # We cant automatically map near the poles yet, just stop for now.
     poleThresh <- 70
-    if(max(abs(positions$Latitude)) > poleThresh) {
+    if(max(abs(positions[[hasLat]])) > poleThresh) {
         stop('It looks like you are near one of the poles. Automatic mapping not yet supported here. Sorry!')
     }
     # If we tried to zoome out this far something bad happened.
@@ -63,10 +71,10 @@ getFittedMap <- function(positions, offline=FALSE, bounds=NULL, zoom=14, force=F
         stop('Cannot use Zoom 0 or 1. Check coordinates for errors.')
     }
     # Get our map with smallest bounding box of data, or specified box
-    positions <- fixDateline(positions)
+    positions <- fixDateline(positions, hasLon)
     if(is.null(bounds)) {
-        boundLong <- range(positions$Longitude)
-        boundLat <- range(positions$Latitude)
+        boundLong <- range(positions[[hasLon]])
+        boundLat <- range(positions[[hasLat]])
     } else {
         boundLong <- bounds[c(2,4)]
         boundLat <- bounds[c(1,3)]
@@ -77,21 +85,35 @@ getFittedMap <- function(positions, offline=FALSE, bounds=NULL, zoom=14, force=F
     }
     # Try downloading up to three times - fails quite often, but will work on second try
     if(!offline) {
-        nTries <- 3
         map <- NULL
+        nTries <- 3
+        map <- switch(source,
+                      'google' = .getGoogleMap(center = center, zoom = zoom),
+                      'stamen' = .getStamenMap(bbox = c(left = boundLong[1],
+                                                        bottom = boundLat[1],
+                                                        right = boundLong[2],
+                                                        top = boundLat[2])),
+                      'offline' = .getOfflineMap(positions),
+                      .getOfflineMap(positions))
         suppressMessages(
             for(t in 1:nTries) {
                 try(
-                    map <- get_map(location = center, zoom=zoom),
-                    silent = TRUE
-                )
+                    switch(source,
+                           'google' = map <- get_map(location = center, zoom=zoom),
+                           'stamen' = map <- get_stamenmap(bbox = c(left = boundLong[1],
+                                                                    bottom = boundLat[1],
+                                                                    right = boundLong[2],
+                                                                    top = boundLat[2]),
+                                                           maptype = 'toner-lite', zoom = zoom), # ZOOM IZ BROAK
+                           NULL),
+                    silent = TRUE)
                 if(!is.null(map)) break
             }
         )
         # If still null we couldnt download, so switch to offline mode
         if(is.null(map)) {
             warning('Unable to download map, switching to offline mode.')
-            return(getFittedMap(positions, zoom=zoom, quiet=quiet, offline=TRUE))
+            return(getFittedMap(positions, zoom=zoom, quiet=quiet, source='offline'))
         }
         # Checking if all points are within map range. If not, zoom out 1.
         mapRange <- attr(map, 'bb')
@@ -102,7 +124,7 @@ getFittedMap <- function(positions, offline=FALSE, bounds=NULL, zoom=14, force=F
             boundLat[2] > mapRange[3])) {
             # statement mostly useful for debugging
             # cat('Zoom level', zoom, 'is too close. Trying', zoom-1,'. \n')
-            return(getFittedMap(positions, zoom=zoom-1, quiet=quiet, offline=offline))
+            return(getFittedMap(positions, zoom=zoom-1, quiet=quiet, source = source))
         }
         if(!quiet) {
             cat('Zoom level', zoom, 'being used. \n')
@@ -136,3 +158,35 @@ getFittedMap <- function(positions, offline=FALSE, bounds=NULL, zoom=14, force=F
         return(map)
     }
 }
+
+.getGoogleMap <- function(center, zoom, force, boundLong, boundLat, quiet) {
+    map <- NULL
+    nTries <- 3
+    suppressMessages(
+        for(i in seq_along(nTries)) {
+            try(
+                map <- get_map(location = center, zoom = zoom),
+                silent = TRUE
+            )
+            if(!is.null(map)) break
+        }
+    )
+    if(is.null(map)) {
+        return(NULL)
+    }
+    mapRange <- attr(map, 'bb')
+    if(!force & (
+        boundLong[1] < mapRange[2] |
+        boundLong[2] > mapRange[4] |
+        boundLat[1] < mapRange[1] |
+        boundLat[2] > mapRange[3])) {
+        # statement mostly useful for debugging
+        # cat('Zoom level', zoom, 'is too close. Trying', zoom-1,'. \n')
+        return(.getGoogleMap(center = center, zoom=zoom-1, force=force, quiet=quiet))
+    }
+    if(!quiet) {
+        cat('Zoom level', zoom, 'being used. \n')
+    }
+    return(ggmap(map))
+}
+

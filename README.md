@@ -55,6 +55,11 @@ modify or remove existing entries in the database.
 
 ### Versions
 
+**1.4.0** - Added functions for downloading environmental data and matching it to your
+data. Replaced older verison of `formatURL` from v 1.3.0. New exported functions are
+`edinfoToURL`, `downloadEnv`, `erddapToEdinfo`, `varSelect`, `getEdinfo`,
+`ncToData`, `matchEnvData`, `browseEdinfo`. Updated tutorial to follow later.
+
 **1.3.1** - bug fix where `straightPath` was not properly averaging angles. Changed to
 polar coordinate style averaging, will now handle angles near the 0-360 border properly
 
