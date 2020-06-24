@@ -55,6 +55,9 @@ modify or remove existing entries in the database.
 
 ### Versions
 
+**1.4.1** - Internal changes to make `matchEnvData` a generic method so can write methods
+for non-dataframe sources easier
+
 **1.4.0** - Added functions for downloading environmental data and matching it to your
 data. Replaced older verison of `formatURL` from v 1.3.0. New exported functions are
 `edinfoToURL`, `downloadEnv`, `erddapToEdinfo`, `varSelect`, `getEdinfo`,

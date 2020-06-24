@@ -290,4 +290,3 @@ romsCheck <- function(nc) {
     # nc$var <- nc$var[!whichDimVar]
     nc
 }
-

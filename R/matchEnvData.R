@@ -23,12 +23,19 @@
 #'
 #' @author Taiki Sakai \email{taiki.sakai@@noaa.gov}
 #'
-#' @importFrom dplyr bind_rows bind_cols
-#' @importFrom rerddap cache_delete
-#'
+#' @name matchEnvData
 #' @export
 #'
-matchEnvData <- function(data, nc=NULL, var=NULL, buffer=c(0,0,0), fileName = NULL, ...) {
+setGeneric('matchEnvData',
+           function(data, nc=NULL, var=NULL, buffer=c(0,0,0), fileName = NULL, ...) standardGeneric('matchEnvData')
+)
+
+#' @rdname matchEnvData
+#' @importFrom dplyr bind_rows bind_cols
+#' @importFrom rerddap cache_delete
+#' @export
+#'
+setMethod('matchEnvData', 'data.frame', function(data, nc=NULL, var=NULL, buffer=c(0,0,0), fileName = NULL, ...) {
     # First just get an edinfo
     if(is.null(nc)) {
         nc <- browseEdinfo(var=var)
@@ -40,6 +47,7 @@ matchEnvData <- function(data, nc=NULL, var=NULL, buffer=c(0,0,0), fileName = NU
             stop(paste0(nc, ' must be a valid nc file or erddap dataset id.'))
         }
     }
+
     # if pointing to an ncfile, just do that
     if(is.character(nc) &&
        file.exists(nc)) {
@@ -48,14 +56,6 @@ matchEnvData <- function(data, nc=NULL, var=NULL, buffer=c(0,0,0), fileName = NU
     if(!inherits(nc, 'edinfo')) {
         stop(paste0(nc, ' must be a valid nc file or erddap dataset id.'))
     }
-    # ask download all
-    # dlChoice <- menu(title = paste0('Would you like to download one large nc file and save it for future use (slow)',
-    #                                 ' or many smaller temporary files (faster, no nc files saved) ?'),
-    #                  choices = c('One large', 'Many small temporary'))
-    # if(dlChoice == 0) {
-    #     cat('Must choose an option')
-    #     return(invisible(NULL))
-    # }
 
     # no filename provided means dont download all, do smaller
     if(is.null(fileName)) {
@@ -70,10 +70,6 @@ matchEnvData <- function(data, nc=NULL, var=NULL, buffer=c(0,0,0), fileName = NU
         }
         return(bind_rows(result))
     }
-    # if(dlChoice == 1) {
-    # if(is.null(fileName)) {
-    #     fileName <- readline('Enter a name for the nc file, it will be savaed in the current directory:')
-    # }
 
     # file name provided means get big all at once
     if(!grepl('\\.nc$', fileName)) {
@@ -81,4 +77,4 @@ matchEnvData <- function(data, nc=NULL, var=NULL, buffer=c(0,0,0), fileName = NU
     }
     ncData <- downloadEnv(data=data, edinfo = nc, fileName = fileName, buffer = buffer)
     return(ncToData(data=data, nc=ncData, buffer=buffer, ...))
-}
+})

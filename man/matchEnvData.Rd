@@ -2,9 +2,19 @@
 % Please edit documentation in R/matchEnvData.R
 \name{matchEnvData}
 \alias{matchEnvData}
+\alias{matchEnvData,data.frame-method}
 \title{Match Data From an Existing Netcdf File or Download and Match}
 \usage{
 matchEnvData(
+  data,
+  nc = NULL,
+  var = NULL,
+  buffer = c(0, 0, 0),
+  fileName = NULL,
+  ...
+)
+
+\S4method{matchEnvData}{data.frame}(
   data,
   nc = NULL,
   var = NULL,
