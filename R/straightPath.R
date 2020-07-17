@@ -23,6 +23,9 @@
 #' @export
 #'
 straightPath<- function(gps, nSmall = 10, nLarge = 60, thresh = 10, plot = FALSE) {
+    if(any(is.na(gps$Heading))) {
+        warning('Heading data missing. Tell Taiki to make it work without heading data.')
+    }
     gps$realHead <- cos(gps$Heading * pi / 180)
     gps$imHead <- sin(gps$Heading * pi / 180)
     smallLag <- Arg(complex(real=roll_sumr(gps$realHead, n=nSmall, fill=NA),

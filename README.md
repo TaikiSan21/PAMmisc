@@ -53,7 +53,13 @@ Existing events cannot be added to, so all detections for an event must be added
 at the same time. This function should only add to an existing database, it will not
 modify or remove existing entries in the database. 
 
+* `addPgGps` - Add a gpsData table to a Pamguard database. Gps source can either be
+a dataframe, SPOT csv file, or SPOT gpx file, or csv file with UTC, Longitude, and
+Latitude
+
 ### Versions
+
+**1.5.0** - Added `addPgGps` to add GPS data to a Pamguard database
 
 **1.4.1** - Internal changes to make `matchEnvData` a generic method so can write methods
 for non-dataframe sources easier

@@ -61,7 +61,7 @@ setMethod('matchEnvData', 'data.frame', function(data, nc=NULL, var=NULL, buffer
     if(is.null(fileName)) {
         result <- vector('list', length = nrow(data))
         cat('Downloading data...\n')
-        pb <- txtProgressBar(min=1, max = length(result), style=3)
+        pb <- txtProgressBar(min=0, max = length(result), style=3)
         for(i in seq_along(result)) {
             ncData <- downloadEnv(data=data[i, ], edinfo = nc, buffer = buffer)
             on.exit(rerddap::cache_delete(basename(ncData)), add=FALSE)
