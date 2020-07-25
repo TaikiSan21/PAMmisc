@@ -32,22 +32,34 @@ downloadEnv <- function(data, edinfo, fileName = NULL, buffer = c(0, 0, 0)) {
         edinfo <- erddapToEdinfo(info)
         return(downloadEnv(data, edinfo, fileName, buffer))
     }
+    colnames(data) <- standardCoordNames(colnames(data))
     fileName <- fileNameManager(fileName)
+    # check cross dateline, only do something if env is
+    crossDateline <- checkDateline(data)
+    if(crossDateline) {
+        left <- to180(data$Longitude) > 0
+        dataLeft <- data[left, ]
+        dataRight <- data[!left, ]
+        return(c(downloadEnv(dataLeft, edinfo, fileNameManager(fileName, 'leftLong'), buffer),
+                 downloadEnv(dataRight, edinfo, fileNameManager(fileName, 'rightLong'), buffer)))
+    }
+
     buffer <- bufferToSpacing(buffer, edinfo)
+    data <- to180(data, inverse = !edinfo$is180)
     dataBounds <- dataToRanges(data, buffer)
+    # dataBounds$Longitude <- to180(dataBounds$Longitude, inverse = !edinfo$is180)
+    if(checkDateline(dataBounds)) {
+        if(dataBounds$Longitude[1] < edinfo$limits$Longitude[1]) {
+            dataBounds$Longitude[1] <- edinfo$limits$Longitude[1]
+        }
+        if(dataBounds$Longitude[2] > edinfo$limits$Longitude[2]) {
+            dataBounds$Longitude[2] <- edinfo$limits$Longitude[2]
+        }
+    }
     # ensures limits are within range of dataset, first call is just to report number of points outside range
     checkonly <- checkLimits(data, edinfo, replace=TRUE, quiet=FALSE)
     dataBounds <- checkLimits(dataBounds, edinfo, replace=TRUE, quiet=TRUE)
-    dataBounds$Longitude <- to180(dataBounds$Longitude, inverse = !edinfo$is180)
 
-    # check cross dateline, only do something if env is
-    crossDateline <- checkDateline(dataBounds)
-    if(crossDateline) {
-        dataPos <- data[data$Longitude >= 0, ]
-        dataNeg <- data[data$Longitude < 0, ]
-        return(c(downloadEnv(dataPos, edinfo, fileNameManager(fileName, 'posLong'), buffer),
-                 downloadEnv(dataNeg, edinfo, fileNameManager(fileName, 'negLong'), buffer)))
-    }
 
     url <- edinfoToURL(edinfo, ranges=dataBounds)
     # hm shit need some tempdir stuff, either make one in wd with a weird name, or tempdir(),
@@ -61,6 +73,9 @@ downloadEnv <- function(data, edinfo, fileName = NULL, buffer = c(0, 0, 0)) {
                                                   # verbose(),
                                                   progress(),
                                                   write_disk(fileName, overwrite = TRUE))))
+        if(envData$status_code == 400) {
+            stop(paste0('URL ', envData$url, ' is invalid, pasting this into a browser may give more information.'))
+        }
         if(inherits(envData, 'try-error')) {
             nTry <- nTry + 1
             next

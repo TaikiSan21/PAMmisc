@@ -246,6 +246,7 @@ fileNameManager <- function(fileName=NULL, suffix=NULL) {
 
 checkDateline <- function(data) {
     names(data) <- standardCoordNames(names(data))
+    data <- to180(data)
     # check diff signs, then make sure we arent around the 0 transition
     (sign(max(data$Longitude)) != sign(min(data$Longitude))) &&
         ((max(data$Longitude) >= 90) || (min(data$Longitude) <= -90))

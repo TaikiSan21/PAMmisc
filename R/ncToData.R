@@ -30,9 +30,12 @@ ncToData <- function(data, nc, buffer = c(0,0,0), raw = FALSE, quiet=FALSE) {
     nc <- nc_open(nc)
     on.exit(nc_close(nc))
     nc <- romsCheck(nc)
+    oldNames <- colnames(data)
+    colnames(data) <- standardCoordNames(oldNames)
     # this finds the name of the longitude coordinate from my list that matches lon/long/whatever to Longitude
     nc180 <- ncIs180(nc)
     data180 <- dataIs180(data)
+
     if(nc180 != data180) {
         data <- to180(data, inverse = !nc180)
     }
@@ -76,6 +79,7 @@ ncToData <- function(data, nc, buffer = c(0,0,0), raw = FALSE, quiet=FALSE) {
         allVar$matchTime_mean <- as.POSIXct(allVar$matchTime_mean, origin = '1970-01-01 00:00:00', tz='UTC')
         allVar$matchTime_median <- as.POSIXct(allVar$matchTime_median, origin = '1970-01-01 00:00:00', tz='UTC')
     }
+    colnames(data) <- oldNames
     cbind(data, allVar)
 }
 

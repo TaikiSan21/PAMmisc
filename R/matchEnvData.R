@@ -76,5 +76,19 @@ setMethod('matchEnvData', 'data.frame', function(data, nc=NULL, var=NULL, buffer
         fileName <- paste0(fileName, '.nc')
     }
     ncData <- downloadEnv(data=data, edinfo = nc, fileName = fileName, buffer = buffer)
+    # browser()
+    if(length(ncData) > 1) {
+        cat(paste0('Data crossed the dateline, download split into two files: ',
+                   ncData[1], ' and ', ncData[2]))
+        oldNames <- colnames(data)
+        colnames(data) <- standardCoordNames(colnames(data))
+        left <- to180(data$Longitude) > 0
+        colnames(data) <- oldNames
+        dataLeft <- data[left, ]
+        dataRight <- data[!left, ]
+        return(bind_rows(ncToData(data=dataLeft, nc=ncData[1], buffer=buffer, ...),
+                         ncToData(data=dataRight, nc=ncData[2], buffer=buffer, ...))
+        )
+    }
     return(ncToData(data=data, nc=ncData, buffer=buffer, ...))
 })

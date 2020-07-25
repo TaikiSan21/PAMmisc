@@ -22,7 +22,8 @@ devtools::install_github('TaikiSan21/PAMmisc')
 
 * `getFittedMap` - Get nicely fitted maps to plot your data. Either downloads
 from Google Maps or uses coastline shape files in offline mode. **NOTE** this 
-now requires configuring a Google Maps API key!!!
+now requires configuring a Google Maps API key!!! **NOTE** THIS HAS BEEN REMOVED
+BECAUSE `ggmap` PACKAGE HAS BEEN ORPHANED
 
 * `writeClickWave` - Create synthetic delphinid click wav files
 
@@ -58,6 +59,10 @@ a dataframe, SPOT csv file, or SPOT gpx file, or csv file with UTC, Longitude, a
 Latitude
 
 ### Versions
+
+**1.6.0** - Whoa, environmental data functions might work fine for crossing the dateline now.
+`getFittedMap` also removed because `ggmap` package has been orphaned.
+
 
 **1.5.0** - Added `addPgGps` to add GPS data to a Pamguard database
 
