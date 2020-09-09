@@ -4,16 +4,38 @@
 \alias{varSelect}
 \title{Utility for Selecting Variables to Download}
 \usage{
-varSelect(edinfo)
+varSelect(edinfo, select = NULL)
 }
 \arguments{
 \item{edinfo}{a datalist, either from \link{getEdinfo} or created by
 \link{erddapToEdinfo}}
+
+\item{select}{(optional) logical vector of which variables to select.
+If left as default \code{NULL}, user will be prompted to select which
+variables to keep. If not \code{NULL}, can either be a single \code{TRUE}
+to select all variables, or a logical vector of length equal to the number
+of variables in \code{edinfo}}
+}
+\value{
+the same object as \code{edinfo} with an updated \code{varSelect} field
 }
 \description{
 Loops through the available variables in an edinfo object and asks
   whether or not each should be downloaded, then stores the result for
   passing on to \link{formatURL}
+}
+\examples{
+
+sstEdi <- getEdinfo()[['jplMURSST41']]
+\dontrun{
+# interactively select
+sstEdi <- varSelect(sstEdi)
+}
+# select all variables
+sstEdi <- varSelect(sstEdi, TRUE)
+# select the first two of four
+sstEdi <- varSelect(sstEdi, c(TRUE, TRUE, FALSE, FALSE))
+
 }
 \author{
 Taiki Sakai \email{taiki.sakai@noaa.gov}

@@ -20,11 +20,6 @@ devtools::install_github('TaikiSan21/PAMmisc')
 
 ### Functions
 
-* `getFittedMap` - Get nicely fitted maps to plot your data. Either downloads
-from Google Maps or uses coastline shape files in offline mode. **NOTE** this 
-now requires configuring a Google Maps API key!!! **NOTE** THIS HAS BEEN REMOVED
-BECAUSE `ggmap` PACKAGE HAS BEEN ORPHANED
-
 * `writeClickWave` - Create synthetic delphinid click wav files
 
 * `writeAMWave` - Create synthetic amplitude modulated wav files
@@ -58,51 +53,8 @@ modify or remove existing entries in the database.
 a dataframe, SPOT csv file, or SPOT gpx file, or csv file with UTC, Longitude, and
 Latitude
 
-### Versions
-
-**1.6.0** - Whoa, environmental data functions might work fine for crossing the dateline now.
-`getFittedMap` also removed because `ggmap` package has been orphaned.
-
-
-**1.5.0** - Added `addPgGps` to add GPS data to a Pamguard database
-
-**1.4.1** - Internal changes to make `matchEnvData` a generic method so can write methods
-for non-dataframe sources easier
-
-**1.4.0** - Added functions for downloading environmental data and matching it to your
-data. Replaced older verison of `formatURL` from v 1.3.0. New exported functions are
-`edinfoToURL`, `downloadEnv`, `erddapToEdinfo`, `varSelect`, `getEdinfo`,
-`ncToData`, `matchEnvData`, `browseEdinfo`. Updated tutorial to follow later.
-
-**1.3.1** - bug fix where `straightPath` was not properly averaging angles. Changed to
-polar coordinate style averaging, will now handle angles near the 0-360 border properly
-
-**1.3.0** - added `formatURL` functions for making ERDDAP downloading URLs automatically
-
-**1.2.1** - minor change in error handling for `peakTrough`
-- `writeClickWave` can handle vectors for CPS and frequency
-
-**1.2.0** - `writeAMWave` function added to create synthetic amplitude modulated waves
-
-**1.1.0** - `addPgEvent` function added to add new events to an existing Pamguard database by
-providing a vector of UIDs
-
-**1.0.4** - fixed typo that broke `wignerTransform`
-
-**1.0.3** - minor change to output of `wignerTransform`, resizes back to length of
-original signal
-
-**1.0.2** - bug fixed in `decimateWavFiles` when trying to write a folder of files
-
-**1.0.1** - `wignerTransform` added
+* Environmental data fetching functions to be described later
 
 ### TODO
 
 Rework `decimateWavFiles` to work with multi-channel data.
-
-Finish fixing `getFittedMap` Can we check
-for 403 forbidden error?? More color or other options for offline? Apparently
-`rnaturalearth` is a package. More flexibility in column names. I can probably redo
-this using `sf` stuff a lot nicer, I had to do some janky business to get coordinates
-to look like not-a-shit-show
-

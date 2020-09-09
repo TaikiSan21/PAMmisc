@@ -11,6 +11,17 @@
 #'
 #' @author Taiki Sakai \email{taiki.sakai@@noaa.gov}
 #'
+#' @return a properly formatted URL that can be used to download environmental data
+#'
+#' @examples
+#' sstEdi <- getEdinfo()[['jplMURSST41']]
+#' # select all variables for download
+#' sstEdi <- varSelect(sstEdi, TRUE)
+#' edinfoToURL(sstEdi, ranges = list(Latitude = c(32, 33),
+#'                                   Longitude = c(-118, -117),
+#'                                   UTC = as.POSIXct(c('2000-01-01 00:00:00',
+#'                                                      '2000-01-02 00:00:00'), tz='UTC')))
+#' @importFrom lubridate yday
 #' @export
 #'
 edinfoToURL <- function(edinfo, ranges) {
@@ -31,7 +42,7 @@ edinfoToURL <- function(edinfo, ranges) {
     }
     if(inherits(ranges$UTC, 'POSIXct') &&
        identical(edinfo$limits$UTC, c(1, 365))) {
-        ranges$UTC <- lubridate::yday(ranges$UTC)
+        ranges$UTC <- yday(ranges$UTC)
     }
     # WHY DOES ERDDAP SOMETIMES HAVE BACKWARDS COORDS
     # Only found for latitude so far, but including lon just in case
@@ -44,6 +55,6 @@ edinfoToURL <- function(edinfo, ranges) {
               dataset = edinfo$dataset,
               fileType = edinfo$fileType,
               vars = edinfo$vars[edinfo$varSelect],
-              ranges = ranges,
+              ranges = ranges[names(edinfo$limits)],
               style = edinfo$source)
 }

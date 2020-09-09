@@ -13,10 +13,22 @@ edinfoToURL(edinfo, ranges)
 \item{ranges}{list of ranges for Longitude, Latitude, and UTC. Must be a
 named list with a vector of min/max values for each of the three dimensions}
 }
+\value{
+a properly formatted URL that can be used to download environmental data
+}
 \description{
 Creates a properly formatted URL (see \link{formatURL}) from
   a datalist either from the package's recommended sources or an ERDDAP
   dataset id
+}
+\examples{
+sstEdi <- getEdinfo()[['jplMURSST41']]
+# select all variables for download
+sstEdi <- varSelect(sstEdi, TRUE)
+edinfoToURL(sstEdi, ranges = list(Latitude = c(32, 33),
+                                  Longitude = c(-118, -117),
+                                  UTC = as.POSIXct(c('2000-01-01 00:00:00',
+                                                     '2000-01-02 00:00:00'), tz='UTC')))
 }
 \author{
 Taiki Sakai \email{taiki.sakai@noaa.gov}

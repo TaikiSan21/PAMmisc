@@ -23,7 +23,7 @@ ncTimeToPosix <- function(vals, units) {
 }
 
 #
-#' @importFrom lubridate yday is.difftime
+#' @importFrom lubridate yday
 #'
 dimToIx <- function(data, dim, buffer=0, quiet=FALSE) {
     if(quiet) {
@@ -61,7 +61,7 @@ dimToIx <- function(data, dim, buffer=0, quiet=FALSE) {
     }
     count <- end - start + 1
     maxDiff <- max(diff)
-    if(is.difftime(maxDiff)) {
+    if(inherits(maxDiff, 'difftime')) {
         maxDiff <- as.double(maxDiff, units='secs')
     }
     # browser()
@@ -78,7 +78,7 @@ dimToIx <- function(data, dim, buffer=0, quiet=FALSE) {
     } else if(length(dim$vals) > 1) {
         dimStride <- abs(dim$vals[2]-dim$vals[1])
         # browser()
-        if(is.difftime(dimStride)) {
+        if(inherits(dimStride, 'difftime')) {
             dimStride <- as.double(dimStride, units='secs')
         }
         if(maxDiff / dimStride > 1) {
@@ -135,19 +135,6 @@ to360 <- function(x, inverse = FALSE) {
 #' @importFrom ncdf4 ncatt_get
 #'
 ncIs180 <- function(nc) {
-    # nameDf <- getCoordNameMatch()
-    # longName <- names(nc$dim)[names(nc$dim) %in% nameDf[nameDf$standard == 'Longitude', 'current']]
-    # if(length(longName) == 0) {
-    #     stop('Couldnt find a "Longitude" coordinate in this NC file.')
-    # }
-    # atts <- ncatt_get(nc, longName)
-    # if(atts$valid_max > 180) {
-    #     return(FALSE)
-    # }
-    # if(atts$valid_min < 0) {
-    #     return(TRUE)
-    # }
-    # TRUE
     names(nc$dim) <- standardCoordNames(names(nc$dim))
     if(is.null(nc$dim$Longitude)) {
         stop('Couldnt find a "Longitude" coordinate in this NC file.')
@@ -222,7 +209,7 @@ checkLimits <- function(data, limits, replace=FALSE, quiet=FALSE) {
         }
         dat
     }
-    for(d in c('Longitude', 'Latitude', 'UTC')) {
+    for(d in names(limits)) {
         data <- checkOneLim(data, limits, d, replace, quiet)
     }
     to180(data, inverse = !data180)
@@ -230,9 +217,11 @@ checkLimits <- function(data, limits, replace=FALSE, quiet=FALSE) {
 
 # does creating of temp directories/files if you need, adds a suffix to a file
 # if you need
+#' @importFrom hoardr hoard
+#'
 fileNameManager <- function(fileName=NULL, suffix=NULL) {
     if(is.null(fileName)) {
-        tempDir <- rerddap:::rrcache$cache_path_get()
+        tempDir <- hoard()$cache_path_set('PAMmisc')
         if(!dir.exists(tempDir)) {
             dir.create(tempDir, recursive = TRUE)
         }
@@ -240,6 +229,9 @@ fileNameManager <- function(fileName=NULL, suffix=NULL) {
     }
     if(!is.null(suffix)) {
         fileName <- gsub('(.*)(\\.nc$)', paste0('\\1_', suffix, '\\2'), fileName)
+    }
+    if(!dir.exists(dirname(fileName))) {
+        dir.create(dirname(fileName), recursive = TRUE)
     }
     fileName
 }
@@ -265,7 +257,8 @@ bufferToSpacing <- function(buffer, edinfo) {
     if(buffer[2] < abs(edinfo$spacing$Latitude)) {
         buffer[2] <- abs(edinfo$spacing$Latitude)
     }
-    if(buffer[3] < edinfo$spacing$UTC) {
+    if(!is.null(edinfo$spacing$UTC) &&
+       buffer[3] < edinfo$spacing$UTC) {
         buffer[3] <- edinfo$spacing$UTC
     }
     buffer

@@ -24,9 +24,9 @@
 #' myDb <- 'PamguardDatabase.sqlite3'
 #' myBinaries <- c('./Binaries/Bin1.pgdf', './Binaries/Bin2.pgdf')
 #' addUIDs <- c(10000001, 10000002, 20000007, 20000008)
-#' addPgEvent(db = myDb, UIDs = addUIDs, binaries = myBinaries, eventType = 'MyNewEvent')
+#' addPgEvent(db = myDb, UIDs = addUIDs, binary = myBinaries, eventType = 'MyNewEvent')
 #' }
-#' @importFrom RSQLite dbConnect SQLite dbListTables dbReadTable dbDisconnect dbAppendTable dbSendQuery
+#' @importFrom RSQLite dbConnect SQLite dbListTables dbReadTable dbDisconnect dbAppendTable dbSendQuery dbClearResult
 #' @importFrom PamBinaries loadPamguardBinaryFile convertPgDate
 #' @importFrom dplyr bind_rows select
 #'
@@ -102,7 +102,7 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
     eventAppend$UTC <- allAppend$UTC[which.min(allAppend$TEMPTIME)]
     eventAppend$EventEnd <- allAppend$UTC[which.max(allAppend$TEMPTIME)]
     eventAppend$UTCMilliseconds <- allAppend$UTCMilliseconds[which.min(allAppend$TEMPTIME)]
-    allAppend <- select(allAppend, -TEMPTIME)
+    allAppend['TEMPTIME'] <- NULL
     eventAppend$nClicks <- nrow(allAppend)
     eventAppend$eventType <- eventType
     eventAppend$comment <- comment

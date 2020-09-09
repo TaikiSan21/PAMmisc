@@ -17,9 +17,22 @@ erddapToEdinfo(
 
 \item{chooseVars}{logical flag whether or not to select which variables you want now}
 }
+\value{
+an edinfo list object that can be used to download environmental data
+}
 \description{
 Creates an edinfo object that can be used to create a URL for
   downloading environmental data using \link{edinfoToURL}
+}
+\examples{
+\dontrun{
+# examples not run because they require internet connection
+sstEdi <- erddapToEdinfo('jplMURSST41')
+# dataset from a diferent erddap server
+sshEdi <- erddapToEdinfo('hawaii_soest_2ee3_0bfa_a8d6',
+                          baseurl = 'http://apdrc.soest.hawaii.edu/erddap/')
+}
+
 }
 \author{
 Taiki Sakai \email{taiki.sakai@noaa.gov}

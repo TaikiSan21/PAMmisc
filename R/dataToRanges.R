@@ -14,6 +14,17 @@
 #'
 #' @author Taiki Sakai \email{taiki.sakai@@noaa.gov}
 #'
+#' @examples
+#'
+#' gps <- data.frame(Latitude = c(32, 32.1, 32.2, 32.2, 32.2),
+#'                   Longitude = c(-110, -110.1, -110.2, -110.3, -110.4),
+#'                   UTC = as.POSIXct(c('2000-01-01 00:00:00', '2000-01-01 00:00:10',
+#'                                      '2000-01-01 00:00:20', '2000-01-01 00:00:30',
+#'                                      '2000-01-01 00:00:40')))
+#' dataToRanges(gps)
+#'
+#' dataToRanges(gps, buffer = c(.05, .05, 86400))
+#'
 #' @export
 #'
 dataToRanges <- function(data, buffer = c(0, 0, 0)) {

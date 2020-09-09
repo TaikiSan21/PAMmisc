@@ -17,6 +17,18 @@
 #'
 #' @author Taiki Sakai \email{taiki.sakai@@noaa.gov}
 #'
+#' @examples
+#' \dontrun{
+#' # not run because example files don't exist
+#' myDb <- 'PamguardDatabase.sqlite3'
+#' # adding from a .gpx file downloaded from SPOT
+#' spotGpx <- 'SpotGPX.gpx'
+#' addPgGps(myDb, spotGpx, source='SPOTgpx')
+#' # adding from a csv file with a Y-M-D H:M date format
+#' gpsCsv <- 'GPS.csv'
+#' addPgGps(myDb, gpsCsv, source='csv', format='%Y-%m-%d %H:%M')
+#' }
+#'
 #' @importFrom RSQLite dbConnect SQLite dbListTables dbReadTable dbDisconnect dbAppendTable dbSendQuery
 #' @importFrom plotKML readGPX
 #' @importFrom dplyr bind_rows
@@ -75,6 +87,8 @@ addPgGps <- function(db, gps, source = c('SPOTcsv', 'SPOTgpx', 'csv'), format = 
     invisible(unique(gps$Name))
 }
 
+#' @importFrom utils read.csv
+#'
 fmtGps <- function(x, source, format) {
     if(is.character(x)) {
         if(!file.exists(x)) {
@@ -84,9 +98,30 @@ fmtGps <- function(x, source, format) {
         switch(source,
                'SPOTcsv' = {
                    format <- '%m/%d/%Y %H:%M:%S'
-                   result <- read.csv(x, stringsAsFactors = FALSE, header=FALSE)[, 1:5]
-                   colnames(result) <- c('UTC', 'Name', 'Message', 'Latitude', 'Longitude')
-                   # result$UTC <- as.POSIXct(result$UTC, tz='UTC', format=format)
+                   # sometimes have headers, sometimes not.
+                   head <- read.csv(x, stringsAsFactors = FALSE, header=FALSE, nrows=1)
+                   numericCol <- sapply(head, is.numeric)
+                   result <- read.csv(x, header = !any(numericCol), stringsAsFactors = FALSE)
+                   # sometimes HMS sometime HM
+                   if(is.na(as.POSIXct(result[1, 1], format=format, tz='UTC'))) {
+                       format <- '%m/%d/%Y %H:%M'
+                       if(is.na(as.POSIXct(result[1, 1], format=format, tz='UTC'))) {
+                           stop('File does not appear to be a SPOT csv. See note in ?addPgGps for non-SPOT csv files.')
+                       }
+                   }
+                   numericCol <- which(sapply(result, is.numeric))
+                   if(length(numericCol) != 2) {
+                       stop('File does not appear to be a SPOT csv. See note in ?addPgGps for non-SPOT csv files.')
+                   }
+                   # sometimes a 2nd name column???
+                   name <- result[[2]]
+                   if(min(numericCol)-2 > 2) {
+                       name <- paste0(name,'_', result[[3]])
+                   }
+                   result <- result[, unique(c(1, min(numericCol)-1, numericCol))]
+                   colnames(result) <- c('UTC', 'Message', 'Latitude', 'Longitude')
+                   result$Name <- name
+                   result$UTC <- as.POSIXct(result$UTC, format=format, tz='UTC')
                },
                'SPOTgpx' = {
                    gpx <- readGPX(x)

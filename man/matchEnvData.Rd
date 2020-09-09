@@ -10,6 +10,7 @@ matchEnvData(
   nc = NULL,
   var = NULL,
   buffer = c(0, 0, 0),
+  FUN = c(mean, median, sd),
   fileName = NULL,
   ...
 )
@@ -19,6 +20,7 @@ matchEnvData(
   nc = NULL,
   var = NULL,
   buffer = c(0, 0, 0),
+  FUN = c(mean, median, sd),
   fileName = NULL,
   ...
 )
@@ -27,13 +29,16 @@ matchEnvData(
 \item{data}{dataframe containing Longitude, Latitude, and UTC to extract matching
 variables from the netcdf file}
 
-\item{nc}{name of a netcdf file}
+\item{nc}{name of a netcdf file, ERDDAP dataset id, or an edinfo object}
 
 \item{var}{(optional) vector of variable names}
 
 \item{buffer}{vector of Longitude, Latitude, and Time (seconds) to buffer around
 each datapoint. All values within the buffer will be used to report the mean,
 median, and standard deviation}
+
+\item{FUN}{a vector or list of functions to apply to the data. Default is to apply
+mean, median, and standard deviation calculations}
 
 \item{fileName}{(optional) file name to save downloaded nc file to. If not provided,
 then no nc files will be stored, instead small temporary files will be downloaded
@@ -51,6 +56,28 @@ original dataframe with three attached columns for each variable in the netcdf
 \description{
 Extracts all variables from a netcdf file matching Longitude,
   Latitude, and UTC coordinates in given dataframe
+}
+\examples{
+data <- data.frame(Latitude = 32, Longitude = -117,
+                   UTC = as.POSIXct('2000-01-01 00:00:00', tz='UTC'))
+\dontrun{
+# Not run because downloads files
+sstEdi <- getEdinfo()[['jplMURSST41']]
+sstEdi <- varSelect(sstEdi, TRUE)
+# default calculates mean, median, and standard deviation
+matchEnvData(data, sstEdi)
+# get just mean within a buffer around coordinates
+matchEnvData(data, sstEdi, FUN = mean, buffer = c(.01, .01, 86400))
+# Can also work from an existing nc file
+nc <- downloadEnv(data, sstEdi, buffer = c(.01, .01, 86400))
+matchEnvData(data, nc = nc)
+# Using a custom function
+meanPlusOne <- function(x) {
+  mean(x, na.rm=TRUE) + 1
+}
+matchEnvData(data, nc=nc, FUN=c(mean, meanPlusOne))
+}
+
 }
 \author{
 Taiki Sakai \email{taiki.sakai@noaa.gov}

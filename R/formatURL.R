@@ -20,6 +20,24 @@
 #'
 #' @author Taiki Sakai \email{taiki.sakai@@noaa.gov}
 #'
+#' @return a properly formatted URL that can be used to download environmental data
+#'
+#' @examples
+#'
+#' formatURL(
+#'     base = "https://upwell.pfeg.noaa.gov/erddap/griddap/",
+#'     dataset = "jplMURSST41",
+#'     fileType = "nc",
+#'     vars = "analysed_sst",
+#'     ranges = list(
+#'                Latitude = c(30, 31),
+#'                Longitude = c(-118, -117),
+#'                UTC = as.POSIXct(c('2005-01-01 00:00:00', '2005-01-02 00:00:00'), tz='UTC')
+#'              ),
+#'     stride=1,
+#'     style = 'erddap'
+#' )
+#'
 #' @importFrom lubridate with_tz
 #' @export
 #'
@@ -80,11 +98,16 @@ fmtRange_hycom <- function(ranges, stride=1, html=TRUE) {
 fmtRange_erddap <- function(ranges, stride=1, html=FALSE) {
     # Change times to proper format
     # expected time lat long
+    rngOrder <- c('Latitude', 'Longitude')
     if('Depth' %in% names(ranges)) {
-        ranges <- ranges[c('UTC', 'Depth', 'Latitude', 'Longitude')]
-    } else {
-        ranges <- ranges[c('UTC', 'Latitude', 'Longitude')]
+        rngOrder <- c('Depth', rngOrder)
+        # ranges <- ranges[c('UTC', 'Depth', 'Latitude', 'Longitude')]
     }
+    if('UTC' %in% names(ranges)) {
+        rngOrder <- c('UTC', rngOrder)
+        # ranges <- ranges[c('UTC', 'Latitude', 'Longitude')]
+    }
+    ranges <- ranges[rngOrder]
     paste0(sapply(ranges, function(x) {
         if('POSIXct' %in% class(x)) {
             x <- fmtPsx8601(x, html=html)

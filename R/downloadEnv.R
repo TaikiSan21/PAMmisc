@@ -16,6 +16,24 @@
 #'
 #' @author Taiki Sakai \email{taiki.sakai@@noaa.gov}
 #'
+#' @return If successful, the file name of downloaded data. If not, returns \code{FALSE}
+#'
+#' @examples
+#'
+#' data <- data.frame(Latitude = 32, Longitude = -117,
+#'                    UTC = as.POSIXct('2000-01-01 00:00:00', tz='UTC'))
+#' \dontrun{
+#' # not run because download could take time
+#' # download jplMURSST41 dataset
+#' edi <- erddapToEdinfo('jplMURSST41')
+#' ncFile <- downloadEnv(data, edi, 'sstData.nc')
+#'
+#' # browse suggested sst datasets, then download
+#' edi <- browseEdinfo(var='sst')
+#' ncFile <- downloadEnv(data, edi, 'sstData.nc')
+#' }
+#'
+#'
 #' @import httr
 #' @importFrom rerddap info
 #'
@@ -25,7 +43,7 @@ downloadEnv <- function(data, edinfo, fileName = NULL, buffer = c(0, 0, 0)) {
     if(is.character(edinfo)) {
         # do some erddap info checking shit and make a URL for it
         # list above needs base, vars, dataset, fileType, source
-        info <- suppressMessages(try(rerddap::info(edinfo)))
+        info <- suppressMessages(try(info(edinfo)))
         if(inherits(info, 'try-error')) {
             stop('Not a valid erddap dataset')
         }
@@ -69,10 +87,10 @@ downloadEnv <- function(data, edinfo, fileName = NULL, buffer = c(0, 0, 0)) {
     maxTries <- 3
     nTry <- 1
     while(nTry <= maxTries) {
-        envData <- try(suppressMessages(httr::GET(url,
-                                                  # verbose(),
-                                                  progress(),
-                                                  write_disk(fileName, overwrite = TRUE))))
+        envData <- try(suppressMessages(GET(url,
+                                            # verbose(),
+                                            progress(),
+                                            write_disk(fileName, overwrite = TRUE))))
         if(envData$status_code == 400) {
             stop(paste0('URL ', envData$url, ' is invalid, pasting this into a browser may give more information.'))
         }

@@ -47,7 +47,14 @@
 #'   troughs between those peaks. Also reports the peak-to-peak distance. Any
 #'   peaks / troughs that were not able to be found (based on \code{freqBounds}
 #'   and \code{dbMin} parameters) will be 0.
+#'
 #' @author Taiki Sakai \email{taiki.sakai@@noaa.gov}
+#'
+#' @examples
+#'
+#' clickWave <- createClickWave(signalLength = .1, clickLength = 1000, clicksPerSecond = 200,
+#'                              frequency = 3e3, sampleRate = 10e3)
+#' peakTrough(seewave::spec(clickWave, plot=FALSE), plot=TRUE)
 #'
 #' @importFrom dplyr filter mutate
 #' @importFrom magrittr %>%
@@ -57,6 +64,11 @@
 #'
 peakTrough <- function(spec, freqBounds=c(10, 30), dbMin=-15, smooth=5, plot=FALSE) {
     # Default values to return if we dont find other peaks
+    if(max(spec[, 1] > 1e3)) {
+        warning(paste0('Expected kHz, but frequency units appear to be in hertz.',
+                       'Converting before calculation, note that result is in kHz.'))
+        spec[, 1] <- spec[, 1] / 1e3
+    }
     peak2 <- 0; peak2dB <- dbMin
     trough <- 0; troughdB <- dbMin
     peak3 <- 0; peak3dB <- dbMin
@@ -162,10 +174,10 @@ peakTrough <- function(spec, freqBounds=c(10, 30), dbMin=-15, smooth=5, plot=FAL
         graphDf <- data.frame(Freq = c(peak, peak2, peak3, trough, trough2),
                               dB = c(max(specDf$dB), peak2dB, peak3dB, troughdB, trough2dB),
                               Type = c('Highest Peak', 'Second Peak', 'Third Peak', 'Trough / Notch', 'Trough / Notch'))
-        g <- ggplot() + geom_line(data=specDf, aes(x=Freq, y=dB)) +
+        g <- ggplot() + geom_line(data=specDf, aes_string(x='Freq', y='dB')) +
             geom_vline(xintercept=freqLines, color='goldenrod1') +
             geom_hline(yintercept=dbMin, color='blue') +
-            geom_point(data=graphDf, aes(x=Freq, y=dB, color=Type), size=3) +
+            geom_point(data=graphDf, aes_string(x='Freq', y='dB', color='Type'), size=3) +
             coord_cartesian(xlim=range(specDf$Freq), ylim=range(specDf$dB)) +
             scale_x_continuous(breaks=seq(0,500,20)) +
             labs(title='Finding Peaks and Troughs', x='Frequency (kHz)', y='Relative dB') +

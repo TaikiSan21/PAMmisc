@@ -4,15 +4,13 @@
 \alias{wignerTransform}
 \title{Calculate the Wigner-Ville Transform of a Signal}
 \usage{
-wignerTransform(signal, n, sr, plot = FALSE)
+wignerTransform(signal, n = NULL, sr, plot = FALSE)
 }
 \arguments{
 \item{signal}{input signal waveform}
 
-\item{n}{the size of the output, if missing will be the next power of two
-from the length of the input signal (recommended)
-## NO ITS NOT ITS THE LENGTH OF THE SIGNAL AND CHANGING N DOESNT CHAGNE T
-## TIME LENGTH ONLY FREQUENCY LENGTH}
+\item{n}{number of frequency bins of the output, if NULL will be the next power of two
+from the length of the input signal (recommended)}
 
 \item{sr}{the sample rate of the data}
 
@@ -20,8 +18,9 @@ from the length of the input signal (recommended)
 }
 \value{
 a list with three items. \code{tfr}, the real values of the wigner
-  transform as an nxn matrix. \code{f} and \code{t} the values of the frequency
-  and time axes.
+  transform as a matrix with \code{n} rows and number of columns equal to the next
+  power of two from the length of the input signal. \code{f} and \code{t}
+  the values of the frequency and time axes.
 }
 \description{
 Calculates the Wigner-Ville transform a signal. By default, the
@@ -33,6 +32,12 @@ Calculates the Wigner-Ville transform a signal. By default, the
 \details{
 This code mostly follows Pamguard's Java code for computing the
   Wigner-Ville and Hilbert transforms.
+}
+\examples{
+clickWave <- createClickWave(signalLength = .05, clickLength = 1000, clicksPerSecond = 200,
+                             frequency = 3e3, sampleRate = 10e3)
+wt <- wignerTransform(clickWave@left, n = 1000, sr = 10e3, plot=TRUE)
+
 }
 \author{
 Taiki Sakai \email{taiki.sakai@noaa.gov}

@@ -10,37 +10,45 @@
 #'   Wigner-Ville and Hilbert transforms.
 #'
 #' @param signal input signal waveform
-#' @param n the size of the output, if missing will be the next power of two
+#' @param n number of frequency bins of the output, if NULL will be the next power of two
 #'   from the length of the input signal (recommended)
-#'   ## NO ITS NOT ITS THE LENGTH OF THE SIGNAL AND CHANGING N DOESNT CHAGNE T
-#'   ## TIME LENGTH ONLY FREQUENCY LENGTH
 #' @param sr the sample rate of the data
 #' @param plot logical flag whether or not to plot the result
 #'
 #' @return a list with three items. \code{tfr}, the real values of the wigner
-#'   transform as an nxn matrix. \code{f} and \code{t} the values of the frequency
-#'   and time axes.
+#'   transform as a matrix with \code{n} rows and number of columns equal to the next
+#'   power of two from the length of the input signal. \code{f} and \code{t}
+#'   the values of the frequency and time axes.
 #'
 #' @author Taiki Sakai \email{taiki.sakai@@noaa.gov}
+#'
+#' @examples
+#' clickWave <- createClickWave(signalLength = .05, clickLength = 1000, clicksPerSecond = 200,
+#'                              frequency = 3e3, sampleRate = 10e3)
+#' wt <- wignerTransform(clickWave@left, n = 1000, sr = 10e3, plot=TRUE)
 #'
 #' @importFrom stats fft
 #' @importFrom graphics axis image
 #' @export
 #'
-wignerTransform <- function(signal, n, sr, plot=FALSE) {
-    analytic <- toAnalytic(signal)[1:length(signal)] # size changed during toAnalytic function
+wignerTransform <- function(signal, n=NULL, sr, plot=FALSE) {
+    analytic <- toAnalytic(signal)#[1:length(signal)] # size changed during toAnalytic function
     conjAnalytic <- Conj(analytic)
-    if(missing(n)) {
+    if(is.null(n)) {
         n <- length(analytic)
     }
 
     nRow <- n # nFreq bins
     nCol <- length(analytic) # nTimesteps
+    # nCol <- n # nTimesteps
+
 
     tfr <- matrix(0, nRow, nCol)
 
     for(iCol in 1:nCol) {
         taumax <- min(iCol-1, nCol-iCol, round(nRow/2)-1)
+        # cat('Max', iCol + taumax,
+        #     'Min', iCol-taumax, '\n')
         tau <- -taumax:taumax
         indices <- (nRow + tau) %% nRow + 1
         # * .5 in PG?

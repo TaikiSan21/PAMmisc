@@ -13,12 +13,27 @@ decimateWavFiles(inDir, outDir, newSr)
 
 \item{newSr}{sample rate to decimate the files to}
 }
+\value{
+Invisibly returns the names of all files that were successfully
+  decimated
+}
 \description{
 Decimate a folder of .wav files or a single .wav file
   to a new sample rate.
 }
 \details{
 This code is based on R code written by Jay Barlow.
+}
+\examples{
+
+origDir <- file.path(tempdir(), 'origSR')
+decDir <- file.path(tempdir(), 'decSR')
+writeClickWave('origWav.wav', outDir=origDir, signalLength = 1, clickLength = 100,
+               clicksPerSecond = 200, frequency = 20000, sampleRate = 100000)
+decWavs <- decimateWavFiles(origDir, decDir, 50000)
+file.remove(paste0(origDir, 'origWav.wav'))
+file.remove(decWavs)
+
 }
 \author{
 Taiki Sakai \email{taiki.sakai@noaa.gov}

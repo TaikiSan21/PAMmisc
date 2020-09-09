@@ -36,7 +36,7 @@ Add a new event to an existing Pamguard database in the "OfflineEvents"
 myDb <- 'PamguardDatabase.sqlite3'
 myBinaries <- c('./Binaries/Bin1.pgdf', './Binaries/Bin2.pgdf')
 addUIDs <- c(10000001, 10000002, 20000007, 20000008)
-addPgEvent(db = myDb, UIDs = addUIDs, binaries = myBinaries, eventType = 'MyNewEvent')
+addPgEvent(db = myDb, UIDs = addUIDs, binary = myBinaries, eventType = 'MyNewEvent')
 }
 }
 \author{

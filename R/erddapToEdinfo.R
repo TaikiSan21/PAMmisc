@@ -9,12 +9,23 @@
 #'
 #' @author Taiki Sakai \email{taiki.sakai@@noaa.gov}
 #'
+#' @return an edinfo list object that can be used to download environmental data
+#'
+#' @examples
+#' \dontrun{
+#' # examples not run because they require internet connection
+#' sstEdi <- erddapToEdinfo('jplMURSST41')
+#' # dataset from a diferent erddap server
+#' sshEdi <- erddapToEdinfo('hawaii_soest_2ee3_0bfa_a8d6',
+#'                           baseurl = 'http://apdrc.soest.hawaii.edu/erddap/')
+#' }
+#'
 #' @importFrom rerddap info
 #' @export
 #'
 erddapToEdinfo <- function(dataset, baseurl='https://upwell.pfeg.noaa.gov/erddap/', chooseVars = TRUE) {
     if(is.character(dataset)) {
-        dataset <- rerddap::info(dataset, url = baseurl)
+        dataset <- info(dataset, url = baseurl)
     }
     if(!inherits(dataset, 'info')) {
         stop(dataset, ' must be a valid ERDDAP dataset id or result from rerddap::info')
@@ -54,17 +65,19 @@ erddapToEdinfo <- function(dataset, baseurl='https://upwell.pfeg.noaa.gov/erddap
     }
     longInfo <- getRangeParse(data$Longitude)
     latInfo <- getRangeParse(data$Latitude)
-    timeInfo <- getRangeParse(data$UTC)
     result$limits <- list(
         Longitude = longInfo$range,
-        Latitude = latInfo$range,
-        UTC = timeInfo$range
+        Latitude = latInfo$range
     )
     result$spacing <- list(
         Longitude = longInfo$spacing,
-        Latitude = latInfo$spacing,
-        UTC = timeInfo$spacing
+        Latitude = latInfo$spacing
     )
+    if('UTC' %in% names(data)) {
+        timeInfo <- getRangeParse(data$UTC)
+        result$limits$UTC <- timeInfo$range
+        result$spacing$UTC <- timeInfo$spacing
+    }
     if('Depth' %in% names(data)) {
         depthInfo <- getRangeParse(data$Depth)
         result$limits$Depth <- depthInfo$range

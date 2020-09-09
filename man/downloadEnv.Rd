@@ -22,9 +22,28 @@ UTC coordinates by}
 \value{
 if download is successful, invisibly returns the filename. If it fails returns
   \code{FALSE}.
+
+If successful, the file name of downloaded data. If not, returns \code{FALSE}
 }
 \description{
 Downloads environmental data matching the coordinates in a set of data
+}
+\examples{
+
+data <- data.frame(Latitude = 32, Longitude = -117,
+                   UTC = as.POSIXct('2000-01-01 00:00:00', tz='UTC'))
+\dontrun{
+# not run because download could take time
+# download jplMURSST41 dataset
+edi <- erddapToEdinfo('jplMURSST41')
+ncFile <- downloadEnv(data, edi, 'sstData.nc')
+
+# browse suggested sst datasets, then download
+edi <- browseEdinfo(var='sst')
+ncFile <- downloadEnv(data, edi, 'sstData.nc')
+}
+
+
 }
 \author{
 Taiki Sakai \email{taiki.sakai@noaa.gov}

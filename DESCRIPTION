@@ -1,6 +1,6 @@
 Package: PAMmisc
-Title: A Collection of Miscellaneous Functions for Passive Acoustics
-Version: 1.6.0
+Title: Miscellaneous Functions for Passive Acoustic Analysis
+Version: 1.6.1
 Authors@R: c(
   TS = person("Taiki", "Sakai", email = "taiki.sakai@noaa.gov", role = c("aut", "cre")))
 Description: A collection of miscellaneous functions for passive acoustics. 
@@ -24,4 +24,11 @@ Imports:
     ncdf4,
     httr,
     purrr,
-    plotKML
+    plotKML,
+    hoardr,
+    methods,
+    geosphere
+Suggests: 
+    testthat
+Remotes:
+    TaikiSan21/PamBinaries

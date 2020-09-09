@@ -47,12 +47,26 @@ usign signalLength, clickLength, clicksPerSecond, frequency, and sampleRate}
 
 \item{gainFactor}{scaling factor between 0 and 1. Low numbers are recommended (default 0.1)}
 }
+\value{
+\code{writeClickWave} invisibly returns the file name, \code{createClickWave}
+  returns a \linkS4class{Wave} class object
+}
 \description{
 Write a wave file for a synthesized delphinid click
 }
 \details{
 This code is based on Matlab code by Julie Oswald (2004). Clicks are
   simulated as an exponentially damped sinusoid.
+}
+\examples{
+
+tmpFile <- file.path(tempdir(), 'tempWav.wav')
+writeClickWave(tmpFile, signalLength = 1, clickLength = 100, clicksPerSecond = 200,
+               frequency = 30000, sampleRate = 100000)
+file.remove(tmpFile)
+clickWave <- createClickWave(signalLength = 1, clickLength = 100, clicksPerSecond = 200,
+                             frequency = 30e3, sampleRate = 100e3)
+
 }
 \author{
 Taiki Sakai \email{taiki.sakai@noaa.gov}

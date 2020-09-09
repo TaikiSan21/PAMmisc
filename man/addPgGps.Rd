@@ -32,6 +32,19 @@ Adds to the database \code{db}, invisibly returns the \code{Name} of the GPS tra
 \description{
 Add GPS data to an existing Pamguard database
 }
+\examples{
+\dontrun{
+# not run because example files don't exist
+myDb <- 'PamguardDatabase.sqlite3'
+# adding from a .gpx file downloaded from SPOT
+spotGpx <- 'SpotGPX.gpx'
+addPgGps(myDb, spotGpx, source='SPOTgpx')
+# adding from a csv file with a Y-M-D H:M date format
+gpsCsv <- 'GPS.csv'
+addPgGps(myDb, gpsCsv, source='csv', format='\%Y-\%m-\%d \%H:\%M')
+}
+
+}
 \author{
 Taiki Sakai \email{taiki.sakai@noaa.gov}
 }

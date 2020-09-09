@@ -47,6 +47,10 @@ usign signalLength, modFrequency, frequency, and sampleRate}
 
 \item{gainFactor}{scaling factor between 0 and 1. Low numbers are recommended (default 0.1)}
 }
+\value{
+\code{writeAMWave} invisibly returns the file name, \code{createAMWave}
+  returns a \linkS4class{Wave} class object
+}
 \description{
 Write a wave file for a synthesized amplitude modulated call
 }
@@ -65,6 +69,13 @@ par(mfrow=c(3,1))
 plot(signal, type='l')
 plot(window, type='l')
 plot(window*signal, type='l')
+
+tmpFile <- file.path(tempdir(), 'tempWav.wav')
+writeAMWave(tmpFile, signalLength = 1, modFrequency = 1000,
+               frequency = 30000, sampleRate = 100000)
+file.remove(tmpFile)
+amWave <- createAMWave(signalLength = 1, modFrequency = 1000,
+                             frequency = 30e3, sampleRate = 100e3)
 
 }
 \author{

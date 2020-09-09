@@ -34,11 +34,31 @@ where each vector is \code{c(min, max)} (Note: even if the time is something lik
 
 \item{style}{either \code{'erddap'} or \code{'hycom'}}
 }
+\value{
+a properly formatted URL that can be used to download environmental data
+}
 \description{
 This creates a properly formatted URL for downloading environmental
   data either from an ERDDAP or HYCOM server. This URL can be pasted into a browser
   or submitted to something like httr::GET to actually download the data. Also see
   \link{edinfoToURL}
+}
+\examples{
+
+formatURL(
+    base = "https://upwell.pfeg.noaa.gov/erddap/griddap/",
+    dataset = "jplMURSST41",
+    fileType = "nc",
+    vars = "analysed_sst",
+    ranges = list(
+               Latitude = c(30, 31),
+               Longitude = c(-118, -117),
+               UTC = as.POSIXct(c('2005-01-01 00:00:00', '2005-01-02 00:00:00'), tz='UTC')
+             ),
+    stride=1,
+    style = 'erddap'
+)
+
 }
 \author{
 Taiki Sakai \email{taiki.sakai@noaa.gov}

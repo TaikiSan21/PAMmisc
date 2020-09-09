@@ -22,6 +22,18 @@ Creates a named list with the ranges of Longitude, Latitude,
   and Time (UTC) data for use in functions like \link{formatURL}. Can also
   specify an amount to buffer the min and max values by for each coordinate
 }
+\examples{
+
+gps <- data.frame(Latitude = c(32, 32.1, 32.2, 32.2, 32.2),
+                  Longitude = c(-110, -110.1, -110.2, -110.3, -110.4),
+                  UTC = as.POSIXct(c('2000-01-01 00:00:00', '2000-01-01 00:00:10',
+                                     '2000-01-01 00:00:20', '2000-01-01 00:00:30',
+                                     '2000-01-01 00:00:40')))
+dataToRanges(gps)
+
+dataToRanges(gps, buffer = c(.05, .05, 86400))
+
+}
 \author{
 Taiki Sakai \email{taiki.sakai@noaa.gov}
 }

@@ -4,7 +4,15 @@
 \alias{ncToData}
 \title{Match Data From a Netcdf File}
 \usage{
-ncToData(data, nc, buffer = c(0, 0, 0), raw = FALSE, quiet = FALSE)
+ncToData(
+  data,
+  nc,
+  buffer = c(0, 0, 0),
+  FUN = c(mean, median, sd),
+  raw = FALSE,
+  progress = TRUE,
+  quiet = FALSE
+)
 }
 \arguments{
 \item{data}{dataframe containing Longitude, Latitude, and UTC to extract matching
@@ -16,10 +24,15 @@ variables from the netcdf file}
 each datapoint. All values within the buffer will be used to report the mean,
 median, and standard deviation}
 
+\item{FUN}{a vector or list of functions to apply to the data. Default is to apply
+mean, median, and standard deviation calculations}
+
 \item{raw}{logical flag to return only the raw values of the variables. If \code{TRUE}
 the output will be changed to a list with length equal to the number of data points.
 Each item in the list will have separate named entries for each variable that will have
 all values within the given buffer and all values for any Z coordinates present.}
+
+\item{progress}{logical flag to show progress bar for matching data}
 
 \item{quiet}{logical flag to show warning messages for possible coordinate mismatch}
 }
@@ -30,6 +43,22 @@ original dataframe with three attached columns for each variable in the netcdf
 \description{
 Extracts all variables from a netcdf file matching Longitude,
   Latitude, and UTC coordinates in given dataframe
+}
+\examples{
+
+data <- data.frame(Latitude = 32, Longitude = -117,
+                   UTC = as.POSIXct('2005-01-01 00:00:00', tz='UTC'))
+nc <- system.file('extdata', 'sst.nc', package='PAMmisc')
+# calculate mean median and stdev
+ncToData(data, nc = nc)
+# calculate only median
+ncToData(data, nc=nc, FUN=median, buffer = c(.01, .01, 86400))
+# custom function
+meanPlusOne <- function(x) {
+    mean(x, na.rm=TRUE) + 1
+}
+ncToData(data, nc=nc, FUN=c(mean, meanPlusOne))
+
 }
 \author{
 Taiki Sakai \email{taiki.sakai@noaa.gov}

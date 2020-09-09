@@ -5,6 +5,14 @@
 #'
 #' @author Taiki Sakai \email{taiki.sakai@@noaa.gov}
 #'
+#' @return a list of edinfo list objects
+#'
+#' @examples
+#'
+#' ediList <- getEdinfo()
+#' ediList[[1]]
+#' ediList[['jplMURSST41']]
+#'
 #' @export
 #'
 getEdinfo <- function() {
@@ -45,8 +53,8 @@ print.edinfo <- function(x, ...) {
 # update edinfo objects, mostly relevant for -Present time ranges
 updateEdinfo <- function() {
     baseURLs <- c('https://upwell.pfeg.noaa.gov/erddap/')
-    datasets <- list(id = c('jplMURSST41mday', 'jplMURSST41', 'jplMURSST41clim', 'erdMH1pp8day', 'erdMBchla8day'),
-                     baseIx = c(1, 1, 1, 1, 1))
+    datasets <- list(id = c('jplMURSST41mday', 'jplMURSST41', 'jplMURSST41clim', 'erdMH1pp8day', 'erdMBchla8day', 'erdSrtm30plusSeafloorGradient'),
+                     baseIx = c(1, 1, 1, 1, 1, 1))
     erddapList <- vector('list', length = length(datasets$id))
     for(i in seq_along(datasets$id)) {
         erddapList[[i]] <- erddapToEdinfo(datasets$id[i], baseURLs[datasets$baseIx[i]], chooseVars = FALSE)

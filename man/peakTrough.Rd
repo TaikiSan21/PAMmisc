@@ -63,6 +63,13 @@ This uses a very simple algorithm to find second and third peaks
   search range and selected peaks so you can easily see if the selected
   parameters are capturing the behavior you want.
 }
+\examples{
+
+clickWave <- createClickWave(signalLength = .1, clickLength = 1000, clicksPerSecond = 200,
+                             frequency = 3e3, sampleRate = 10e3)
+peakTrough(seewave::spec(clickWave, plot=FALSE), plot=TRUE)
+
+}
 \author{
 Taiki Sakai \email{taiki.sakai@noaa.gov}
 }

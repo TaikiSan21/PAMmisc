@@ -9,7 +9,20 @@
 #'
 #' @details This code is based on R code written by Jay Barlow.
 #'
+#' @return Invisibly returns the names of all files that were successfully
+#'   decimated
+#'
 #' @author Taiki Sakai \email{taiki.sakai@@noaa.gov}
+#'
+#' @examples
+#'
+#' origDir <- file.path(tempdir(), 'origSR')
+#' decDir <- file.path(tempdir(), 'decSR')
+#' writeClickWave('origWav.wav', outDir=origDir, signalLength = 1, clickLength = 100,
+#'                clicksPerSecond = 200, frequency = 20000, sampleRate = 100000)
+#' decWavs <- decimateWavFiles(origDir, decDir, 50000)
+#' file.remove(paste0(origDir, 'origWav.wav'))
+#' file.remove(decWavs)
 #'
 #' @importFrom tuneR readWave writeWave
 #' @importFrom seewave bwfilter resamp
@@ -44,18 +57,20 @@ decimateWavFiles <- function(inDir, outDir, newSr) {
     cat('Decimating', length(files), 'wav files...\n')
     pb <- txtProgressBar(min = 0, max = length(files), style = 3)
     for(i in seq_along(files)) {
-        inWave <- try(tuneR::readWave(files[i]), silent=TRUE)
+        inWave <- try(readWave(files[i]), silent=TRUE)
         if(length(inWave)==1) {
             error[i] <- TRUE
             next
         }
-        outWave <- seewave::bwfilter(inWave, n=2, from=5, to=1.2*(newSr/2), output='Wave')
-        outWave <- seewave::resamp(outWave, g=newSr, output='Wave')
-        tuneR::writeWave(outWave, filename=paste0(outDir, '/LF_', basename(files[i])), extensible=FALSE)
+        outWave <- bwfilter(inWave, n=2, from=5, to=1.2*(newSr/2), output='Wave')
+        outWave <- resamp(outWave, g=newSr, output='Wave')
+        outWave@left <- round(outWave@left)
+        writeWave(outWave, filename=paste0(outDir, '/LF_', basename(files[i])), extensible=FALSE)
         setTxtProgressBar(pb, value = i)
     }
     if(sum(error) > 0) {
         warning('Error trying to decimate file(s):\n',
             paste(basename(files[error]), collapse=', '))
     }
+    invisible(paste0(outDir, '/LF_', basename(files))[!error])
 }

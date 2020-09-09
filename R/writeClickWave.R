@@ -18,6 +18,18 @@
 #'
 #' @author Taiki Sakai \email{taiki.sakai@@noaa.gov}
 #'
+#' @return \code{writeClickWave} invisibly returns the file name, \code{createClickWave}
+#'   returns a \linkS4class{Wave} class object
+#'
+#' @examples
+#'
+#' tmpFile <- file.path(tempdir(), 'tempWav.wav')
+#' writeClickWave(tmpFile, signalLength = 1, clickLength = 100, clicksPerSecond = 200,
+#'                frequency = 30000, sampleRate = 100000)
+#' file.remove(tmpFile)
+#' clickWave <- createClickWave(signalLength = 1, clickLength = 100, clicksPerSecond = 200,
+#'                              frequency = 30e3, sampleRate = 100e3)
+#'
 #' @importFrom tuneR Wave writeWave normalize bind
 #' @export
 #'
@@ -43,6 +55,7 @@ writeClickWave <- function(fileName, outDir, signalLength, clickLength, clicksPe
     }
     fileName <- paste0(outDir,'/', fileName)
     writeWave(wav, fileName, extensible = FALSE)
+    invisible(fileName)
 }
 
 #' @rdname writeClickWave

@@ -6,9 +6,19 @@
 \usage{
 getEdinfo()
 }
+\value{
+a list of edinfo list objects
+}
 \description{
 This function gets the list of environmental datasets provided
   as a recommended starting point for various measures
+}
+\examples{
+
+ediList <- getEdinfo()
+ediList[[1]]
+ediList[['jplMURSST41']]
+
 }
 \author{
 Taiki Sakai \email{taiki.sakai@noaa.gov}
