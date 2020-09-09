@@ -27,8 +27,7 @@ Imports:
     plotKML,
     hoardr,
     methods,
-    geosphere
+    geosphere,
+    tcltk
 Suggests: 
     testthat
-Remotes:
-    TaikiSan21/PamBinaries

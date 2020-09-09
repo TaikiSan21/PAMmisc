@@ -26,17 +26,18 @@
 #'
 #' @importFrom tuneR readWave writeWave
 #' @importFrom seewave bwfilter resamp
-#' @importFrom utils choose.dir setTxtProgressBar txtProgressBar
+#' @importFrom utils setTxtProgressBar txtProgressBar
+#' @importFrom tcltk tk_choose.dir
 #' @export
 #'
 decimateWavFiles <- function(inDir, outDir, newSr) {
     if(missing(inDir)) {
         cat('Please choose an input folder.\n')
-        inDir <- choose.dir()
+        inDir <- tk_choose.dir(caption='Select input folder.')
     }
     if(missing(outDir)) {
         cat('Please choose an output folder.\n')
-        outDir <- choose.dir()
+        outDir <- tk_choose.dir(caption='Select output folder.')
     }
     outDir <- gsub('[\\\\/]*$', '', outDir)
     if(!dir.exists(outDir)) {
