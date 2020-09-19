@@ -102,6 +102,10 @@ fmtGps <- function(x, source, format) {
                    head <- read.csv(x, stringsAsFactors = FALSE, header=FALSE, nrows=1)
                    numericCol <- sapply(head, is.numeric)
                    result <- read.csv(x, header = !any(numericCol), stringsAsFactors = FALSE)
+                   # check for row ID column and drop it
+                   if(colnames(result)[1] == 'X') {
+                       result <- result[-1]
+                   }
                    # sometimes HMS sometime HM
                    if(is.na(as.POSIXct(result[1, 1], format=format, tz='UTC'))) {
                        format <- '%m/%d/%Y %H:%M'

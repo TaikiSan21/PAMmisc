@@ -62,21 +62,22 @@ Amplitude modulated signals are modelled as an ideal sinusoid multiplied by a
  See \code{example(writeAMWave)} for a plot showing how this works.
 }
 \examples{
+
 # Visualisation of modelled AM wave
 signal <- sin(2*pi*100*(1:1000)/1000)
 window <- .55 + .45 * sin(2*pi*15*(1:1000)/1000)
+oldMf <- par()$mfrow
 par(mfrow=c(3,1))
 plot(signal, type='l')
 plot(window, type='l')
 plot(window*signal, type='l')
-
 tmpFile <- file.path(tempdir(), 'tempWav.wav')
 writeAMWave(tmpFile, signalLength = 1, modFrequency = 1000,
                frequency = 30000, sampleRate = 100000)
 file.remove(tmpFile)
 amWave <- createAMWave(signalLength = 1, modFrequency = 1000,
                              frequency = 30e3, sampleRate = 100e3)
-
+par(mfrow=oldMf)
 }
 \author{
 Taiki Sakai \email{taiki.sakai@noaa.gov}
