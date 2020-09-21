@@ -21,6 +21,7 @@ test_that('Test gps adding', {
     expect_identical(gps$Latitude, fromDb$Latitude)
     expect_identical(gps$Longitude, fromDb$Longitude)
     expect_identical(gps$UTC, fromDb$UTC)
+    expect_error(addPgGps(db='DNE'))
     # clean up test rows
     del <- dbSendQuery(con,
                        'DELETE FROM gpsData WHERE Id > 200'
@@ -46,6 +47,7 @@ test_that('Test event adding', {
     expect_equal(ev$nClicks, nrow(click))
     expect_equal(ev$eventType, 'MyNewEvent')
     expect_equal(ev$EventEnd, click$UTC[3])
+    expect_error(addPgEvent(db='DNE'))
     # clean up test rows
     del <- dbSendQuery(con, 'DELETE FROM Click_Detector_OfflineEvents')
     RSQLite::dbClearResult(del)

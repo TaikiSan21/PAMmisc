@@ -37,13 +37,19 @@
 #'
 addPgGps <- function(db, gps, source = c('SPOTcsv', 'SPOTgpx', 'csv'), format = '%m/%d/%Y %H:%M:%S') {
     source <- match.arg(source)
+    if(!file.exists(db)) {
+        stop('Could not find database file', db, call. = FALSE)
+    }
     gps <- fmtGps(gps, source, format)
     con <- dbConnect(db, drv=SQLite())
-    on.exit(dbDisconnect(con))
+    on.exit({
+
+        dbDisconnect(con)
+        })
     if(!('gpsData' %in% dbListTables(con))) {
         # dbCreateTable(con, 'gpsData', GPSDF) then dbAppendTable(con, 'gpsData', GPSDF)
         # is sort of an option if we convert UTC to character first
-        dbSendQuery(con,
+        tbl <- dbSendQuery(con,
                     "CREATE TABLE gpsData
             (Id INTEGER,
             UID INTEGER,
@@ -64,6 +70,7 @@ addPgGps <- function(db, gps, source = c('SPOTcsv', 'SPOTgpx', 'csv'), format = 
             GPSError INTEGER,
             DataStatus CHARACTER(3),
             PRIMARY KEY (Id))")
+        on.exit(dbClearResult(tbl), add=TRUE, after=FALSE)
     }
     dbGps <- dbReadTable(con, 'gpsData')
     gpsAppend <- dbGps[FALSE, ]

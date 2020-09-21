@@ -1,3 +1,9 @@
+# PAMmisc 1.6.2
+
+* Checks in database adding function to make sure file exists
+
+* `writeAMWave` example resets par() settings to original
+
 # PAMmisc 1.6.1
 
 * Added a `NEWS.md` file to track changes to the package.

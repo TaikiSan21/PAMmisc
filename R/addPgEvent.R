@@ -33,6 +33,9 @@
 #' @export
 #'
 addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NULL) {
+    if(!file.exists(db)) {
+        stop('Could not find database file', db, call. = FALSE)
+    }
     con <- dbConnect(db, drv = SQLite())
     on.exit(dbDisconnect(con))
     tableList <- dbListTables(con)
@@ -112,7 +115,7 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
 
     # Add eventType to Lookup table if it isnt there, also create Lookup if not there
     if(!('Lookup' %in% tableList)) {
-        dbSendQuery(con,
+        tbl <- dbSendQuery(con,
                     "CREATE TABLE Lookup
             (Id INTEGER,
             Topic CHARACTER(50),
@@ -124,6 +127,7 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
             BorderColour CHARACTER(20),
             Symbol CHARACTER(2),
             PRIMARY KEY (Id))")
+        on.exit(dbClearResult(tbl), add=TRUE, after=FALSE)
     }
     lookup <- dbReadTable(con, 'Lookup')
     if(eventType %in% gsub(' ', '', lookup$Code)) {
