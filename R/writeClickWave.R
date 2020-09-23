@@ -50,7 +50,7 @@ writeClickWave <- function(fileName, outDir, signalLength, clickLength, clicksPe
     }
     outDir <- gsub('[\\\\/]*$', '', outDir)
     if(!dir.exists(outDir)) {
-        cat('Creating directory', outDir)
+        # cat('Creating directory', outDir)
         dir.create(outDir)
     }
     fileName <- paste0(outDir,'/', fileName)

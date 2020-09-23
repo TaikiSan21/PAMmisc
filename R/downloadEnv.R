@@ -75,8 +75,8 @@ downloadEnv <- function(data, edinfo, fileName = NULL, buffer = c(0, 0, 0)) {
         }
     }
     # ensures limits are within range of dataset, first call is just to report number of points outside range
-    checkonly <- checkLimits(data, edinfo, replace=TRUE, quiet=FALSE)
-    dataBounds <- checkLimits(dataBounds, edinfo, replace=TRUE, quiet=TRUE)
+    checkonly <- checkLimits(data, edinfo, replace=TRUE, verbose=TRUE)
+    dataBounds <- checkLimits(dataBounds, edinfo, replace=TRUE, verbose=FALSE)
 
 
     url <- edinfoToURL(edinfo, ranges=dataBounds)

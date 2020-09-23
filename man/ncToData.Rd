@@ -11,7 +11,7 @@ ncToData(
   FUN = c(mean, median, sd),
   raw = FALSE,
   progress = TRUE,
-  quiet = FALSE
+  verbose = TRUE
 )
 }
 \arguments{
@@ -34,7 +34,7 @@ all values within the given buffer and all values for any Z coordinates present.
 
 \item{progress}{logical flag to show progress bar for matching data}
 
-\item{quiet}{logical flag to show warning messages for possible coordinate mismatch}
+\item{verbose}{logical flag to show warning messages for possible coordinate mismatch}
 }
 \value{
 original dataframe with three attached columns for each variable in the netcdf

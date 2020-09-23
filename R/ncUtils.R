@@ -25,9 +25,9 @@ ncTimeToPosix <- function(vals, units) {
 #
 #' @importFrom lubridate yday
 #'
-dimToIx <- function(data, dim, buffer=0, quiet=FALSE) {
-    if(quiet) {
-        return(suppressWarnings(dimToIx(data, dim, buffer, quiet=FALSE)))
+dimToIx <- function(data, dim, buffer=0, verbose=TRUE) {
+    if(!verbose) {
+        return(suppressWarnings(dimToIx(data, dim, buffer, verbose=TRUE)))
     }
     if(buffer > 0) {
         data <- c(min(data) - buffer, data, max(data) + buffer)
@@ -37,7 +37,7 @@ dimToIx <- function(data, dim, buffer=0, quiet=FALSE) {
         dim$vals <- ncTimeToPosix(dim)
         if(dim$name == 'dayOfYear' &&
            inherits(data, 'POSIXct')) {
-            data <- lubridate::yday(data)
+            data <- yday(data)
         }
     }
     # prob want to keep actual distance?
@@ -167,7 +167,7 @@ getCoordNameMatch <- function() {
 
 # check that data is within limits of the dataset you want to pull, it will either
 # replace these wiith acceptable min/max or remove them if outside
-checkLimits <- function(data, limits, replace=FALSE, quiet=FALSE) {
+checkLimits <- function(data, limits, replace=FALSE, verbose=TRUE) {
     if(inherits(limits, 'edinfo')) {
         limits <- limits$limits
     }
@@ -176,7 +176,7 @@ checkLimits <- function(data, limits, replace=FALSE, quiet=FALSE) {
     limit180 <- dataIs180(limits$Longitude)
     data <- to180(data, inverse = !limit180)
     # helper checks on dimension
-    checkOneLim <- function(dat, lim, dim, replace=FALSE, quiet=FALSE) {
+    checkOneLim <- function(dat, lim, dim, replace=FALSE, verbose=TRUE) {
         # check for 1-365 data, cant be out of bounds of that
         if(inherits(dat[[dim]], 'POSIXct') &&
            identical(lim[[dim]], c(1, 365))) {
@@ -193,7 +193,7 @@ checkLimits <- function(data, limits, replace=FALSE, quiet=FALSE) {
         wrnMsg <- paste0(sum(!inLim), ' out of ', length(inLim),
                          ' data points are outside the range of dimension ',
                          dim, ', these will be ', repMsg)
-        if(!quiet) {
+        if(verbose) {
             warning(wrnMsg, call. = FALSE)
         }
         if(!replace) {
@@ -210,7 +210,7 @@ checkLimits <- function(data, limits, replace=FALSE, quiet=FALSE) {
         dat
     }
     for(d in names(limits)) {
-        data <- checkOneLim(data, limits, d, replace, quiet)
+        data <- checkOneLim(data, limits, d, replace, verbose)
     }
     to180(data, inverse = !data180)
 }

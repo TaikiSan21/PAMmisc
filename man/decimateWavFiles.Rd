@@ -4,7 +4,7 @@
 \alias{decimateWavFiles}
 \title{Decimate Wave Files}
 \usage{
-decimateWavFiles(inDir, outDir, newSr)
+decimateWavFiles(inDir, outDir, newSr, progress = TRUE)
 }
 \arguments{
 \item{inDir}{directory of wave files to decimate. Can also be a single .wav file.}
@@ -12,6 +12,8 @@ decimateWavFiles(inDir, outDir, newSr)
 \item{outDir}{directory to write wave files to}
 
 \item{newSr}{sample rate to decimate the files to}
+
+\item{progress}{logical flag to show progress bar}
 }
 \value{
 Invisibly returns the names of all files that were successfully

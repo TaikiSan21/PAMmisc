@@ -16,7 +16,7 @@
 #'   Each item in the list will have separate named entries for each variable that will have
 #'   all values within the given buffer and all values for any Z coordinates present.
 #' @param progress logical flag to show progress bar for matching data
-#' @param quiet logical flag to show warning messages for possible coordinate mismatch
+#' @param verbose logical flag to show warning messages for possible coordinate mismatch
 #'
 #' @return original dataframe with three attached columns for each variable in the netcdf
 #'   file, one for each of mean, median, and standard deviation of all values within the buffer
@@ -45,7 +45,7 @@
 #' @export
 #'
 ncToData <- function(data, nc, buffer = c(0,0,0), FUN = c(mean, median, sd),
-                     raw = FALSE, progress=TRUE, quiet=FALSE) {
+                     raw = FALSE, progress=TRUE, verbose=TRUE) {
     nc <- nc_open(nc)
     on.exit(nc_close(nc))
     nc <- romsCheck(nc)
@@ -77,7 +77,7 @@ ncToData <- function(data, nc, buffer = c(0,0,0), FUN = c(mean, median, sd),
         names(nc$var[[v]]$dim) <- names(nc$dim)[nc$var[[v]]$dimids + 1]
     }
     for(i in 1:nrow(data)) {
-        varData <- getVarData(data[i,], nc=nc, var=varNames, buffer = buffer, quiet=quiet)
+        varData <- getVarData(data[i,], nc=nc, var=varNames, buffer = buffer, verbose=verbose)
         for(v in varNames) {
             allVar[[v]][[i]] <- varData[[v]]
         }
@@ -122,19 +122,20 @@ ncToData <- function(data, nc, buffer = c(0,0,0), FUN = c(mean, median, sd),
     for(c in c('matchLong', 'matchLat', 'matchTime')) {
         data[[paste0(c, '_mean')]] <- sapply(allVar[[c]], function(x) mean(x, na.rm=TRUE))
     }
-    if(!(all(is.na(data$matchTime_mean))) &&
+    if(!is.null(data$matchTime_mean) &&
+       !(all(is.na(data$matchTime_mean))) &&
        max(abs(data$matchTime_mean)) > 365) {
         data$matchTime_mean <- as.POSIXct(data$matchTime_mean, origin = '1970-01-01 00:00:00', tz='UTC')
     }
     data
 }
 
-getVarData <- function(data, nc, var, buffer, quiet=FALSE) {
-    xIx <- dimToIx(data$Longitude, nc$dim$Longitude, buffer[1], quiet)
-    yIx <- dimToIx(data$Latitude, nc$dim$Latitude, buffer[2], quiet)
+getVarData <- function(data, nc, var, buffer, verbose=TRUE) {
+    xIx <- dimToIx(data$Longitude, nc$dim$Longitude, buffer[1], verbose)
+    yIx <- dimToIx(data$Latitude, nc$dim$Latitude, buffer[2], verbose)
     hasT <- 'UTC' %in% names(nc$dim)
     if(hasT) {
-        tIx <- dimToIx(data$UTC, nc$dim$UTC, buffer[3], quiet)
+        tIx <- dimToIx(data$UTC, nc$dim$UTC, buffer[3], verbose)
         tVals <- ncTimeToPosix(nc$dim$UTC$vals[tIx$ix], units = nc$dim$UTC$units)
     } else {
         tVals <- NA

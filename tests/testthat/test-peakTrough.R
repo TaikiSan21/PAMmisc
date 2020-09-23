@@ -17,8 +17,8 @@ test_that('Peak trough gets right values', {
     # check warning if units appear to be hz not khz
     spHz <- sp
     spHz[, 1] <- spHz[, 1] * 1e3
-    expect_warning(peakTrough(spHz))
-    ptHz <- suppressWarnings(peakTrough(spHz, freqBounds = c(.5, 3)))
+    expect_message(peakTrough(spHz), 'Expected kHz')
+    ptHz <- suppressMessages(peakTrough(spHz, freqBounds = c(.5, 3)))
     expect_identical(pt, ptHz)
     # search range restricted
     pt <- peakTrough(sp, freqBounds = c(3, 10))

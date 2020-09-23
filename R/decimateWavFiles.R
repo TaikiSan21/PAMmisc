@@ -6,6 +6,7 @@
 #' @param inDir directory of wave files to decimate. Can also be a single .wav file.
 #' @param outDir directory to write wave files to
 #' @param newSr sample rate to decimate the files to
+#' @param progress logical flag to show progress bar
 #'
 #' @details This code is based on R code written by Jay Barlow.
 #'
@@ -30,7 +31,7 @@
 #' @importFrom tcltk tk_choose.dir
 #' @export
 #'
-decimateWavFiles <- function(inDir, outDir, newSr) {
+decimateWavFiles <- function(inDir, outDir, newSr, progress=TRUE) {
     if(missing(inDir)) {
         cat('Please choose an input folder.\n')
         inDir <- tk_choose.dir(caption='Select input folder.')
@@ -41,7 +42,7 @@ decimateWavFiles <- function(inDir, outDir, newSr) {
     }
     outDir <- gsub('[\\\\/]*$', '', outDir)
     if(!dir.exists(outDir)) {
-        cat('Creating directory', outDir)
+        # cat('Creating directory', outDir)
         dir.create(outDir)
     }
     if(missing(newSr)) {
@@ -55,8 +56,10 @@ decimateWavFiles <- function(inDir, outDir, newSr) {
         files <- list.files(inDir, pattern='\\.wav$', recursive=FALSE, full.names=TRUE)
     }
     error <- rep(FALSE, length(files))
-    cat('Decimating', length(files), 'wav files...\n')
-    pb <- txtProgressBar(min = 0, max = length(files), style = 3)
+    if(progress) {
+        cat('Decimating', length(files), 'wav files...\n')
+        pb <- txtProgressBar(min = 0, max = length(files), style = 3)
+    }
     for(i in seq_along(files)) {
         inWave <- try(readWave(files[i]), silent=TRUE)
         if(length(inWave)==1) {
@@ -67,11 +70,13 @@ decimateWavFiles <- function(inDir, outDir, newSr) {
         outWave <- resamp(outWave, g=newSr, output='Wave')
         outWave@left <- round(outWave@left)
         writeWave(outWave, filename=paste0(outDir, '/LF_', basename(files[i])), extensible=FALSE)
-        setTxtProgressBar(pb, value = i)
+        if(progress) {
+            setTxtProgressBar(pb, value = i)
+        }
     }
     if(sum(error) > 0) {
         warning('Error trying to decimate file(s):\n',
-            paste(basename(files[error]), collapse=', '))
+                paste(basename(files[error]), collapse=', '))
     }
     invisible(paste0(outDir, '/LF_', basename(files))[!error])
 }

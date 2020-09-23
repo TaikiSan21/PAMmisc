@@ -26,7 +26,7 @@ test_that('Test gps adding', {
     del <- dbSendQuery(con,
                        'DELETE FROM gpsData WHERE Id > 200'
     )
-    RSQLite::dbClearResult(del)
+    dbClearResult(del)
     dbDisconnect(con)
 })
 
@@ -50,10 +50,10 @@ test_that('Test event adding', {
     expect_error(addPgEvent(db='DNE'))
     # clean up test rows
     del <- dbSendQuery(con, 'DELETE FROM Click_Detector_OfflineEvents')
-    RSQLite::dbClearResult(del)
+    dbClearResult(del)
     del <- dbSendQuery(con, 'DELETE FROM Click_Detector_OfflineClicks')
-    RSQLite::dbClearResult(del)
+    dbClearResult(del)
     del <- dbSendQuery(con, "DELETE FROM Lookup WHERE Code = 'MyNewEvent'")
-    RSQLite::dbClearResult(del)
+    dbClearResult(del)
     dbDisconnect(con)
 })

@@ -65,7 +65,7 @@
 peakTrough <- function(spec, freqBounds=c(10, 30), dbMin=-15, smooth=5, plot=FALSE) {
     # Default values to return if we dont find other peaks
     if(max(spec[, 1] > 1e3)) {
-        warning(paste0('Expected kHz, but frequency units appear to be in hertz.',
+        message(paste0('Expected kHz, but frequency units appear to be in hertz.',
                        'Converting before calculation, note that result is in kHz.'))
         spec[, 1] <- spec[, 1] / 1e3
     }
@@ -200,7 +200,7 @@ peakTrough <- function(spec, freqBounds=c(10, 30), dbMin=-15, smooth=5, plot=FAL
                   row.names=c(NA, -1), class='data.frame')
     },
     error = function(e) {
-        cat('peakTrough failed with error:\n', e$message)
+        message('peakTrough failed with error:\n', e$message)
         data.frame(peak = NA, peak2 = NA, peak3 = NA,
                    trough = NA, trough2 = NA,
                    peakToPeak2 = NA, peakToPeak3 = NA, peak2ToPeak3 = NA)

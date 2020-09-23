@@ -183,7 +183,17 @@ fmtGps <- function(x, source, format) {
         if(nameChoice == 0) {
             stop('Must choose a GPS track')
         }
-        result <- result[result$Name == nameOpts[nameChoice], ]
+        nameKeep <- nameOpts[nameChoice]
+        for(i in seq_along(nameOpts[-nameChoice])) {
+            nameOpts <- nameOpts[-nameChoice]
+            nameChoice <- menu(choices = nameOpts,
+                               title = c('Would you like to add another GPS track? Enter "0" to exit.'))
+            if(nameChoice == 0) {
+                break
+            }
+            nameKeep <- c(nameKeep, nameOpts[nameChoice])
+        }
+        result <- result[result$Name %in% nameKeep, ]
     }
     result
 }
