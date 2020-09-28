@@ -1,3 +1,9 @@
+# PAMmisc 1.6.3
+
+* Changed `addPgGps` to use `parse_date_time` for date conversions to allow
+for truncated date formats to be properly parsed because thanks Excel for
+rounding those dates didn't need to know there were 0 seconds anyway
+
 # PAMmisc 1.6.2
 
 * Checks in database adding function to make sure file exists

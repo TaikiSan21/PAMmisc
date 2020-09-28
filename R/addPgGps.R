@@ -32,6 +32,7 @@
 #' @importFrom RSQLite dbConnect SQLite dbListTables dbReadTable dbDisconnect dbAppendTable dbSendQuery
 #' @importFrom plotKML readGPX
 #' @importFrom dplyr bind_rows
+#' @importFrom lubridate parse_date_time
 #'
 #' @export
 #'
@@ -45,12 +46,12 @@ addPgGps <- function(db, gps, source = c('SPOTcsv', 'SPOTgpx', 'csv'), format = 
     on.exit({
 
         dbDisconnect(con)
-        })
+    })
     if(!('gpsData' %in% dbListTables(con))) {
         # dbCreateTable(con, 'gpsData', GPSDF) then dbAppendTable(con, 'gpsData', GPSDF)
         # is sort of an option if we convert UTC to character first
         tbl <- dbSendQuery(con,
-                    "CREATE TABLE gpsData
+                           "CREATE TABLE gpsData
             (Id INTEGER,
             UID INTEGER,
             UTC CHARACTER(50),
@@ -113,13 +114,12 @@ fmtGps <- function(x, source, format) {
                    if(colnames(result)[1] == 'X') {
                        result <- result[-1]
                    }
-                   # sometimes HMS sometime HM
-                   if(is.na(as.POSIXct(result[1, 1], format=format, tz='UTC'))) {
-                       format <- '%m/%d/%Y %H:%M'
-                       if(is.na(as.POSIXct(result[1, 1], format=format, tz='UTC'))) {
-                           stop('File does not appear to be a SPOT csv. See note in ?addPgGps for non-SPOT csv files.')
-                       }
+                   if(is.na(parse_date_time(result[1, 1], orders=format,
+                                            exact=TRUE, truncated=1, tz='UTC'))) {
+                   # if(is.na(as.POSIXct(result[1, 1], tryFormats=format, tz='UTC'))) {
+                       stop('File does not appear to be a SPOT csv. See note in ?addPgGps for non-SPOT csv files.')
                    }
+
                    numericCol <- which(sapply(result, is.numeric))
                    if(length(numericCol) != 2) {
                        stop('File does not appear to be a SPOT csv. See note in ?addPgGps for non-SPOT csv files.')
@@ -132,7 +132,9 @@ fmtGps <- function(x, source, format) {
                    result <- result[, unique(c(1, min(numericCol)-1, numericCol))]
                    colnames(result) <- c('UTC', 'Message', 'Latitude', 'Longitude')
                    result$Name <- name
-                   result$UTC <- as.POSIXct(result$UTC, format=format, tz='UTC')
+                   result$UTC <- parse_date_time(result$UTC, orders=format,
+                                                 tz='UTC', exact=TRUE, truncated=1)
+                   # result$UTC <- as.POSIXct(result$UTC, tryFormats=format, tz='UTC')
                },
                'SPOTgpx' = {
                    gpx <- readGPX(x)
@@ -169,7 +171,9 @@ fmtGps <- function(x, source, format) {
     }
     if(is.character(result$UTC) ||
        is.factor(result$UTC)) {
-        result$UTC <- as.POSIXct(as.character(result$UTC), tz='UTC', format=format)
+        # result$UTC <- as.POSIXct(as.character(result$UTC), tz='UTC', format=format)
+        result$UTC <- parse_date_time(as.character(result$UTC), orders=format,
+                                      tz='UTC', exact=TRUE, truncated=1)
     }
     if(any(is.na(result$UTC))) {
         stop('Not able to properly convert UTC to POSIXct format, check format argument.', call. = FALSE)
