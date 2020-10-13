@@ -68,6 +68,10 @@ decimateWavFiles <- function(inDir, outDir, newSr, progress=TRUE) {
         }
         outWave <- bwfilter(inWave, n=2, from=5, to=1.2*(newSr/2), output='Wave')
         outWave <- resamp(outWave, g=newSr, output='Wave')
+        # sometimes outWave ends up bigger than inWave which can cause writing issues,
+        # just rescale to inWave size if this happens
+        relScale <- max(abs(outWave@left)) / max(abs(inWave@left))
+        outWave@left <- outWave@left / max(1, relScale)
         outWave@left <- round(outWave@left)
         writeWave(outWave, filename=paste0(outDir, '/LF_', basename(files[i])), extensible=FALSE)
         if(progress) {

@@ -115,7 +115,7 @@ fmtGps <- function(x, source, format) {
                        result <- result[-1]
                    }
                    if(is.na(parse_date_time(result[1, 1], orders=format,
-                                            exact=TRUE, truncated=1, tz='UTC'))) {
+                                            exact=TRUE, truncated=2, tz='UTC'))) {
                    # if(is.na(as.POSIXct(result[1, 1], tryFormats=format, tz='UTC'))) {
                        stop('File does not appear to be a SPOT csv. See note in ?addPgGps for non-SPOT csv files.')
                    }
@@ -173,7 +173,7 @@ fmtGps <- function(x, source, format) {
        is.factor(result$UTC)) {
         # result$UTC <- as.POSIXct(as.character(result$UTC), tz='UTC', format=format)
         result$UTC <- parse_date_time(as.character(result$UTC), orders=format,
-                                      tz='UTC', exact=TRUE, truncated=1)
+                                      tz='UTC', exact=TRUE, truncated=2)
     }
     if(any(is.na(result$UTC))) {
         stop('Not able to properly convert UTC to POSIXct format, check format argument.', call. = FALSE)

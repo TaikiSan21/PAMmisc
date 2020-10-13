@@ -4,6 +4,8 @@
 for truncated date formats to be properly parsed because thanks Excel for
 rounding those dates didn't need to know there were 0 seconds anyway
 
+* `matchEnvData` not propagating `progress` argument properly
+
 # PAMmisc 1.6.2
 
 * Checks in database adding function to make sure file exists

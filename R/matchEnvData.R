@@ -90,7 +90,7 @@ setMethod('matchEnvData', 'data.frame',
               # if pointing to an ncfile, just do that
               if(is.character(nc) &&
                  file.exists(nc)) {
-                  return(ncToData(data=data, nc=nc, buffer=buffer, FUN=FUN, ...))
+                  return(ncToData(data=data, nc=nc, buffer=buffer, FUN=FUN, progress=progress, ...))
               }
               if(!inherits(nc, 'edinfo')) {
                   stop(paste0(nc, ' must be a valid nc file or erddap dataset id.'))
@@ -136,9 +136,9 @@ setMethod('matchEnvData', 'data.frame',
                   colnames(data) <- oldNames
                   dataLeft <- data[left, ]
                   dataRight <- data[!left, ]
-                  return(bind_rows(ncToData(data=dataLeft, nc=ncData[1], buffer=buffer, FUN=FUN, ...),
-                                   ncToData(data=dataRight, nc=ncData[2], buffer=buffer, FUN=FUN, ...))
+                  return(bind_rows(ncToData(data=dataLeft, nc=ncData[1], buffer=buffer, FUN=FUN, progress=progress, ...),
+                                   ncToData(data=dataRight, nc=ncData[2], buffer=buffer, FUN=FUN, progress=progress, ...))
                   )
               }
-              return(ncToData(data=data, nc=ncData, buffer=buffer, FUN=FUN, ...))
+              return(ncToData(data=data, nc=ncData, buffer=buffer, FUN=FUN, progress=progress, ...))
           })
