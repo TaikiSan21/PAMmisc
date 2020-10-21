@@ -11,6 +11,7 @@
 #'   source of the GPS data, not needed if \code{gps} is a data.frame
 #' @param format date format for converting to POSIXct, only needed for \code{source='csv'}.
 #'   See \link{strptime}
+#' @param tz timezone of gps source being added, will be converted to UTC
 #'
 #' @return Adds to the database \code{db}, invisibly returns the \code{Name} of the GPS track
 #'   if successful (\code{NA} if not named)
@@ -32,19 +33,18 @@
 #' @importFrom RSQLite dbConnect SQLite dbListTables dbReadTable dbDisconnect dbAppendTable dbSendQuery
 #' @importFrom plotKML readGPX
 #' @importFrom dplyr bind_rows
-#' @importFrom lubridate parse_date_time
+#' @importFrom lubridate parse_date_time with_tz
 #'
 #' @export
 #'
-addPgGps <- function(db, gps, source = c('SPOTcsv', 'SPOTgpx', 'csv'), format = '%m/%d/%Y %H:%M:%S') {
+addPgGps <- function(db, gps, source = c('SPOTcsv', 'SPOTgpx', 'csv'), format = '%m/%d/%Y %H:%M:%S', tz='UTC') {
     source <- match.arg(source)
     if(!file.exists(db)) {
         stop('Could not find database file', db, call. = FALSE)
     }
-    gps <- fmtGps(gps, source, format)
+    gps <- fmtGps(gps, source, format, tz)
     con <- dbConnect(db, drv=SQLite())
     on.exit({
-
         dbDisconnect(con)
     })
     if(!('gpsData' %in% dbListTables(con))) {
@@ -74,6 +74,17 @@ addPgGps <- function(db, gps, source = c('SPOTcsv', 'SPOTgpx', 'csv'), format = 
         on.exit(dbClearResult(tbl), add=TRUE, after=FALSE)
     }
     dbGps <- dbReadTable(con, 'gpsData')
+    if(nrow(dbGps) > 0) {
+        # check for duplicates
+        justDbCoords <- dbGps[c('UTC', 'Longitude', 'Latitude')]
+        justGpsCoords <- gps[c('UTC', 'Longitude', 'Latitude')]
+        justDbCoords$UTC <- as.POSIXct(justDbCoords$UTC, '%Y-%m-%d %H:%M:%OS', tz='UTC')
+        isDupe <- duplicated(rbind(justGpsCoords, justDbCoords), fromLast = TRUE)[1:nrow(gps)]
+        if(all(isDupe)) {
+            return(invisible(unique(gps$Name)))
+        }
+        gps <- gps[!isDupe, ]
+    }
     gpsAppend <- dbGps[FALSE, ]
     gpsAppend[1:nrow(gps), ] <- NA
     if(nrow(dbGps) == 0) {
@@ -97,7 +108,7 @@ addPgGps <- function(db, gps, source = c('SPOTcsv', 'SPOTgpx', 'csv'), format = 
 
 #' @importFrom utils read.csv
 #'
-fmtGps <- function(x, source, format) {
+fmtGps <- function(x, source, format, tz) {
     if(is.character(x)) {
         if(!file.exists(x)) {
             stop('Could not find GPS file', x, call. = FALSE)
@@ -132,8 +143,7 @@ fmtGps <- function(x, source, format) {
                    result <- result[, unique(c(1, min(numericCol)-1, numericCol))]
                    colnames(result) <- c('UTC', 'Message', 'Latitude', 'Longitude')
                    result$Name <- name
-                   result$UTC <- parse_date_time(result$UTC, orders=format,
-                                                 tz='UTC', exact=TRUE, truncated=1)
+                   result$UTC <- parseToUTC(result$UTC, format=format, tz=tz)
                    # result$UTC <- as.POSIXct(result$UTC, tryFormats=format, tz='UTC')
                },
                'SPOTgpx' = {
@@ -172,8 +182,7 @@ fmtGps <- function(x, source, format) {
     if(is.character(result$UTC) ||
        is.factor(result$UTC)) {
         # result$UTC <- as.POSIXct(as.character(result$UTC), tz='UTC', format=format)
-        result$UTC <- parse_date_time(as.character(result$UTC), orders=format,
-                                      tz='UTC', exact=TRUE, truncated=2)
+        result$UTC <- parseToUTC(as.character(result$UTC), format=format, tz=tz)
     }
     if(any(is.na(result$UTC))) {
         stop('Not able to properly convert UTC to POSIXct format, check format argument.', call. = FALSE)
@@ -200,4 +209,21 @@ fmtGps <- function(x, source, format) {
         result <- result[result$Name %in% nameKeep, ]
     }
     result
+}
+
+parseToUTC <- function(x, format, tz) {
+    tryCatch({
+        testTz <- parse_date_time('10-10-2020 12:00:05', orders = '%m/%d/%Y %H:%M:%S', tz=tz)
+    },
+    error = function(e) {
+        msg <- e$message
+        if(grepl('CCTZ: Unrecognized output timezone', msg)) {
+            stop('Timezone not recognized, see function OlsonNames() for accepted options', call.=FALSE)
+        }
+    })
+    origTz <- parse_date_time(x, orders=format, tz=tz, exact=TRUE, truncated=2)
+    if(!inherits(origTz, 'POSIXct')) {
+        stop('Unable to convert to POSIXct time.', call.=FALSE)
+    }
+    with_tz(origTz, tzone='UTC')
 }

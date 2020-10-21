@@ -1,6 +1,6 @@
 Package: PAMmisc
 Title: Miscellaneous Functions for Passive Acoustic Analysis
-Version: 1.6.3
+Version: 1.6.4
 Authors@R: c(
   TS = person("Taiki", "Sakai", email = "taiki.sakai@noaa.gov", role = c("aut", "cre")),
   JB = person("Jay", "Barlow", role = c("ctb")),
@@ -30,6 +30,7 @@ Imports:
     hoardr,
     methods,
     geosphere,
-    tcltk
+    tcltk,
+    stringr
 Suggests: 
     testthat

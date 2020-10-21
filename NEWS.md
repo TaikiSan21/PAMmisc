@@ -1,3 +1,8 @@
+# PAMmisc 1.6.4
+
+* Added `updateUID` function to try and realign UID mismatches in Pamguard databases
+between event detections and their corresponding binary files
+
 # PAMmisc 1.6.3
 
 * Changed `addPgGps` to use `parse_date_time` for date conversions to allow

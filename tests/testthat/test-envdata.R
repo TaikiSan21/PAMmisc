@@ -33,26 +33,26 @@ test_that('Making data range for URL requests', {
 })
 
 test_that('Matching .nc data to a dataframe', {
-    gps <- data.frame(Latitude = c(31.9, 32, 32.1),
+    gps <- data.frame(Latitude = c(31.95, 32, 32.05),
                       Longitude = c(-117, -117.1, -117.1),
                       UTC = as.POSIXct(c('2005-01-01 00:00:00', '2005-01-01 00:00:10',
                                          '2005-01-01 00:00:20'), tz='UTC'))
     nc <- system.file('extdata', 'sst.nc', package='PAMmisc')
-    matched <- ncToData(gps, nc)
+    matched <- ncToData(gps, nc, progress = FALSE)
     expect_identical(gps, matched[, 1:ncol(gps)])
     expect_true(all(paste0('analysed_sst_', c('mean', 'median', 'sd')) %in% colnames(matched)))
-    expect_identical(matched, matchEnvData(gps, nc))
+    expect_identical(matched, matchEnvData(gps, nc, progress=FALSE))
     # all within buffer
-    raw <- ncToData(gps, nc, raw=TRUE, buffer=c(.01, .01, 86400))
+    raw <- ncToData(gps, nc, raw=TRUE, buffer=c(.01, .01, 86400), progress = FALSE)
     expect_is(raw, 'list')
     expect_equal(length(raw), nrow(gps))
     # new functions
     meanPlusOne <- function(x) mean(x, na.rm=TRUE) + 1
-    plusOne <- ncToData(gps, nc, FUN = c(mean, meanPlusOne))
+    plusOne <- ncToData(gps, nc, FUN = c(mean, meanPlusOne), progress=FALSE)
     expect_true(all(paste0('analysed_sst_', c('mean', 'meanPlusOne')) %in% colnames(plusOne)))
     expect_identical(plusOne$analysed_sst_mean + 1, plusOne$analysed_sst_meanPlusOne)
-    expect_identical(plusOne, matchEnvData(gps, nc, FUN=c(mean, meanPlusOne)))
+    expect_identical(plusOne, matchEnvData(gps, nc, FUN=c(mean, meanPlusOne), progress=FALSE))
     # test warn if seems out of data bounds
     gpsOOB <- data.frame(Latitude = 33, Longitude = -116, UTC = as.POSIXct('2005-01-01 00:00:00', tz='UTC'))
-    expect_warning(ncToData(gpsOOB, nc))
+    expect_warning(ncToData(gpsOOB, nc, progress=FALSE))
 })

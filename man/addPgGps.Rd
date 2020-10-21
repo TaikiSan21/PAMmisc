@@ -8,7 +8,8 @@ addPgGps(
   db,
   gps,
   source = c("SPOTcsv", "SPOTgpx", "csv"),
-  format = "\%m/\%d/\%Y \%H:\%M:\%S"
+  format = "\%m/\%d/\%Y \%H:\%M:\%S",
+  tz = "UTC"
 )
 }
 \arguments{
@@ -24,6 +25,8 @@ source of the GPS data, not needed if \code{gps} is a data.frame}
 
 \item{format}{date format for converting to POSIXct, only needed for \code{source='csv'}.
 See \link{strptime}}
+
+\item{tz}{timezone of gps source being added, will be converted to UTC}
 }
 \value{
 Adds to the database \code{db}, invisibly returns the \code{Name} of the GPS track

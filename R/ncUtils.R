@@ -81,6 +81,7 @@ dimToIx <- function(data, dim, buffer=0, verbose=TRUE) {
         if(inherits(dimStride, 'difftime')) {
             dimStride <- as.double(dimStride, units='secs')
         }
+        # dimStride <- round(dimStride, 4)
         if(maxDiff / dimStride > 1) {
             warnMsg <- paste0('Data are matched to the nearest value in the netcdf file, dimension ', dim$name,
                               ' had values up to ', maxDiff, ' apart from the nearest value present in the file.',

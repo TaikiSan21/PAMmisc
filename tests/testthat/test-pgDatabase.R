@@ -11,16 +11,20 @@ test_that('Test gps adding', {
                               '2005-01-01 00:00:40'), tz='UTC'))
 
     write.csv(gps, tmpFile)
-    addPgGps(db, gps, source='csv', format='%Y-%m-%d %H:%M:%S')
+    addPgGps(db, tmpFile, source='csv', format='%Y-%m-%d %H:%M:%S')
+    addPgGps(db, tmpFile, source='csv', format='%Y-%m-%d %H:%M:%S', tz='Etc/GMT-1')
+    expect_error(addPgGps(db, tmpFile, source='csv', format='%Y-%m-%d %H:%M:%S', tz='DNE'),
+                 'Timezone not recognized')
     file.remove(tmpFile)
     con <- dbConnect(db, drv=SQLite())
     fromDb <- dbReadTable(con, 'gpsData')
     # test db has 200 rows of GPS, 201 on should be our new stuff
     fromDb <- fromDb[201:nrow(fromDb), ]
     fromDb$UTC <- as.POSIXct(fromDb$UTC, format = '%Y-%m-%d %H:%M:%S', tz='UTC')
-    expect_identical(gps$Latitude, fromDb$Latitude)
-    expect_identical(gps$Longitude, fromDb$Longitude)
-    expect_identical(gps$UTC, fromDb$UTC)
+    expect_identical(gps$Latitude, fromDb$Latitude[1:5])
+    expect_identical(fromDb$UTC[1:5], fromDb$UTC[6:10] + 60*60)
+    expect_identical(gps$Longitude, fromDb$Longitude[1:5])
+    expect_identical(gps$UTC, fromDb$UTC[1:5])
     expect_error(addPgGps(db='DNE'))
     # clean up test rows
     del <- dbSendQuery(con,
