@@ -91,7 +91,7 @@ updateUID <- function(db, binaries, verbose=TRUE, progress=TRUE) {
                 result <- bind_rows(result, thisOne)
             }
             if(progress) {
-                setTxtProgressBar(pb, value = which(unique(thisTbl$BinaryFile) == basename(thisBin)))
+                setTxtProgressBar(pb, value = which(unique(thisTbl$BinaryFile) == unique(basename(thisBin))))
             }
             result
         }))
