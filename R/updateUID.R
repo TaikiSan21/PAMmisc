@@ -42,7 +42,7 @@ updateUID <- function(db, binaries, verbose=TRUE, progress=TRUE) {
         names(nAdded) <- db
         for(i in seq_along(db)) {
             if(verbose) {
-                cat('\nUpdating UIDs in database ', basename(db), sep='')
+                cat('\nUpdating UIDs in database ', basename(db[i]), sep='')
             }
             nAdded[[i]] <- updateUID(db[i], binaries, verbose, progress)
         }
@@ -67,10 +67,15 @@ updateUID <- function(db, binaries, verbose=TRUE, progress=TRUE) {
         if(progress) {
             cat('\nUpdating table "', d, '" ...\n', sep='')
             pb <- txtProgressBar(min = 0, max = length(unique(thisTbl$BinaryFile)), style=3)
+            val <- 1
         }
         newUids <- bind_rows(lapply(split(thisTbl, thisTbl$BinaryFile), function(b) {
             thisBin <- grep(b$BinaryFile[1], binaries, value=TRUE)
             if(length(thisBin) == 0) {
+                if(progress) {
+                    setTxtProgressBar(pb, value = val)
+                    val <<- val + 1
+                }
                 return(NULL)
             }
             binUids <- lapply(thisBin, function(x) checkOneBin(b, x))
@@ -91,7 +96,8 @@ updateUID <- function(db, binaries, verbose=TRUE, progress=TRUE) {
                 result <- bind_rows(result, thisOne)
             }
             if(progress) {
-                setTxtProgressBar(pb, value = which(unique(thisTbl$BinaryFile) == unique(basename(thisBin))))
+                setTxtProgressBar(pb, value = val)
+                val <<- val + 1
             }
             result
         }))
@@ -126,18 +132,27 @@ checkOneBin <- function(det, binary) {
     binDf <- bind_rows(lapply(binData, function(x) {
         x[c('UID', 'date')]
     }))
-    newUID <- sapply(det$UTC, function(x) {
-        isMatch <- which((x - binDf$date) == 0)
-        if(length(isMatch) == 0) {
-            return(-1)
-        }
-        binDf$UID[min(isMatch)]
-    })
+    if('ClickNo' %in% colnames(det)) {
+        binDf <- binDf[det$ClickNo + 1, ]
+        isMatch <- (det$UTC - binDf$date) == 0
+        isMatch[is.na(isMatch)] <- FALSE
+        newUID <- binDf$UID
+        newUID[!isMatch] <- -1
+    } else {
+        newUID <- sapply(det$UTC, function(x) {
+            isMatch <- which((x - binDf$date) == 0)
+            if(length(isMatch) == 0) {
+                return(-1)
+            } else if(length(isMatch) > 1) {
+                return(-1)
+            }
+            binDf$UID[isMatch]
+        })
+    }
     if(any(newUID == -1)) {
         # message('Binary file ', basename(binary), ' did not have matching times.')
     }
-    return(list(Id = det$Id, UID = newUID))
-    list(Id = det$Id, UID = binDf$UID)
+    list(Id = det$Id, UID = newUID)
 }
 
 # just helper get event table names cuz ppl can change bruh
@@ -173,7 +188,7 @@ getEventTables <- function(db) {
 # does the adding new column
 addNewUID <- function(db, table, uids) {
     if(nrow(uids) == 0) {
-        return(TRUE)
+        return(0)
     }
     con <- dbConnect(db, drv=SQLite())
     on.exit(dbDisconnect(con))
@@ -189,7 +204,6 @@ addNewUID <- function(db, table, uids) {
     dbClearResult(tbl)
     dbAppendTable(con, 'PAMmiscTEMP', uids)
     # add to existing tbl
-    # browser()
     if(!('newUID' %in% dbListFields(con, table))) {
         addCol <- dbSendQuery(con,
                               paste0("ALTER TABLE ", table,
@@ -199,11 +213,6 @@ addNewUID <- function(db, table, uids) {
 
     addUid <- dbSendQuery(
         con,
-        # paste0('UPDATE ', table, ' SET newUID = (SELECT UID FROM PAMmiscTEMP ',
-        #        'WHERE PAMmiscTEMP.Id = ', table, '.Id)')
-        # paste0('UPDATE ', table, ' SET ', table, '.newUID = PAMmiscTEMP.UID ',
-        #        'FROM ', table, ' INNER JOIN PAMmiscTEMP ON ', table,'.Id = ',
-        #        'PAMmiscTEMP.Id')
         paste0('UPDATE ', table, ' SET newUID = (SELECT UID FROM PAMmiscTEMP WHERE PAMmiscTEMP.Id = ', table, '.Id)',
                'WHERE Id IN (SELECT Id FROM PAMmiscTEMP)')
     )

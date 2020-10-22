@@ -1,3 +1,8 @@
+# PAMmisc 1.6.5
+
+* Bug fixes for `updateUID`. Will check for "ClickNo" column first if that is more accurate,
+and will not update a UID if it is matching based on time and there is more than one match
+
 # PAMmisc 1.6.4
 
 * Added `updateUID` function to try and realign UID mismatches in Pamguard databases
