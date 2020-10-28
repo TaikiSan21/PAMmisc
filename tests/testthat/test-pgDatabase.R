@@ -2,6 +2,10 @@ context('Pamguard database adding functions')
 
 test_that('Test gps adding', {
     db <- system.file( 'extdata', 'PgDb.sqlite3', package='PAMmisc')
+    td <- tempdir()
+    file.copy(from = db, to = td)
+    tmpDb <- file.path(td, basename(db))
+    expect_true(file.exists(tmpDb))
     tmpFile <- tempfile(fileext = '.csv')
     # putting 999 Lat so its obviously fake data
     gps <- data.frame(Latitude = c(999, 999, 999, 999, 999),
@@ -11,12 +15,12 @@ test_that('Test gps adding', {
                               '2005-01-01 00:00:40'), tz='UTC'))
 
     write.csv(gps, tmpFile)
-    addPgGps(db, tmpFile, source='csv', format='%Y-%m-%d %H:%M:%S')
-    addPgGps(db, tmpFile, source='csv', format='%Y-%m-%d %H:%M:%S', tz='Etc/GMT-1')
-    expect_error(addPgGps(db, tmpFile, source='csv', format='%Y-%m-%d %H:%M:%S', tz='DNE'),
+    addPgGps(tmpDb, tmpFile, source='csv', format='%Y-%m-%d %H:%M:%S')
+    addPgGps(tmpDb, tmpFile, source='csv', format='%Y-%m-%d %H:%M:%S', tz='Etc/GMT-1')
+    expect_error(addPgGps(tmpDb, tmpFile, source='csv', format='%Y-%m-%d %H:%M:%S', tz='DNE'),
                  'Timezone not recognized')
-    file.remove(tmpFile)
-    con <- dbConnect(db, drv=SQLite())
+    unlink(tmpFile)
+    con <- dbConnect(tmpDb, drv=SQLite())
     fromDb <- dbReadTable(con, 'gpsData')
     # test db has 200 rows of GPS, 201 on should be our new stuff
     fromDb <- fromDb[201:nrow(fromDb), ]
@@ -32,15 +36,22 @@ test_that('Test gps adding', {
     )
     dbClearResult(del)
     dbDisconnect(con)
+    unlink(tmpDb)
+    expect_true(!file.exists(tmpDb))
+    expect_true(!file.exists(tmpFile))
 })
 
 test_that('Test event adding', {
     db <- system.file( 'extdata', 'PgDb.sqlite3', package='PAMmisc')
+    td <- tempdir()
+    file.copy(from = db, to = td)
+    tmpDb <- file.path(td, basename(db))
+    expect_true(file.exists(tmpDb))
     bin <- system.file('extdata', 'Click.pgdf', package='PAMmisc')
     hm <- loadPamguardBinaryFile(bin)
     uids <- c(4000001, 4000002, 4000004)
-    addPgEvent(db = db, UIDs = uids, binary = bin, eventType = 'MyNewEvent')
-    con <- dbConnect(db, drv=SQLite())
+    addPgEvent(db = tmpDb, UIDs = uids, binary = bin, eventType = 'MyNewEvent')
+    con <- dbConnect(tmpDb, drv=SQLite())
     ev <- dbReadTable(con, 'Click_Detector_OfflineEvents')
     click <- dbReadTable(con, 'Click_Detector_OfflineClicks')
     lookup <- dbReadTable(con, 'Lookup')
@@ -60,4 +71,6 @@ test_that('Test event adding', {
     del <- dbSendQuery(con, "DELETE FROM Lookup WHERE Code = 'MyNewEvent'")
     dbClearResult(del)
     dbDisconnect(con)
+    unlink(tmpDb)
+    expect_true(!file.exists(tmpDb))
 })
