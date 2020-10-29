@@ -32,6 +32,14 @@
 #' @export
 #'
 wignerTransform <- function(signal, n=NULL, sr, plot=FALSE) {
+    if(inherits(signal, 'Wave')) {
+        sr <- signal@samp.rate
+        signal <- signal@left
+    }
+    if(inherits(signal, 'WaveMC')) {
+        sr <- signal@samp.rate
+        signal <- signal@.Data[, 1]
+    }
     analytic <- toAnalytic(signal)#[1:length(signal)] # size changed during toAnalytic function
     conjAnalytic <- Conj(analytic)
     if(is.null(n)) {

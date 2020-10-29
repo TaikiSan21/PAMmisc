@@ -59,6 +59,9 @@ updateUID <- function(db, binaries, verbose=TRUE, progress=TRUE) {
     detTables <- getEventTables(db)$detections
     nAdded <- vector('list', length = length(detTables))
     names(nAdded) <- detTables
+    # issue checkers
+    noBinFound <- character(0)
+    allBinEmpty <- character(0)
     for(d in detTables) {
         thisTbl <- dbReadTable(con, d)
         if(nrow(thisTbl) == 0) next
@@ -76,17 +79,28 @@ updateUID <- function(db, binaries, verbose=TRUE, progress=TRUE) {
                     setTxtProgressBar(pb, value = val)
                     val <<- val + 1
                 }
+                noBinFound <<- c(noBinFound, b$BinaryFile[1])
                 return(NULL)
             }
             binUids <- lapply(thisBin, function(x) checkOneBin(b, x))
             goodCheck <- sapply(binUids, function(x) {
+                if(is.null(x)) {
+                    return(0)
+                }
                 isUid <- x$UID != -1
                 sum(isUid)
             })
+            if(all(goodCheck == 0)) {
+                allBinEmpty <<- c(allBinEmpty, b$BinaryFile[1])
+                return(NULL)
+            }
             hasMost <- min(which.max(goodCheck))
             result <- binUids[[hasMost]]
             for(i in seq_along(binUids)) {
-                if(i == hasMost) next
+                if(i == hasMost ||
+                   goodCheck[i] == 0) {
+                    next
+                }
                 thisOne <- binUids[[i]]
                 alreadyIn <- sapply(thisOne$Id, function(x) x %in% result$Id)
                 isUid <- thisOne$UID > -1
@@ -101,14 +115,19 @@ updateUID <- function(db, binaries, verbose=TRUE, progress=TRUE) {
             }
             result
         }))
-        newUids <- arrange(distinct(newUids), desc(.data$UID))
-        dupeId <- duplicated(newUids$Id)
-        # if(any(newUids$UID[dupeId] > -1)) {
-        #     #something something replicates
-        #     1+1
-        # }
-        newUids <- newUids[!dupeId, ]
-        nAdded[[d]] <- addNewUID(db, d, newUids)
+        if(is.null(newUids) ||
+           nrow(newUids) == 0) {
+            nAdded[[d]] <- 0
+        } else {
+            newUids <- arrange(distinct(newUids), desc(.data$UID))
+            dupeId <- duplicated(newUids$Id)
+            # if(any(newUids$UID[dupeId] > -1)) {
+            #     #something something replicates
+            #     1+1
+            # }
+            newUids <- newUids[!dupeId, ]
+            nAdded[[d]] <- addNewUID(db, d, newUids)
+        }
         if(verbose) {
             cat('\nUpdated UIDs for ', nAdded[[d]], ' out of ',
                 nrow(thisTbl), ' total detections.', sep='')
@@ -118,7 +137,9 @@ updateUID <- function(db, binaries, verbose=TRUE, progress=TRUE) {
     # that is -1 if no match found, or the new UID if was match
     # need to go and update the actual database, but probably test this on some
     # studies youve already run first
-    nAdded
+    list(nAdded=nAdded,
+         noMatchingBin = noBinFound,
+         allBinEmpty = allBinEmpty)
 }
 
 # det is already df of table, binary is path to bin file
@@ -128,7 +149,9 @@ checkOneBin <- function(det, binary) {
         return(NULL)
     }
     binData <- loadPamguardBinaryFile(binary, convertDate = FALSE, skipLarge=TRUE)$data
-
+    if(length(binData) == 0) {
+        return(NULL)
+    }
     binDf <- bind_rows(lapply(binData, function(x) {
         x[c('UID', 'date')]
     }))

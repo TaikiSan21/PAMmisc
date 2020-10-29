@@ -1,3 +1,11 @@
+# PAMmisc 1.6.6
+
+* `wignerTransform` works with Wave class input
+
+* `updateUID` bug checking for SR, should crash less with missing data
+
+* tests for UID adding plus test data for bad UIDs added
+
 # PAMmisc 1.6.5
 
 * Bug fixes for `updateUID`. Will check for "ClickNo" column first if that is more accurate,

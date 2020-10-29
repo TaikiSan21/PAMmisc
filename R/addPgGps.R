@@ -111,7 +111,7 @@ addPgGps <- function(db, gps, source = c('SPOTcsv', 'SPOTgpx', 'csv'), format = 
 fmtGps <- function(x, source, format, tz) {
     if(is.character(x)) {
         if(!file.exists(x)) {
-            stop('Could not find GPS file', x, call. = FALSE)
+            stop('Could not find GPS file ', x, call. = FALSE)
         }
         # if file switch for differnt read types
         switch(source,
