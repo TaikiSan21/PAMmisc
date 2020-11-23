@@ -6,11 +6,11 @@ test_that('Test proper output', {
     wt <- wignerTransform(clickWave@left, n = 1000, sr = 10e3, plot=FALSE)
 
     # n time steps is next power of 2 from length of clip 500 -> 512
-    expect_equal(length(wt$t), 512)
+    expect_equal(length(wt$t), .05 * 10e3)
     # should be n
     expect_equal(length(wt$f), 1000)
     # and these are dims of tfr
-    expect_identical(dim(wt$tfr), c(1000L, 512L))
+    expect_identical(dim(wt$tfr), c(1000L, 500L))
     # no NAs
     expect_true(!any(is.na(wt$tfr)))
 })

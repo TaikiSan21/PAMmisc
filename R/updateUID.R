@@ -92,6 +92,8 @@ updateUID <- function(db, binaries, verbose=TRUE, progress=TRUE) {
             })
             if(all(goodCheck == 0)) {
                 allBinEmpty <<- c(allBinEmpty, b$BinaryFile[1])
+                setTxtProgressBar(pb, value = val)
+                val <<- val + 1
                 return(NULL)
             }
             hasMost <- min(which.max(goodCheck))

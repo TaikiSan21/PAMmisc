@@ -1,6 +1,14 @@
+# PAMmisc 1.6.7
+
+* `wignerTransform` fixed output size to actually be n x t
+
+* `updateUID` progress bar minor bug fix
+
 # PAMmisc 1.6.6
 
 * `wignerTransform` works with Wave class input
+
+* `wignerTransform` scaled output by length
 
 * `updateUID` bug checking for SR, should crash less with missing data
 

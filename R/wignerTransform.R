@@ -29,27 +29,27 @@
 #'
 #' @importFrom stats fft
 #' @importFrom graphics axis image
+#' @importFrom viridisLite viridis
 #' @export
 #'
 wignerTransform <- function(signal, n=NULL, sr, plot=FALSE) {
     if(inherits(signal, 'Wave')) {
         sr <- signal@samp.rate
-        signal <- signal@left
+        signal <- signal@left / 2^(signal@bit - 1)
     }
     if(inherits(signal, 'WaveMC')) {
         sr <- signal@samp.rate
-        signal <- signal@.Data[, 1]
+        signal <- signal@.Data[, 1] / 2^(signal@bit - 1)
     }
-    analytic <- toAnalytic(signal)#[1:length(signal)] # size changed during toAnalytic function
+    analytic <- toAnalytic(signal)[1:length(signal)] # size changed during toAnalytic function
     conjAnalytic <- Conj(analytic)
     if(is.null(n)) {
-        n <- length(analytic)
+        n <- nextExp2(length(analytic))
     }
 
     nRow <- n # nFreq bins
     nCol <- length(analytic) # nTimesteps
     # nCol <- n # nTimesteps
-
 
     tfr <- matrix(0, nRow, nCol)
 
@@ -60,7 +60,7 @@ wignerTransform <- function(signal, n=NULL, sr, plot=FALSE) {
         tau <- -taumax:taumax
         indices <- (nRow + tau) %% nRow + 1
         # * .5 in PG?
-        tfr[indices, iCol] <- analytic[iCol+tau] * conjAnalytic[iCol-tau]
+        tfr[indices, iCol] <- analytic[iCol+tau] * conjAnalytic[iCol-tau] / 2
 
         tau <- round(nRow/2)
         if(iCol + tau <= nCol &&
@@ -73,9 +73,15 @@ wignerTransform <- function(signal, n=NULL, sr, plot=FALSE) {
     tfr <- apply(tfr, 2, fft)
     result <- list(tfr=Re(tfr), t=1:nCol/sr, f=sr/2*1:nRow/nRow)
     if(plot) {
-        image(t(result$tfr), xaxt='n', yaxt='n', ylab='Frequency (kHz)', xlab = 'Time (ms)')
-        axis(1, at = 1:4/4, labels = round(1e3*max(result$t)*1:4/4, 3))
-        axis(2, at = 1:4/4, labels = round(max(result$f)*1:4/4/1e3, 1))
+        image(t(result$tfr), xaxt='n', yaxt='n',
+              ylab='Frequency (kHz)', xlab = 'Time (ms)',
+              col = viridis(25))
+        xPretty <- pretty(result$t, n=5)
+        # axis(1, at = 1:4/4, labels = round(1e3*max(result$t)*1:4/4, 3))
+        axis(1, at=xPretty / max(result$t), labels=xPretty*1e3)
+        yPretty <- pretty(result$f, n=5)
+        # axis(2, at = 1:4/4, labels = round(max(result$f)*1:4/4/1e3, 1))
+        axis(2, at = yPretty / max(result$f), labels=yPretty/1e3)
     }
     result
 }
@@ -87,7 +93,7 @@ toAnalytic <- function(signal) {
     newLen <- nextExp2(len)
     newSignal <- c(signal, rep(0, newLen-len))
     hMult <- get1221(newLen)
-    fft(fft(newSignal) * hMult, inverse = TRUE) # possibly scale by len???? only done in real version in PG
+    fft(fft(newSignal) * hMult / len, inverse = TRUE) # possibly scale by len???? only done in real version in PG
 }
 
 nextExp2 <- function(x) {
