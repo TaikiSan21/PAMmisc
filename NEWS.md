@@ -1,3 +1,7 @@
+# PAMmisc 1.6.8
+
+* Improvements for `addPgEvent`
+
 # PAMmisc 1.6.7
 
 * `wignerTransform` fixed output size to actually be n x t

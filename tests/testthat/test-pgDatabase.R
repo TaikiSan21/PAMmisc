@@ -51,8 +51,11 @@ test_that('Test event adding', {
     hm <- loadPamguardBinaryFile(bin)
     uids <- c(4000001, 4000002, 4000004)
     addPgEvent(db = tmpDb, UIDs = uids, binary = bin, eventType = 'MyNewEvent')
+    addPgEvent(db = tmpDb, UIDs = uids, binary = bin, eventType = 'MyNewEvent')
+
     con <- dbConnect(tmpDb, drv=SQLite())
     ev <- dbReadTable(con, 'Click_Detector_OfflineEvents')
+    expect_equal(nrow(ev), 1)
     click <- dbReadTable(con, 'Click_Detector_OfflineClicks')
     lookup <- dbReadTable(con, 'Lookup')
     # test matching data got added
