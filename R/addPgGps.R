@@ -90,7 +90,7 @@ addPgGps <- function(db, gps, source = c('SPOTcsv', 'SPOTgpx', 'csv'), format = 
     if(nrow(dbGps) == 0) {
         newIds <- 1:nrow(gps)
     } else {
-        newIds <- 1:nrow(gps) + max(dbGps$Id)
+        newIds <- 1:nrow(gps) + max(dbGps$Id, na.rm=TRUE)
     }
     timeChar <- as.character(gps$UTC)
     milliChar <- sprintf('%.3f', as.numeric(gps$UTC) - floor(as.numeric(gps$UTC)))

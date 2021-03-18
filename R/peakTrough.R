@@ -3,8 +3,10 @@
 #' @description Finds up to three peaks in a spectrum, as well as the troughs
 #'   between those peaks.
 #'
-#' @details This uses a very simple algorithm to find second and third peaks
-#'   in a spectrum. Peak candidates are identified with a few simple steps.
+#' @details The first peak is the frequency with the highest dB level (first and 
+#'   last frequency points are ignored). Then this uses a very simple algorithm to 
+#'   find second and third peaks
+#'   in a spectrum. Peak candidates are identified with a few simple steps:
 #'   \describe{
 #'     \item{Step 1}{Use a local average of (\code{smooth}) points to smooth the
 #'   spectrum.}
@@ -78,8 +80,9 @@ peakTrough <- function(spec, freqBounds=c(10, 30), dbMin=-15, smooth=5, plot=FAL
     spec[,2] <- spec[,2] - max(spec[,2], na.rm = TRUE)
     extend <- floor(smooth/2)
     spec[,2] <- roll_mean(c(rep(spec[1,2], extend), spec[,2], rep(spec[nrow(spec), 2], extend)), smooth)
-
-    wherePeak <- which.max(spec[,2])
+    
+    # find peak but not first and last
+    wherePeak <- which.max(spec[-1*c(1, nrow(spec)), 2]) + 1
     peak <- spec[wherePeak, 1]
     peakdB <- spec[wherePeak, 2]
 

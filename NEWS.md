@@ -1,3 +1,10 @@
+# PAMmisc 1.6.8
+
+* `peakTrough` ignores first and last frequencies for possible peaks
+
+* `addPgEvent` and `addPgGps` added `na.rm=TRUE` to Id checking logic to avoid issues with
+NULL id values in current database
+
 # PAMmisc 1.6.7
 
 * `wignerTransform` fixed output size to actually be n x t
