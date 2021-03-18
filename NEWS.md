@@ -5,6 +5,8 @@
 * `addPgEvent` and `addPgGps` added `na.rm=TRUE` to Id checking logic to avoid issues with
 NULL id values in current database
 
+* Improvements for `addPgEvent` check for duplicate data
+
 # PAMmisc 1.6.7
 
 * `wignerTransform` fixed output size to actually be n x t

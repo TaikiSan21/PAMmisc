@@ -28,7 +28,7 @@
 #' }
 #' @importFrom RSQLite dbConnect SQLite dbListTables dbReadTable dbDisconnect dbAppendTable dbSendQuery dbClearResult
 #' @importFrom PamBinaries loadPamguardBinaryFile convertPgDate
-#' @importFrom dplyr bind_rows select
+#' @importFrom dplyr bind_rows select setdiff
 #'
 #' @export
 #'
@@ -58,8 +58,11 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
         evId <- 1
         evUID <- 1
     } else {
+
         evId <- max(eventData$Id, na.rm=TRUE) + 1
         evUID <- max(eventData$UID, na.rm=TRUE) + 1
+
+        eventData$eventType <- gsub(' ', '', eventData$eventType)
     }
 
     clickData <- dbReadTable(con, clickTableName)
@@ -110,8 +113,18 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
     eventAppend$eventType <- eventType
     eventAppend$comment <- comment
 
-    dbAppendTable(con, clickTableName, allAppend)
-    dbAppendTable(con, eventTableName, eventAppend)
+    # clickData$Id <- NA
+    # eventData$Id <- NA
+
+    # dbAppendTable(con, clickTableName, allAppend)
+    if(nrow(eventData) == 0 ||
+       nrow(setdiff(eventAppend[c('UTC', 'UTCMilliseconds', 'EventEnd', 'eventType')],
+               eventData[c('UTC', 'UTCMilliseconds', 'EventEnd', 'eventType')])) > 0) {
+        dbAppendTable(con, clickTableName, allAppend)
+        dbAppendTable(con, eventTableName, eventAppend)
+    } else {
+        return(FALSE)
+    }
 
     # Add eventType to Lookup table if it isnt there, also create Lookup if not there
     if(!('Lookup' %in% tableList)) {
