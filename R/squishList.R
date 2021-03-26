@@ -37,17 +37,20 @@ squishList <- function(myList) {
     for(n in myNames) {
         whichThisName <- which(names(myList)==n)
         thisNameData <- myList[whichThisName]
-        thisClasses <- sapply(thisNameData, class)
+        # thisClasses <- sapply(thisNameData, class)
         # This is a mess, but oh well.
         result[[n]] <- if(length(whichThisName)==1) {
             thisNameData[[1]]
-        } else if('list' %in% thisClasses) {
+        # } else if('list' %in% thisClasses) {
+        } else if(all(sapply(thisNameData, function(x) inherits(x, 'list')))) {
             thisNameData <- unlist(thisNameData, recursive = FALSE)
             names(thisNameData) <- gsub(paste0(n, '\\.'), '', names(thisNameData))
             squishList(thisNameData)
-        } else if(all(thisClasses=='data.frame')) {
+        # } else if(all(thisClasses=='data.frame')) {
+        } else if(all(sapply(thisNameData, function(x) inherits(x, 'data.frame')))) {
             bind_rows(thisNameData)
-        } else if(all(thisClasses=='NULL')) {
+        # } else if(all(thisClasses=='NULL')) {
+        } else if(all(sapply(thisNameData, function(x) inherits(x, 'NULL')))) {
             next
         } else {
             # thisNameData[[1]]

@@ -1,3 +1,7 @@
+# PAMmisc 1.6.9
+
+* `squishList` no longer breaks on `data.table` objects
+
 # PAMmisc 1.6.8
 
 * `peakTrough` ignores first and last frequencies for possible peaks
