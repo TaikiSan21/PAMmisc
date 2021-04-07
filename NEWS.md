@@ -1,3 +1,7 @@
+# PAMmisc 1.6.10
+
+* `addPgEvent` fixed potential issue with reading empty binaries
+
 # PAMmisc 1.6.9
 
 * `squishList` no longer breaks on `data.table` objects

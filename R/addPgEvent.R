@@ -27,7 +27,7 @@
 #' addPgEvent(db = myDb, UIDs = addUIDs, binary = myBinaries, eventType = 'MyNewEvent')
 #' }
 #' @importFrom RSQLite dbConnect SQLite dbListTables dbReadTable dbDisconnect dbAppendTable dbSendQuery dbClearResult
-#' @importFrom PamBinaries loadPamguardBinaryFile convertPgDate
+#' @importFrom PamBinaries loadPamguardBinaryFile convertPgDate pbToDf
 #' @importFrom dplyr bind_rows select setdiff
 #'
 #' @export
@@ -74,8 +74,9 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
     for(bin in binary) {
         if(length(UIDsToAdd) == 0) break
         binData <- loadPamguardBinaryFile(bin, skipLarge=TRUE, keepUIDs = UIDsToAdd)
-        binDf <- data.frame(binData)
-        if(nrow(binDf) == 0) next
+        binDf <- pbToDf(binData)
+        if(is.null(binDf) ||
+           nrow(binDf) == 0) next
         UIDsToAdd <- UIDsToAdd[!(UIDsToAdd %in% binDf$UID)]
         binDf$millis <- binDf$millis - floor(binDf$date) * 1e3
         binDf$dbDate <- paste0(as.character(convertPgDate(binDf$date)), '.',

@@ -37,8 +37,10 @@ Finds up to three peaks in a spectrum, as well as the troughs
   between those peaks.
 }
 \details{
-This uses a very simple algorithm to find second and third peaks
-  in a spectrum. Peak candidates are identified with a few simple steps.
+The first peak is the frequency with the highest dB level (first and 
+  last frequency points are ignored). Then this uses a very simple algorithm to 
+  find second and third peaks
+  in a spectrum. Peak candidates are identified with a few simple steps:
   \describe{
     \item{Step 1}{Use a local average of (\code{smooth}) points to smooth the
   spectrum.}
