@@ -8,3 +8,4 @@ addons:
     packages:
     - libnetcdf-dev
     - libgdal-dev
+    - libudunits2-dev
