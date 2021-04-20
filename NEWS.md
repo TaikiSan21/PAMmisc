@@ -1,3 +1,7 @@
+# PAMmisc 1.6.11
+
+* `addPgEvent` fixed issue with repeated Lookup codes and added colours
+
 # PAMmisc 1.6.10
 
 * `addPgEvent` fixed potential issue with reading empty binaries

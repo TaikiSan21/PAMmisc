@@ -57,12 +57,13 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
     if(nrow(eventData) == 0) {
         evId <- 1
         evUID <- 1
+        evColor <- 0
     } else {
 
         evId <- max(eventData$Id, na.rm=TRUE) + 1
         evUID <- max(eventData$UID, na.rm=TRUE) + 1
-
-        eventData$eventType <- gsub(' ', '', eventData$eventType)
+        evColor <- (eventData$colour[nrow(eventData)] + 1) %% 13 
+        eventData$eventType <- str_trim(eventData$eventType)
     }
 
     clickData <- dbReadTable(con, clickTableName)
@@ -113,6 +114,8 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
     eventAppend$nClicks <- nrow(allAppend)
     eventAppend$eventType <- eventType
     eventAppend$comment <- comment
+    
+    eventAppend$colour <- evColor
 
     # clickData$Id <- NA
     # eventData$Id <- NA
@@ -144,7 +147,7 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
         on.exit(dbClearResult(tbl), add=TRUE, after=FALSE)
     }
     lookup <- dbReadTable(con, 'Lookup')
-    if(eventType %in% gsub(' ', '', lookup$Code)) {
+    if(eventType %in% str_trim(lookup$Code)) {
         return(invisible(TRUE)) # dont need to add, just exit
     }
     lookAppend <- lookup[FALSE, ]
