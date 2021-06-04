@@ -1,3 +1,7 @@
+# PAMmisc 1.6.12
+
+* `wignerTransform` plotting now uses option `useRaster = TRUE`
+
 # PAMmisc 1.6.11
 
 * `addPgEvent` fixed issue with repeated Lookup codes and added colours

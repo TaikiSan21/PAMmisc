@@ -75,7 +75,7 @@ wignerTransform <- function(signal, n=NULL, sr, plot=FALSE) {
     if(plot) {
         image(t(result$tfr), xaxt='n', yaxt='n',
               ylab='Frequency (kHz)', xlab = 'Time (ms)',
-              col = viridis(25))
+              col = viridis(25), useRaster=TRUE)
         xPretty <- pretty(result$t, n=5)
         # axis(1, at = 1:4/4, labels = round(1e3*max(result$t)*1:4/4, 3))
         axis(1, at=xPretty / max(result$t), labels=xPretty*1e3)
