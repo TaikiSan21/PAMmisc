@@ -56,5 +56,6 @@ edinfoToURL <- function(edinfo, ranges) {
               fileType = edinfo$fileType,
               vars = edinfo$vars[edinfo$varSelect],
               ranges = ranges[names(edinfo$limits)],
-              style = edinfo$source)
+              style = edinfo$source,
+              stride = 1)
 }

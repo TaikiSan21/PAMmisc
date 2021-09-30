@@ -20,8 +20,8 @@ Attempts to compress a list by combining elements with
 \details{
 items with the same name are assumed to have the same structure
   and will be combined. Dataframes will be combined with bind_rows, vectors
-  just be collapsed into one vector, lists will be combined recursively with
-  another call to \code{squishList}
+  just be collapsed into one vector, matrices will be combined with rbind, 
+  lists will be combined recursively with another call to \code{squishList}
 }
 \examples{
 

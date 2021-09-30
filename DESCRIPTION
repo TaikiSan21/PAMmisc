@@ -1,10 +1,11 @@
 Package: PAMmisc
 Title: Miscellaneous Functions for Passive Acoustic Analysis
-Version: 1.6.11
+Version: 1.7.0
 Authors@R: c(
   TS = person("Taiki", "Sakai", email = "taiki.sakai@noaa.gov", role = c("aut", "cre")),
   JB = person("Jay", "Barlow", role = c("ctb")),
-  JO = person("Julie", "Oswald", role = c("ctb")))
+  JO = person("Julie", "Oswald", role = c("ctb")),
+  VS = person("Val", "Schmidt", role = c("ctb")))
 Description: A collection of miscellaneous functions for passive acoustics. 
     Much of the content here is adapted to R from code written by other people.
     If you have any ideas of functions to add, please contact Taiki Sakai.
@@ -32,6 +33,7 @@ Imports:
     geosphere,
     tcltk,
     stringr,
-    viridisLite
+    viridisLite,
+    viridis
 Suggests: 
     testthat

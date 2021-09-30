@@ -6,8 +6,8 @@
 #'
 #' @details items with the same name are assumed to have the same structure
 #'   and will be combined. Dataframes will be combined with bind_rows, vectors
-#'   just be collapsed into one vector, lists will be combined recursively with
-#'   another call to \code{squishList}
+#'   just be collapsed into one vector, matrices will be combined with rbind, 
+#'   lists will be combined recursively with another call to \code{squishList}
 #'
 #' @param myList a list with named elements to be compressed
 #'
@@ -46,12 +46,15 @@ squishList <- function(myList) {
             thisNameData <- unlist(thisNameData, recursive = FALSE)
             names(thisNameData) <- gsub(paste0(n, '\\.'), '', names(thisNameData))
             squishList(thisNameData)
-        # } else if(all(thisClasses=='data.frame')) {
+            # } else if(all(thisClasses=='data.frame')) {
         } else if(all(sapply(thisNameData, function(x) inherits(x, 'data.frame')))) {
             bind_rows(thisNameData)
-        # } else if(all(thisClasses=='NULL')) {
+            # } else if(all(thisClasses=='NULL')) {
         } else if(all(sapply(thisNameData, function(x) inherits(x, 'NULL')))) {
             next
+        } else if(all(sapply(thisNameData, function(x) inherits(x, 'matrix'))) &&
+                  length(unique(sapply(thisNameData, ncol))) == 1) {
+            do.call(rbind, thisNameData)
         } else {
             # thisNameData[[1]]
             unlist(thisNameData, use.names = FALSE)

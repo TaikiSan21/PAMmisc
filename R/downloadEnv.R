@@ -84,7 +84,7 @@ downloadEnv <- function(data, edinfo, fileName = NULL, buffer = c(0, 0, 0)) {
     # or steal rerddap:::rrcache$cache_path_get() lol
 
     # FOR FILE NAMES LETS DO "DATASET NAME_NUMBER"
-    maxTries <- 3
+    maxTries <- 1
     nTry <- 1
     while(nTry <= maxTries) {
         envData <- try(suppressMessages(GET(url,

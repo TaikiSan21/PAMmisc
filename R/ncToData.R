@@ -68,11 +68,16 @@ ncToData <- function(data, nc, buffer = c(0,0,0), FUN = c(mean, median, sd),
     for(v in seq_along(allVar)) {
         allVar[[v]] <- vector('list', length = nrow(data))
     }
+    names(nc$dim) <- standardCoordNames(names(nc$dim))
+    reqDims <- names(nc$dim)[names(nc$dim) %in% c('Longitude', 'Latitude', 'UTC')]
+    if(!all(reqDims %in% names(data))) {
+        stop('data must have columns ', paste0(reqDims, collapse=', '))
+    }
+    
     if(progress) {
         cat('Matching data...\n')
         pb <- txtProgressBar(min=0, max=nrow(data), style=3)
     }
-    names(nc$dim) <- standardCoordNames(names(nc$dim))
     for(v in varNames) {
         names(nc$var[[v]]$dim) <- names(nc$dim)[nc$var[[v]]$dimids + 1]
     }
@@ -140,6 +145,15 @@ getVarData <- function(data, nc, var, buffer, verbose=TRUE) {
     } else {
         tVals <- NA
     }
+    hasZ <- 'Depth' %in% names(nc$dim)
+    if(hasZ) {
+        if('Depth' %in% colnames(data)) {
+            # no buffer for depth
+            zIx <- dimToIx(data$Depth, nc$dim$Depth, 0, verbose)
+        } else {
+            zIx <- list(start=1, count=-1)
+        }
+    }
     result <- vector('list', length = length(var) + 3)
     names(result) <- c(var, 'matchLong', 'matchLat', 'matchTime')
     for(v in var) {
@@ -147,10 +161,10 @@ getVarData <- function(data, nc, var, buffer, verbose=TRUE) {
         start <- c(xIx$start, yIx$start)
         count <- c(xIx$count, yIx$count)
         thisVar <- nc[['var']][[v]]
-        hasZ <- any(!(names(thisVar$dim) %in% c('Longitude', 'Latitude', 'UTC')))
+        hasZ <- 'Depth' %in% names(thisVar$dim)
         if(hasZ) {
-            start <- c(start, 1)
-            count <- c(count, -1)
+            start <- c(start, zIx$start)
+            count <- c(count, zIx$count)
         }
         hasT <- 'UTC' %in% names(thisVar$dim)
         if(hasT) {

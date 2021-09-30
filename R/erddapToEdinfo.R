@@ -32,7 +32,14 @@ erddapToEdinfo <- function(dataset, baseurl='https://upwell.pfeg.noaa.gov/erddap
     }
     data <- dataset$alldata
     names(data) <- standardCoordNames(names(data))
-    result <- list(base = paste0(dataset$base_url, 'griddap/'))
+    if('Depth' %in% names(data) &&
+       data$Depth[1,1] == 'variable') {
+        names(data)[names(data) == 'Depth'] <- data$Depth[1, 2]
+    }
+    base <- dataset$base_url
+    base <- gsub('/$', '', base)
+    base <- paste0(base, '/griddap/')
+    result <- list(base = base)
     result$dataset <- attr(dataset, 'datasetid')
     result$fileType <- 'nc'
     result$vars <- names(data)[!(names(data) %in% c('UTC', 'Longitude', 'Latitude', 'Depth', 'NC_GLOBAL'))]

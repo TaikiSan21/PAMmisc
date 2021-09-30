@@ -21,6 +21,10 @@ test_that('Proper output from squishList', {
                      a=3:4)
     nullSquish <- squishList(nullList)
     expect_identical(nullSquish$a, 1:4)
-
+    
+    matList <- list(a=matrix(1, nrow=1, ncol=2),
+                    a=matrix(1, nrow=2, ncol=2))
+    matSquish <- squishList(matList)
+    expect_identical(matSquish$a, matrix(1, nrow=3, ncol=2))
     expect_identical(squishList(list()), list())
 })

@@ -1,3 +1,13 @@
+# PAMmisc 1.7.0
+
+* Added `raytrace` function based on MATLAB code by Val Schmidt
+
+* Updating `matchEnvData` and associated functions to work with provided
+Depth values instead of only being able to return all Depth values if a 
+Z dimension is present
+
+* `squishList` works with matrices
+
 # PAMmisc 1.6.12
 
 * `wignerTransform` plotting now uses option `useRaster = TRUE`

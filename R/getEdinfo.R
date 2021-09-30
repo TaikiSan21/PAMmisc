@@ -25,12 +25,33 @@ getEdinfo <- function() {
                                  limits = list(
                                      Longitude = c(-180, 179.92),
                                      Latitude = c(-80, 80),
-                                     UTC = as.POSIXct(c('1995-08-01 00:00:00', '2012-12-31 00:00:00'), tz='UTC')
+                                     UTC = as.POSIXct(c('1995-08-01 00:00:00', '2012-12-31 00:00:00'), tz='UTC'),
+                                     Depth = c(0, 5000)
                                  ),
                                  spacing = list(
                                      Longitude = .08,
                                      Latitude = .08,
-                                     UTC = 86400
+                                     UTC = 86400,
+                                     Depth = 5000 / 39
+                                 ),
+                                 stride = 1,
+                                 source = 'hycom'),
+         'HYCOM_GLBy93.0' = list(base = 'http://ncss.hycom.org/thredds/ncss/',
+                                 dataset = 'GLBy0.08/expt_93.0',
+                                 fileType = 'netcdf',
+                                 vars = c('surf_el', 'salinity', 'water_temp', 'water_u', 'water_v'),
+                                 is180 = FALSE,
+                                 limits = list(
+                                     Longitude = c(-180, 179.92),
+                                     Latitude = c(-80, 80),
+                                     UTC = c(as.POSIXct('2018-12-04 12:00:00', tz='UTC'), nowUTC() - 13 * 3600),
+                                     Depth = c(0, 5000)
+                                 ),
+                                 spacing = list(
+                                     Longitude = .08,
+                                     Latitude = .04,
+                                     UTC = 10800,
+                                     Depth = 5000 / 39
                                  ),
                                  stride = 1,
                                  source = 'hycom'))

@@ -50,9 +50,13 @@ dataToRanges <- function(data, buffer = c(0, 0, 0)) {
         longRange <- range(data$Longitude) + buffer[1] * c(-1, 1)
     }
 
-    list(
+    result <- list(
         Longitude = longRange,
         Latitude = range(data$Latitude) + buffer[2] * c(-1, 1),
         UTC = range(data$UTC) + buffer[3] * c(-1, 1)
     )
+    if('Depth' %in% colnames(data)) {
+        result$Depth <- range(data$Depth)
+    }
+    result
 }
