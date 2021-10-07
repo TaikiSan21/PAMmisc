@@ -8,6 +8,8 @@ Z dimension is present
 
 * `squishList` works with matrices
 
+* Added `readGPXTrack` to remove dependency on `plotKML::readGPX`
+
 # PAMmisc 1.6.12
 
 * `wignerTransform` plotting now uses option `useRaster = TRUE`

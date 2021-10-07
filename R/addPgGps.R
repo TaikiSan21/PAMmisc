@@ -31,7 +31,6 @@
 #' }
 #'
 #' @importFrom RSQLite dbConnect SQLite dbListTables dbReadTable dbDisconnect dbAppendTable dbSendQuery
-#' @importFrom plotKML readGPX
 #' @importFrom dplyr bind_rows
 #' @importFrom lubridate parse_date_time with_tz
 #'
@@ -147,18 +146,19 @@ fmtGps <- function(x, source, format, tz) {
                    # result$UTC <- as.POSIXct(result$UTC, tryFormats=format, tz='UTC')
                },
                'SPOTgpx' = {
-                   gpx <- readGPX(x)
-                   format <- '%Y-%m-%dT%H:%M:%SZ'
-                   result <- do.call(rbind, lapply(gpx$tracks, function(x) {
-                       tmp <- vector('list', length = length(x))
-                       for(i in seq_along(x)) {
-                           df <- x[[i]][, c('lon', 'lat', 'time')]
-                           df$Name <- names(x)[i]
-                           tmp[[i]] <- df
-                       }
-                       bind_rows(tmp)
-                   }))
-                   colnames(result) <- c('Longitude', 'Latitude', 'UTC', 'Name')
+                   result <- readGPXTrack(x)
+                   # gpx <- readGPX(x)
+                   # format <- '%Y-%m-%dT%H:%M:%SZ'
+                   # result <- do.call(rbind, lapply(gpx$tracks, function(x) {
+                   #     tmp <- vector('list', length = length(x))
+                   #     for(i in seq_along(x)) {
+                   #         df <- x[[i]][, c('lon', 'lat', 'time')]
+                   #         df$Name <- names(x)[i]
+                   #         tmp[[i]] <- df
+                   #     }
+                   #     bind_rows(tmp)
+                   # }))
+                   # colnames(result) <- c('Longitude', 'Latitude', 'UTC', 'Name')
                    # result$UTC <- as.POSIXct(result$UTC, tz='UTC', format = format)
                },
                'csv' = {

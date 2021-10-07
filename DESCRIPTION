@@ -27,7 +27,7 @@ Imports:
     ncdf4,
     httr,
     purrr,
-    plotKML,
+    xml2,
     hoardr,
     methods,
     geosphere,

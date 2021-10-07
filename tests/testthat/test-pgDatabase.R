@@ -20,16 +20,25 @@ test_that('Test gps adding', {
     expect_error(addPgGps(tmpDb, tmpFile, source='csv', format='%Y-%m-%d %H:%M:%S', tz='DNE'),
                  'Timezone not recognized')
     unlink(tmpFile)
+    # test adding gpx
+    gpxFile <- system.file('extdata', 'GPX.gpx', package='PAMmisc')
+    gpxData <- readGPXTrack(gpxFile)
+    addPgGps(tmpDb, gpxFile, source='SPOTgpx')
     con <- dbConnect(tmpDb, drv=SQLite())
     fromDb <- dbReadTable(con, 'gpsData')
     # test db has 200 rows of GPS, 201 on should be our new stuff
     fromDb <- fromDb[201:nrow(fromDb), ]
     fromDb$UTC <- as.POSIXct(fromDb$UTC, format = '%Y-%m-%d %H:%M:%S', tz='UTC')
+    # check CSV stuff
     expect_identical(gps$Latitude, fromDb$Latitude[1:5])
     expect_identical(fromDb$UTC[1:5], fromDb$UTC[6:10] + 60*60)
     expect_identical(gps$Longitude, fromDb$Longitude[1:5])
     expect_identical(gps$UTC, fromDb$UTC[1:5])
+    # check GPX stuff
+    expect_identical(gpxData$UTC, fromDb$UTC[11:nrow(fromDb)])
+    expect_identical(gpxData$Latitude, fromDb$Latitude[11:nrow(fromDb)])
     expect_error(addPgGps(db='DNE'))
+   
     # clean up test rows
     del <- dbSendQuery(con,
                        'DELETE FROM gpsData WHERE Id > 200'
