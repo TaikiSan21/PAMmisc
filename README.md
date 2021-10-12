@@ -1,3 +1,7 @@
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/TaikiSan21/PAMmisc/workflows/R-CMD-check/badge.svg)](https://github.com/TaikiSan21/PAMmisc/actions)
+<!-- badges: end -->
+
 # PAMmisc
 
 PAMmisc is a collection of random utility functions that might be useful
