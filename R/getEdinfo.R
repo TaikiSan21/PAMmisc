@@ -16,55 +16,62 @@
 #' @export
 #'
 getEdinfo <- function() {
-    hycomList <- list(
-         'HYCOM_GLBu19.1' = list(base = 'http://ncss.hycom.org/thredds/ncss/',
-                                 dataset = 'GLBu0.08/expt_19.1',
-                                 fileType = 'netcdf',
-                                 vars = c('surf_el', 'salinity', 'water_temp', 'water_u', 'water_v'),
-                                 is180 = TRUE,
-                                 limits = list(
-                                     Longitude = c(-180, 179.92),
-                                     Latitude = c(-80, 80),
-                                     UTC = as.POSIXct(c('1995-08-01 00:00:00', '2012-12-31 00:00:00'), tz='UTC'),
-                                     Depth = c(0, 5000)
-                                 ),
-                                 spacing = list(
-                                     Longitude = .08,
-                                     Latitude = .08,
-                                     UTC = 86400,
-                                     Depth = 5000 / 39
-                                 ),
-                                 stride = 1,
-                                 source = 'hycom'),
-         'HYCOM_GLBy93.0' = list(base = 'http://ncss.hycom.org/thredds/ncss/',
-                                 dataset = 'GLBy0.08/expt_93.0',
-                                 fileType = 'netcdf',
-                                 vars = c('surf_el', 'salinity', 'water_temp', 'water_u', 'water_v'),
-                                 is180 = FALSE,
-                                 limits = list(
-                                     Longitude = c(-180, 179.92),
-                                     Latitude = c(-80, 80),
-                                     UTC = c(as.POSIXct('2018-12-04 12:00:00', tz='UTC'), nowUTC() - 13 * 3600),
-                                     Depth = c(0, 5000)
-                                 ),
-                                 spacing = list(
-                                     Longitude = .08,
-                                     Latitude = .04,
-                                     UTC = 10800,
-                                     Depth = 5000 / 39
-                                 ),
-                                 stride = 1,
-                                 source = 'hycom'))
-    for(i in seq_along(hycomList)) {
-        class(hycomList[[i]]) <- c('edinfo', 'list')
-    }
-    c(hycomList, PAMmisc::erddapList)
+    # hycomList <- list(
+    #      'HYCOM_GLBu19.1' = list(base = 'http://ncss.hycom.org/thredds/ncss/',
+    #                              dataset = 'GLBu0.08/expt_19.1',
+    #                              fileType = 'netcdf',
+    #                              vars = c('surf_el', 'salinity', 'water_temp', 'water_u', 'water_v'),
+    #                              is180 = TRUE,
+    #                              limits = list(
+    #                                  Longitude = c(-180, 179.92),
+    #                                  Latitude = c(-80, 80),
+    #                                  UTC = as.POSIXct(c('1995-08-01 00:00:00', '2012-12-31 00:00:00'), tz='UTC'),
+    #                                  Depth = c(0, 5000)
+    #                              ),
+    #                              spacing = list(
+    #                                  Longitude = .08,
+    #                                  Latitude = .08,
+    #                                  UTC = 86400,
+    #                                  Depth = 5000 / 39
+    #                              ),
+    #                              stride = 1,
+    #                              source = 'hycom'),
+    #      'HYCOM_GLBy93.0' = list(base = 'http://ncss.hycom.org/thredds/ncss/',
+    #                              dataset = 'GLBy0.08/expt_93.0',
+    #                              fileType = 'netcdf',
+    #                              vars = c('surf_el', 'salinity', 'water_temp', 'water_u', 'water_v'),
+    #                              is180 = FALSE,
+    #                              limits = list(
+    #                                  Longitude = c(0, 359.92),
+    #                                  Latitude = c(-80, 80),
+    #                                  UTC = c(as.POSIXct('2018-12-04 12:00:00', tz='UTC'), nowUTC() - 13 * 3600),
+    #                                  Depth = c(0, 5000)
+    #                              ),
+    #                              spacing = list(
+    #                                  Longitude = .08,
+    #                                  Latitude = .04,
+    #                                  UTC = 10800,
+    #                                  Depth = 5000 / 39
+    #                              ),
+    #                              stride = 1,
+    #                              source = 'hycom'))
+    # for(i in seq_along(hycomList)) {
+    #     class(hycomList[[i]]) <- c('edinfo', 'list')
+    # }
+    
+    result <- PAMmisc::erddapList
+    result$HYCOM <- PAMmisc::hycomList
+    result
     # hycomlist
 }
 
 #' @export
 #'
 print.edinfo <- function(x, ...) {
+    if(!is.null(x$isCurrent) && 
+       isTRUE(x$isCurrent)) {
+        x$limits$UTC[2] <- nowUTC()
+    }
     cat('Dataset id ', x$dataset, ' has ', length(x$vars), ' variables:\n    ',
         paste0(x$vars, collapse=', '), '\n  With valid coordinate limts:\n    ',
         rngPrinter(x$limits), '\n  And average coordinate spacing:\n    ',
@@ -81,7 +88,7 @@ updateEdinfo <- function() {
         erddapList[[i]] <- erddapToEdinfo(datasets$id[i], baseURLs[datasets$baseIx[i]], chooseVars = FALSE)
     }
     names(erddapList) <- datasets$id
-    save(erddapList, file = './data/erddapList.RData')
+    save(erddapList, file = './data/erddapList.rda')
 }
 
 rngPrinter <- function(x) {

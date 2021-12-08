@@ -2,6 +2,7 @@
 % Please edit documentation in R/erddapToEdinfo.R
 \name{erddapToEdinfo}
 \alias{erddapToEdinfo}
+\alias{hycomToEdinfo}
 \title{Create an edinfo Object from an ERDDAP Dataset Id}
 \usage{
 erddapToEdinfo(
@@ -9,11 +10,17 @@ erddapToEdinfo(
   baseurl = "https://upwell.pfeg.noaa.gov/erddap/",
   chooseVars = TRUE
 )
+
+hycomToEdinfo(
+  dataset = "GLBy0.08/expt_93.0",
+  baseurl = "https://ncss.hycom.org/thredds/ncss/",
+  chooseVars = TRUE
+)
 }
 \arguments{
-\item{dataset}{an ERDDAP dataset id, or the result from \link[rerddap]{info}}
+\item{dataset}{an ERDDAP or HYCOM dataset id, or the result from \link[rerddap]{info}}
 
-\item{baseurl}{the base URL of an ERDDAP server}
+\item{baseurl}{the base URL of an ERDDAP/HYCOM server}
 
 \item{chooseVars}{logical flag whether or not to select which variables you want now}
 }
@@ -31,6 +38,9 @@ sstEdi <- erddapToEdinfo('jplMURSST41')
 # dataset from a diferent erddap server
 sshEdi <- erddapToEdinfo('hawaii_soest_2ee3_0bfa_a8d6',
                           baseurl = 'http://apdrc.soest.hawaii.edu/erddap/')
+# THese work the same - erddap function will pass to hycom if appears to be hycom dataset
+hycomEdi <- hycomToEdinfo('GLBy0.08/expt_93.0')
+hycomEdi <- erddapToEdinfo('GLBy0.08/expt_93.0')
 }
 
 }

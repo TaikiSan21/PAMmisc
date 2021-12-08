@@ -56,6 +56,8 @@ fmtURL_erddap <- function(base, dataset, fileType, vars, ranges, stride) {
         fileType <- 'nc'
     }
     allRanges <- fmtRange_erddap(ranges, stride, html=FALSE)
+    base <- gsub('/$', '', base)
+    base <- paste0(base, '/griddap/')
     paste0(base,
            dataset,
            '.', fileType, '?',

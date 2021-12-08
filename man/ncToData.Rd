@@ -10,6 +10,7 @@ ncToData(
   buffer = c(0, 0, 0),
   FUN = c(mean, median, sd),
   raw = FALSE,
+  keepMatch = TRUE,
   progress = TRUE,
   verbose = TRUE
 )
@@ -31,6 +32,9 @@ mean, median, and standard deviation calculations}
 the output will be changed to a list with length equal to the number of data points.
 Each item in the list will have separate named entries for each variable that will have
 all values within the given buffer and all values for any Z coordinates present.}
+
+\item{keepMatch}{logical flag to keep the matched coordinates, these are useful to make sure
+the closest point is actually close to your XYZT}
 
 \item{progress}{logical flag to show progress bar for matching data}
 

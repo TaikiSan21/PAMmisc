@@ -62,7 +62,10 @@ dimToIx <- function(data, dim, buffer=0, verbose=TRUE) {
     count <- end - start + 1
     maxDiff <- max(diff)
     if(inherits(maxDiff, 'difftime')) {
+        diffMsg <- paste0(round(as.double(maxDiff, units='days'), 1), ' days')
         maxDiff <- as.double(maxDiff, units='secs')
+    } else {
+        diffMsg <- round(maxDiff, 3)
     }
     # browser()
     # check if any matched data appear to be out of bounds. if dimension has only one value, can only report
@@ -73,7 +76,7 @@ dimToIx <- function(data, dim, buffer=0, verbose=TRUE) {
     if(length(dim$vals) == 1 &&
        maxDiff > 0) {
         warnMsg <- paste0('Data are matched to the nearest value in the netcdf file, dimension ', dim$name,
-                          ' had values up to ', maxDiff, ' apart from the nearest value present in the file.')
+                          ' had values up to ', diffMsg, ' apart from the nearest value present in the file.')
         warning(warnMsg)
     } else if(length(dim$vals) > 1) {
         dimStride <- abs(dim$vals[2]-dim$vals[1])
@@ -84,7 +87,7 @@ dimToIx <- function(data, dim, buffer=0, verbose=TRUE) {
         # dimStride <- round(dimStride, 4)
         if(maxDiff / dimStride > 1) {
             warnMsg <- paste0('Data are matched to the nearest value in the netcdf file, dimension ', dim$name,
-                              ' had values up to ', maxDiff, ' apart from the nearest value present in the file.',
+                              ' had values up to ', diffMsg, ' apart from the nearest value present in the file.',
                               ' It is possible that a closer match could be made with more data.')
             warning(warnMsg)
         }
@@ -170,6 +173,10 @@ getCoordNameMatch <- function() {
 # replace these wiith acceptable min/max or remove them if outside
 checkLimits <- function(data, limits, replace=FALSE, verbose=TRUE) {
     if(inherits(limits, 'edinfo')) {
+        # if(!is.null(limits$isCurrent) &&
+        #    isTRUE(limits$isCurrent)) {
+        #     limits$limits$UTC[2] <- nowUTC()
+        # }
         limits <- limits$limits
     }
     # make both same 180 status and save original status to reconvert later
@@ -290,4 +297,43 @@ nowUTC <- function() {
     now <- Sys.time()
     attr(now, 'tzone') <- 'UTC'
     now
+}
+
+estDownloadSize <- function(x, edi, verbose=FALSE) {
+    spacing <- edi$spacing
+    nLats <- floor(diff(range(x$Latitude)) / spacing$Latitude) + 3
+    nLongs <- floor(diff(range(x$Longitude)) / spacing$Longitude) + 3
+    nTimes <- floor(as.numeric(difftime(max(x$UTC), min(x$UTC), units='secs')) / spacing$UTC) + 3
+    if(is.null(spacing$Depth) || is.na(spacing$Depth)) {
+        nDepths <- 1
+    } else {
+        if('Depth' %in% colnames(x) &&
+           edi$source != 'hycom') {
+            nDepths <- floor(diff(range(x$Depth)) / spacing$Depth) + 3
+        } else {
+            nDepths <- floor(diff(edi$limits$Depth) / spacing$Depth) + 3
+        }
+    }
+    if(verbose) {
+        cat('Lats :', nLats, '\nLongs:', nLongs, '\nTimes:', nTimes, '\nDepths:', nDepths)
+    }
+    size <- nLats * nLongs * nTimes * nDepths * 8 / 1e6 * sum(edi$varSelect)
+    list(size=size, biggest=c('Latitude', 'Longitude', 'UTC')[which.max(c(nLats, nLongs, nTimes))])
+}
+
+planDownload <- function(x, edi, last=0, thresh=50) {
+    if(nrow(x) == 1) {
+        return(last + 1)
+    }
+    estSize <- estDownloadSize(x, edi)
+    if(estSize$size <= thresh) {
+        return(rep(last + 1, nrow(x)))
+    }
+    whichLow <- x[[estSize$biggest]] <= mean(range(x[[estSize$biggest]]))
+    lows <- planDownload(x[whichLow, ], edi, last, thresh)
+    highs <- planDownload(x[!whichLow, ], edi, max(lows), thresh)
+    out <- rep(NA, nrow(x))
+    out[whichLow] <- lows
+    out[!whichLow] <- highs
+    out
 }

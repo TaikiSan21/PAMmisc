@@ -1,3 +1,17 @@
+# PAMmisc 1.8.0
+
+* Reworking of enviro functions to make HYCOM datasets easier to use. Will now
+automatically figure out which ones you need based on dates and partition your
+data for you
+
+* Enviro functions reworked for temporary download to be much faster - no longer
+does a separate download for every row, will check to estimate download size first 
+and break in to ~20MB chunks at once
+
+# PAMmisc 1.7.1
+
+* Minor changes to smooth out usability of `addPgGps`
+
 # PAMmisc 1.7.0
 
 * Added `raytrace` function based on MATLAB code by Val Schmidt

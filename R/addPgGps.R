@@ -36,7 +36,10 @@
 #'
 #' @export
 #'
-addPgGps <- function(db, gps, source = c('SPOTcsv', 'SPOTgpx', 'csv'), format = '%m/%d/%Y %H:%M:%S', tz='UTC') {
+addPgGps <- function(db, gps, source = c('SPOTcsv', 'SPOTgpx', 'csv'), 
+                     format = c('%m/%d/%Y %H:%M:%S', '%m-%d-%Y %H:%M:%S',
+                                '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M:%S'),
+                     tz='UTC') {
     source <- match.arg(source)
     if(!file.exists(db)) {
         stop('Could not find database file', db, call. = FALSE)

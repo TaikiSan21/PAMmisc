@@ -15,6 +15,8 @@
 #'   the output will be changed to a list with length equal to the number of data points.
 #'   Each item in the list will have separate named entries for each variable that will have
 #'   all values within the given buffer and all values for any Z coordinates present.
+#' @param keepMatch logical flag to keep the matched coordinates, these are useful to make sure
+#'   the closest point is actually close to your XYZT
 #' @param progress logical flag to show progress bar for matching data
 #' @param verbose logical flag to show warning messages for possible coordinate mismatch
 #'
@@ -45,7 +47,7 @@
 #' @export
 #'
 ncToData <- function(data, nc, buffer = c(0,0,0), FUN = c(mean, median, sd),
-                     raw = FALSE, progress=TRUE, verbose=TRUE) {
+                     raw = FALSE, keepMatch=TRUE, progress=TRUE, verbose=TRUE) {
     nc <- nc_open(nc)
     on.exit(nc_close(nc))
     nc <- romsCheck(nc)
@@ -63,12 +65,17 @@ ncToData <- function(data, nc, buffer = c(0,0,0), FUN = c(mean, median, sd),
     # OPTION TO ONLY GET A CERTAIN Z VALUE LIKE DEPTH FIRST VALUE SOMEHOW
     dropVar <- c('latitude', 'longitude', 'month', 'day', 'year', 'lon', 'lat')
     varNames <- names(nc$var)[!(names(nc$var) %in% dropVar)]
-    allVar <- vector('list', length = length(varNames) + 3)
-    names(allVar) <- c(varNames, 'matchLong', 'matchLat', 'matchTime')
+    names(nc$dim) <- standardCoordNames(names(nc$dim))
+    if('Depth' %in% names(nc$dim)) {
+        matchDims <- c('matchLong', 'matchLat', 'matchTime', 'matchDepth')
+    } else {
+        matchDims <- c('matchLong', 'matchLat', 'matchTime')
+    }
+    allVar <- vector('list', length = length(varNames) + length(matchDims))
+    names(allVar) <- c(varNames, matchDims)
     for(v in seq_along(allVar)) {
         allVar[[v]] <- vector('list', length = nrow(data))
     }
-    names(nc$dim) <- standardCoordNames(names(nc$dim))
     reqDims <- names(nc$dim)[names(nc$dim) %in% c('Longitude', 'Latitude', 'UTC')]
     if(!all(reqDims %in% names(data))) {
         stop('data must have columns ', paste0(reqDims, collapse=', '))
@@ -86,7 +93,7 @@ ncToData <- function(data, nc, buffer = c(0,0,0), FUN = c(mean, median, sd),
         for(v in varNames) {
             allVar[[v]][[i]] <- varData[[v]]
         }
-        for(c in c('matchLong', 'matchLat', 'matchTime')) {
+        for(c in matchDims) {
             allVar[[c]][[i]] <- varData[[c]]
         }
         if(progress) {
@@ -124,14 +131,17 @@ ncToData <- function(data, nc, buffer = c(0,0,0), FUN = c(mean, median, sd),
             }
         }
     }
-    for(c in c('matchLong', 'matchLat', 'matchTime')) {
-        data[[paste0(c, '_mean')]] <- sapply(allVar[[c]], function(x) mean(x, na.rm=TRUE))
+    if(keepMatch) {
+        for(c in matchDims) {
+            data[[paste0(c, '_mean')]] <- sapply(allVar[[c]], function(x) mean(x, na.rm=TRUE))
+        }
+        if(!is.null(data$matchTime_mean) &&
+           !(all(is.na(data$matchTime_mean))) &&
+           max(abs(data$matchTime_mean)) > 365) {
+            data$matchTime_mean <- as.POSIXct(data$matchTime_mean, origin = '1970-01-01 00:00:00', tz='UTC')
+        }
     }
-    if(!is.null(data$matchTime_mean) &&
-       !(all(is.na(data$matchTime_mean))) &&
-       max(abs(data$matchTime_mean)) > 365) {
-        data$matchTime_mean <- as.POSIXct(data$matchTime_mean, origin = '1970-01-01 00:00:00', tz='UTC')
-    }
+    data <- to180(data, inverse=!data180)
     data
 }
 
@@ -149,9 +159,11 @@ getVarData <- function(data, nc, var, buffer, verbose=TRUE) {
     if(hasZ) {
         if('Depth' %in% colnames(data)) {
             # no buffer for depth
-            zIx <- dimToIx(data$Depth, nc$dim$Depth, 0, verbose)
+            zIx <- dimToIx(data$Depth, nc$dim$Depth, 0, verbose=FALSE)
+            zVals <- nc$dim$Depth$vals[zIx$ix]
         } else {
             zIx <- list(start=1, count=-1)
+            zVals <- nc$dim$Depth$vals
         }
     }
     result <- vector('list', length = length(var) + 3)
@@ -176,5 +188,8 @@ getVarData <- function(data, nc, var, buffer, verbose=TRUE) {
     result$matchLong <- nc$dim$Longitude$vals[xIx$ix]
     result$matchLat <- nc$dim$Latitude$vals[yIx$ix]
     result$matchTime <- tVals
+    if(hasZ) {
+        result$matchDepth <- zVals
+    }
     result
 }

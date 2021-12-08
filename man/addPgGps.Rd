@@ -8,7 +8,8 @@ addPgGps(
   db,
   gps,
   source = c("SPOTcsv", "SPOTgpx", "csv"),
-  format = "\%m/\%d/\%Y \%H:\%M:\%S",
+  format = c("\%m/\%d/\%Y \%H:\%M:\%S", "\%m-\%d-\%Y \%H:\%M:\%S",
+    "\%Y/\%m/\%d \%H:\%M:\%S", "\%Y-\%m-\%d \%H:\%M:\%S"),
   tz = "UTC"
 )
 }

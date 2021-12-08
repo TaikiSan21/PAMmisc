@@ -92,19 +92,41 @@ setMethod('matchEnvData', 'data.frame',
                  file.exists(nc)) {
                   return(ncToData(data=data, nc=nc, buffer=buffer, FUN=FUN, progress=progress, ...))
               }
+              
               if(!inherits(nc, 'edinfo')) {
                   stop(paste0(nc, ' must be a valid nc file or erddap dataset id.'))
               }
-
+              if(is.null(nc$varSelect) ||
+                 !any(nc$varSelect)) {
+                  nc <- varSelect(nc)
+              }
+              if(inherits(nc, 'hycomList')) {
+                  data$whichHy <- sapply(data$UTC, function(t) {
+                      whichHycom(t, nc$list)
+                  })
+                  naHy <- is.na(data$whichHy)
+                  if(any(naHy)) {
+                      message(sum(naHy), ' rows could not be matched to a HYCOM dataset, they will',
+                              ' be removed from returned result.')
+                  }
+                  return(bind_rows(lapply(split(data, data$whichHy), function(x) {
+                      thisHy <- nc$list[[x$whichHy[1]]]
+                      thisHy$varSelect <- nc$varSelect
+                      x$whichHy <- NULL
+                      matchEnvData(x, nc=thisHy, var, buffer, FUN, fileName, progress, ...)
+                  })))
+              }
               # no filename provided means dont download all, do smaller
               if(is.null(fileName)) {
-                  result <- vector('list', length = nrow(data))
+                  plan <- planDownload(data, nc, thresh=20)
+                  data$DLTEMPID <- 1:nrow(data)
+                  result <- vector('list', length = length(unique(plan)))
                   if(progress) {
                       cat('Downloading data...\n')
                       pb <- txtProgressBar(min=0, max = length(result), style=3)
                   }
                   for(i in seq_along(result)) {
-                      ncData <- downloadEnv(data=data[i, ], edinfo = nc, buffer = buffer)
+                      ncData <- downloadEnv(data=data[plan == unique(plan)[i], ], edinfo = nc, buffer = buffer)
                       #####################################
                       # on.exit(DELETEYOUR PAMMISC TEMP DIR HERE) cache_delete_all from rerddap checkit
                       on.exit({
@@ -112,13 +134,16 @@ setMethod('matchEnvData', 'data.frame',
                           unlink(tmpFiles, force=TRUE)
                       })
                       ######################################
-                      result[[i]] <- ncToData(data=data[i, ], nc=ncData, buffer=buffer, FUN=FUN, progress=FALSE, ...)
+                      result[[i]] <- ncToData(data=data[plan == unique(plan)[i], ], nc=ncData, buffer=buffer, FUN=FUN, progress=FALSE, ...)
                       if(progress) {
                           setTxtProgressBar(pb, value = i)
                       }
                   }
                   cat('\n')
-                  return(bind_rows(result))
+                  result <- bind_rows(result)
+                  result <- arrange(result, .data$DLTEMPID)
+                  result[['DLTEMPID']] <- NULL
+                  return(result)
               }
 
               # file name provided means get big all at once

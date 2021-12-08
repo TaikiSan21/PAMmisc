@@ -44,5 +44,16 @@ browseEdinfo <- function(var=NULL) {
         cat('No selection made.')
         return(invisible(NULL))
     }
-    varSelect(allList[[ediChoice]])
+    ediChoice <- allList[[ediChoice]]
+    if(ediChoice$source == 'erddap') {
+        updated <- erddapToEdinfo(dataset = ediChoice$dataset, baseurl = ediChoice$base, chooseVars = FALSE)
+    } else if(ediChoice$source == 'hycom' &&
+              inherits(ediChoice, 'hycomList')) {
+        updated <- ediChoice
+        for(h in seq_along(ediChoice$list)) {
+            if(isFALSE(ediChoice$list[[h]]$isCurrent)) next
+            updated$list[[h]] <- hycomToEdinfo(dataset = ediChoice$list[[h]]$dataset, chooseVars = FALSE)
+        }
+    }
+    varSelect(updated)
 }

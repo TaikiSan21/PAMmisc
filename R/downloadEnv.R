@@ -91,7 +91,7 @@ downloadEnv <- function(data, edinfo, fileName = NULL, buffer = c(0, 0, 0)) {
                                             # verbose(),
                                             progress(),
                                             write_disk(fileName, overwrite = TRUE))))
-        if(envData$status_code == 400) {
+        if(envData$status_code != 200) {
             stop(paste0('URL ', envData$url, ' is invalid, pasting this into a browser may give more information.'))
         }
         if(inherits(envData, 'try-error')) {
