@@ -100,52 +100,78 @@ setMethod('matchEnvData', 'data.frame',
                  !any(nc$varSelect)) {
                   nc <- varSelect(nc)
               }
+              # browser()
               if(inherits(nc, 'hycomList')) {
-                  data$whichHy <- sapply(data$UTC, function(t) {
+                  whichHy <- sapply(data$UTC, function(t) {
                       whichHycom(t, nc$list)
                   })
-                  naHy <- is.na(data$whichHy)
+                  naHy <- is.na(whichHy)
                   if(any(naHy)) {
                       message(sum(naHy), ' rows could not be matched to a HYCOM dataset, they will',
                               ' be removed from returned result.')
                   }
-                  return(bind_rows(lapply(split(data, data$whichHy), function(x) {
-                      thisHy <- nc$list[[x$whichHy[1]]]
+                  whichHy[naHy] <- -1
+                  hys <- unique(whichHy)
+                  result <- vector('list', length=length(hys))
+                  fixer <- numeric(0)
+                  
+                  for(i in seq_along(result)) {
+                      if(hys[i] == -1) next
+                      thisHy <- nc$list[[hys[i]]]
                       thisHy$varSelect <- nc$varSelect
-                      x$whichHy <- NULL
-                      matchEnvData(x, nc=thisHy, var, buffer, FUN, fileName, progress, ...)
-                  })))
+                      result[[i]] <- matchEnvData(data[whichHy == hys[i], ], nc=thisHy, var, buffer, FUN, fileName, progress, ...)
+                      fixer <- c(fixer, which(whichHy == hys[i]))
+                  }
+                  fixer <- sort(fixer, index.return=TRUE)$ix
+                  # browser()
+                  if(is.data.frame(result[[1]])) {
+                      result <- bind_rows(result)
+                      return(result[fixer, ])
+                  } else if(is.list(result[[1]])) {
+                      result <- unlist(result, recursive = FALSE)
+                      result <- fillNA(result[fixer], which(naHy))
+                      return(result)
+                  }
               }
               # no filename provided means dont download all, do smaller
               if(is.null(fileName)) {
-                  plan <- planDownload(data, nc, thresh=20)
-                  data$DLTEMPID <- 1:nrow(data)
-                  result <- vector('list', length = length(unique(plan)))
+                  plan <- as.character(planDownload(data, nc, thresh=20))
+                  
                   if(progress) {
                       cat('Downloading data...\n')
-                      pb <- txtProgressBar(min=0, max = length(result), style=3)
+                      pb <- txtProgressBar(min=0, max = length(unique(plan)), style=3)
+                      pbix <- 0
                   }
-                  for(i in seq_along(result)) {
-                      ncData <- downloadEnv(data=data[plan == unique(plan)[i], ], edinfo = nc, buffer = buffer)
+                  planFiles <- vector('list', length=length(unique(plan)))
+                  names(planFiles) <- unique(plan)
+                  for(p in unique(plan)) {
+                      thisFile <- fileNameManager(suffix=p)
+                      planFiles[[p]] <- downloadEnv(data=data[plan == p, ],fileName = thisFile, edinfo = nc, buffer = buffer)
                       #####################################
-                      # on.exit(DELETEYOUR PAMMISC TEMP DIR HERE) cache_delete_all from rerddap checkit
                       on.exit({
                           tmpFiles <- list.files(hoard()$cache_path_set('PAMmisc'), full.names=TRUE)
                           unlink(tmpFiles, force=TRUE)
                       })
+                      # on.exit(DELETEYOUR PAMMISC TEMP DIR HERE) cache_delete_all from rerddap checkit
                       ######################################
-                      result[[i]] <- ncToData(data=data[plan == unique(plan)[i], ], nc=ncData, buffer=buffer, FUN=FUN, progress=FALSE, ...)
                       if(progress) {
-                          setTxtProgressBar(pb, value = i)
+                          pbix <- pbix + 1
+                          setTxtProgressBar(pb, value = pbix)
                       }
                   }
+                  result <- vector('list', length = nrow(data))
+                  for(i in seq_along(result)) {
+                      result[[i]] <- ncToData(data=data[i, ], nc=planFiles[[plan[i]]], buffer=buffer, FUN=FUN, progress=FALSE, ...)
+                  }
                   cat('\n')
-                  result <- bind_rows(result)
-                  result <- arrange(result, .data$DLTEMPID)
-                  result[['DLTEMPID']] <- NULL
+                  if(is.data.frame(result[[1]])) {
+                      result <- bind_rows(result)
+                  } else if(is.list(result[[1]])) {
+                      result <- unlist(result, recursive = FALSE)
+                  }
                   return(result)
               }
-
+              
               # file name provided means get big all at once
               if(!grepl('\\.nc$', fileName)) {
                   fileName <- paste0(fileName, '.nc')
@@ -167,3 +193,12 @@ setMethod('matchEnvData', 'data.frame',
               }
               return(ncToData(data=data, nc=ncData, buffer=buffer, FUN=FUN, progress=progress, ...))
           })
+
+fillNA <- function(x, ix) {
+    if(length(ix) == 0) {
+        return(x)
+    }
+    lessIx <- seq_along(x) < ix[1]
+    fillNA(c(x[lessIx], NA, x[!lessIx]), ix[-1])
+}
+

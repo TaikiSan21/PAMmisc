@@ -171,14 +171,8 @@ getCoordNameMatch <- function() {
 
 # check that data is within limits of the dataset you want to pull, it will either
 # replace these wiith acceptable min/max or remove them if outside
-checkLimits <- function(data, limits, replace=FALSE, verbose=TRUE) {
-    if(inherits(limits, 'edinfo')) {
-        # if(!is.null(limits$isCurrent) &&
-        #    isTRUE(limits$isCurrent)) {
-        #     limits$limits$UTC[2] <- nowUTC()
-        # }
-        limits <- limits$limits
-    }
+checkLimits <- function(data, edi, replace=FALSE, verbose=TRUE) {
+    limits <- edi$limits
     # make both same 180 status and save original status to reconvert later
     data180 <- dataIs180(data)
     limit180 <- dataIs180(limits$Longitude)
@@ -210,10 +204,16 @@ checkLimits <- function(data, limits, replace=FALSE, verbose=TRUE) {
         if(any(!lowCheck)) {
             # dat[!lowCheck, dim] <- lim[[dim]][1]
             dat[[dim]][!lowCheck] <- lim[[dim]][1]
+            if(all(!lowCheck)) {
+                dat[[dim]][length(dat[[dim]])] <- lim[[dim]][1] + edi$spacing[[dim]]
+            }
         }
         if(any(!highCheck)) {
             # dat[!highCheck, dim] <- lim[[dim]][2]
             dat[[dim]][!highCheck] <- lim[[dim]][2]
+            if(all(!highCheck)) {
+                dat[[dim]][1] <- lim[[dim]][2] - edi$spacing[[dim]]
+            }
         }
         dat
     }
