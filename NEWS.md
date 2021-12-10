@@ -8,6 +8,8 @@ data for you
 does a separate download for every row, will check to estimate download size first 
 and break in to ~20MB chunks at once
 
+* Added `createSSP` function to create soundspeed profiles
+
 # PAMmisc 1.7.1
 
 * Minor changes to smooth out usability of `addPgGps`
