@@ -10,6 +10,7 @@
 #'   \code{NULL}, data will be saved to a temporary folder
 #' @param buffer numeric vector of the amount to buffer the Longitude, Latitude, and
 #'   UTC coordinates by
+#' @param progress logical flag to show download progress
 #'
 #' @return if download is successful, invisibly returns the filename. If it fails returns
 #'   \code{FALSE}.
@@ -39,7 +40,7 @@
 #'
 #' @export
 #'
-downloadEnv <- function(data, edinfo, fileName = NULL, buffer = c(0, 0, 0)) {
+downloadEnv <- function(data, edinfo, fileName = NULL, buffer = c(0, 0, 0), progress=TRUE) {
     if(is.character(edinfo)) {
         # do some erddap info checking shit and make a URL for it
         # list above needs base, vars, dataset, fileType, source
@@ -82,15 +83,21 @@ downloadEnv <- function(data, edinfo, fileName = NULL, buffer = c(0, 0, 0)) {
     url <- edinfoToURL(edinfo, ranges=dataBounds)
     # hm shit need some tempdir stuff, either make one in wd with a weird name, or tempdir(),
     # or steal rerddap:::rrcache$cache_path_get() lol
-
+    
     # FOR FILE NAMES LETS DO "DATASET NAME_NUMBER"
-    maxTries <- 1
+    maxTries <- 2
     nTry <- 1
     while(nTry <= maxTries) {
-        envData <- try(suppressMessages(GET(url,
-                                            # verbose(),
-                                            progress(),
-                                            write_disk(fileName, overwrite = TRUE))))
+        if(progress) {
+            envData <- try(suppressMessages(GET(url,
+                                                # verbose(),
+                                                progress(),
+                                                write_disk(fileName, overwrite = TRUE))))
+        } else {
+            envData <- try(suppressMessages(GET(url,
+                                                # verbose(),
+                                                write_disk(fileName, overwrite = TRUE))))
+        }
         if(envData$status_code != 200) {
             stop(paste0('URL ', envData$url, ' is invalid, pasting this into a browser may give more information.'))
         }

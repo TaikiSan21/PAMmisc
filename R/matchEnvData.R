@@ -163,7 +163,9 @@ setMethod('matchEnvData', 'data.frame',
                   for(i in seq_along(result)) {
                       result[[i]] <- ncToData(data=data[i, ], nc=planFiles[[plan[i]]], buffer=buffer, FUN=FUN, progress=FALSE, ...)
                   }
-                  cat('\n')
+                  if(progress) {
+                      cat('\n')
+                  }
                   if(is.data.frame(result[[1]])) {
                       result <- bind_rows(result)
                   } else if(is.list(result[[1]])) {

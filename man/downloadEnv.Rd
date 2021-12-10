@@ -4,7 +4,13 @@
 \alias{downloadEnv}
 \title{Download Environmental Data}
 \usage{
-downloadEnv(data, edinfo, fileName = NULL, buffer = c(0, 0, 0))
+downloadEnv(
+  data,
+  edinfo,
+  fileName = NULL,
+  buffer = c(0, 0, 0),
+  progress = TRUE
+)
 }
 \arguments{
 \item{data}{Data containing Longitude, Latitude, and UTC to download matching
@@ -18,6 +24,8 @@ or an ERDDAP dataset ID}
 
 \item{buffer}{numeric vector of the amount to buffer the Longitude, Latitude, and
 UTC coordinates by}
+
+\item{progress}{logical flag to show download progress}
 }
 \value{
 if download is successful, invisibly returns the filename. If it fails returns
