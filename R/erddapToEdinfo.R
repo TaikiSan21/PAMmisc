@@ -157,7 +157,7 @@ hycomToEdinfo <- function(dataset='GLBy0.08/expt_93.0',
     varNames <- xml_find_all(xml, 'gridSet/grid') %>% xml_attr('name')
     result <- list(base = baseurl,
                    dataset = dataset,
-                   fileType = 'netcdf',
+                   fileType = 'netcdf4',
                    vars = varNames[varNames %in% c('surf_el', 'salinity', 'water_temp', 'water_u', 'water_v')],
                    limits = limits,
                    spacing = spacing,
