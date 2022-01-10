@@ -173,6 +173,10 @@ getCoordNameMatch <- function() {
 # replace these wiith acceptable min/max or remove them if outside
 checkLimits <- function(data, edi, replace=FALSE, verbose=TRUE) {
     limits <- edi$limits
+    if(!is.null(edi$isCurrent) &&
+       isTRUE(edi$isCurrent)) {
+        limits$UTC[2] <- nowUTC()
+    }
     # make both same 180 status and save original status to reconvert later
     data180 <- dataIs180(data)
     limit180 <- dataIs180(limits$Longitude)
