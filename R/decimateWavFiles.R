@@ -62,6 +62,7 @@ decimateWavFiles <- function(inDir, outDir, newSr, progress=TRUE) {
     }
     for(i in seq_along(files)) {
         inWave <- try(readWave(files[i]), silent=TRUE)
+        inBit <- inWave@bit
         if(length(inWave)==1) {
             error[i] <- TRUE
             next
@@ -70,9 +71,11 @@ decimateWavFiles <- function(inDir, outDir, newSr, progress=TRUE) {
         outWave <- resamp(outWave, g=newSr, output='Wave')
         # sometimes outWave ends up bigger than inWave which can cause writing issues,
         # just rescale to inWave size if this happens
-        relScale <- max(abs(outWave@left)) / max(abs(inWave@left))
+        # relScale <- max(abs(outWave@left)) / max(abs(inWave@left))
+        relScale <- max(abs(outWave@left)) / (2^(inBit-1) - 1)
         outWave@left <- outWave@left / max(1, relScale)
         outWave@left <- round(outWave@left)
+        outWave@bit <- inBit
         writeWave(outWave, filename=paste0(outDir, '/LF_', basename(files[i])), extensible=FALSE)
         if(progress) {
             setTxtProgressBar(pb, value = i)
