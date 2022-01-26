@@ -108,11 +108,11 @@ erddapToEdinfo <- function(dataset, baseurl='https://upwell.pfeg.noaa.gov/erddap
 
 #' @export
 #' @rdname erddapToEdinfo
-#' 
+#'
 hycomToEdinfo <- function(dataset='GLBy0.08/expt_93.0',
                           baseurl = 'https://ncss.hycom.org/thredds/ncss/',
                           chooseVars=TRUE) {
-    
+
     xmlUrl <- paste0(baseurl, 'grid/', dataset, '/dataset.xml')
     xml <- read_xml(xmlUrl)
     axis <- xml_find_all(xml, 'axis')
@@ -134,17 +134,17 @@ hycomToEdinfo <- function(dataset='GLBy0.08/expt_93.0',
             axText <- axText[reorg]
         }
     }
-        
+
     names(axText) <- standardCoordNames(coordNames)
     axText <- lapply(axText, as.numeric)
     axText$UTC <- axText$UTC * 3600
     limits <- lapply(axText, range)
     limits$UTC <- as.POSIXct(limits$UTC, tz='UTC', origin="2000-01-01 00:00:00" )
-    
+
     spacing <- vector('list', length(axText))
     names(spacing) <- names(axText)
     for(i in names(spacing)) {
-        spacing[[i]] <- 
+        spacing[[i]] <-
             if(i == 'UTC') {
                 tbl <- table(diff(axText$UTC))
                 as.numeric(names(tbl)[which.max(tbl)[1]])
@@ -161,7 +161,7 @@ hycomToEdinfo <- function(dataset='GLBy0.08/expt_93.0',
                    vars = varNames[varNames %in% c('surf_el', 'salinity', 'water_temp', 'water_u', 'water_v')],
                    limits = limits,
                    spacing = spacing,
-                   stride = 1, 
+                   stride = 1,
                    source='hycom'
     )
     result$is180 <- dataIs180(result$limits$Longitude)
@@ -172,8 +172,21 @@ hycomToEdinfo <- function(dataset='GLBy0.08/expt_93.0',
     result
 }
 
+# only for 1 x
 whichHycom <- function(x, hycom) {
+    if(is.data.frame(x)) {
+        return(sapply(x$UTC, function(u) {
+            whichHycom(u, hycom)
+        }))
+    }
+    if(inherits(hycom, 'hycomList')) {
+        hycom <- hycom$list
+    }
     possHy <- which(sapply(hycom, function(h) {
+        if(!is.null(h$isCurrent) &&
+           isTRUE(h$isCurrent)) {
+            h$limits$UTC[2] <- nowUTC()
+        }
         (x >= h$limits$UTC[1]) &&
             (x <= h$limits$UTC[2])
     }))

@@ -307,7 +307,11 @@ estDownloadSize <- function(x, edi, verbose=FALSE) {
     spacing <- edi$spacing
     nLats <- floor(diff(range(x$Latitude)) / spacing$Latitude) + 3
     nLongs <- floor(diff(range(x$Longitude)) / spacing$Longitude) + 3
-    nTimes <- floor(as.numeric(difftime(max(x$UTC), min(x$UTC), units='secs')) / spacing$UTC) + 3
+    if(is.null(spacing$UTC) || is.na(spacing$UTC)) {
+        nTimes <- 1
+    } else {
+        nTimes <- floor(as.numeric(difftime(max(x$UTC), min(x$UTC), units='secs')) / spacing$UTC) + 3
+    }
     if(is.null(spacing$Depth) || is.na(spacing$Depth)) {
         nDepths <- 1
     } else {

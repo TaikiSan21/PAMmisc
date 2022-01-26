@@ -1,7 +1,14 @@
+# PAMmisc 1.8.2
+
+* Added `readSpecAnno` function to read Spectrogram_Annotation tables
+from PAMGuard databases
+
 # PAMmisc 1.8.1
 
 * Updated `decimateWavFiles` to work with wav files with bit rates different
 than 16 (bugs in `seewave` functions do not pass along bit rate properly)
+
+* Bug fix in `matchEnvData` for datasets that had no `UTC` axis
 
 # PAMmisc 1.8.0
 
