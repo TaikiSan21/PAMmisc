@@ -30,10 +30,10 @@
 #' data <- data.frame(Latitude = 32, Longitude = -117,
 #'                    UTC = as.POSIXct('2005-01-01 00:00:00', tz='UTC'))
 #' nc <- system.file('extdata', 'sst.nc', package='PAMmisc')
-#' # calculate mean median and stdev
+#' # default calculates mean
 #' ncToData(data, nc = nc)
-#' # calculate only median
-#' ncToData(data, nc=nc, FUN=median, buffer = c(.01, .01, 86400))
+#' # calculate mean, median, and sd
+#' ncToData(data, nc=nc, FUN=c(mean, median, sd), buffer = c(.01, .01, 86400))
 #' # custom function
 #' meanPlusOne <- function(x) {
 #'     mean(x, na.rm=TRUE) + 1
@@ -46,7 +46,7 @@
 #'
 #' @export
 #'
-ncToData <- function(data, nc, buffer = c(0,0,0), FUN = c(mean, median, sd),
+ncToData <- function(data, nc, buffer = c(0,0,0), FUN = c(mean),
                      raw = FALSE, keepMatch=TRUE, progress=TRUE, verbose=TRUE) {
     nc <- nc_open(nc)
     on.exit(nc_close(nc))
@@ -80,7 +80,7 @@ ncToData <- function(data, nc, buffer = c(0,0,0), FUN = c(mean, median, sd),
     if(!all(reqDims %in% names(data))) {
         stop('data must have columns ', paste0(reqDims, collapse=', '))
     }
-    
+
     if(progress) {
         cat('Matching data...\n')
         pb <- txtProgressBar(min=0, max=nrow(data), style=3)

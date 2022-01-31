@@ -40,7 +40,7 @@ test_that('Matching .nc data to a dataframe', {
     nc <- system.file('extdata', 'sst.nc', package='PAMmisc')
     matched <- ncToData(gps, nc, progress = FALSE)
     expect_identical(gps, matched[, 1:ncol(gps)])
-    expect_true(all(paste0('analysed_sst_', c('mean', 'median', 'sd')) %in% colnames(matched)))
+    expect_true(all(paste0('analysed_sst_', c('mean')) %in% colnames(matched)))
     expect_identical(matched, matchEnvData(gps, nc, progress=FALSE))
     # all within buffer
     raw <- ncToData(gps, nc, raw=TRUE, buffer=c(.01, .01, 86400), progress = FALSE)

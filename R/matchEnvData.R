@@ -54,7 +54,7 @@
 #' @export
 #'
 setGeneric('matchEnvData',
-           function(data, nc=NULL, var=NULL, buffer=c(0,0,0), FUN = c(mean, median, sd),
+           function(data, nc=NULL, var=NULL, buffer=c(0,0,0), FUN = c(mean),
                     fileName = NULL, progress=TRUE, ...) standardGeneric('matchEnvData')
 )
 
@@ -65,7 +65,7 @@ setGeneric('matchEnvData',
 #' @export
 #'
 setMethod('matchEnvData', 'data.frame',
-          function(data, nc=NULL, var=NULL, buffer=c(0,0,0), FUN = c(mean, median, sd),
+          function(data, nc=NULL, var=NULL, buffer=c(0,0,0), FUN = c(mean),
                    fileName = NULL, progress=TRUE, ...) {
               # First just get an edinfo
               if(is.null(nc)) {
@@ -92,7 +92,7 @@ setMethod('matchEnvData', 'data.frame',
                  file.exists(nc)) {
                   return(ncToData(data=data, nc=nc, buffer=buffer, FUN=FUN, progress=progress, ...))
               }
-              
+
               if(!inherits(nc, 'edinfo')) {
                   stop(paste0(nc, ' must be a valid nc file or erddap dataset id.'))
               }
@@ -114,7 +114,7 @@ setMethod('matchEnvData', 'data.frame',
                   hys <- unique(whichHy)
                   result <- vector('list', length=length(hys))
                   fixer <- numeric(0)
-                  
+
                   for(i in seq_along(result)) {
                       if(hys[i] == -1) next
                       thisHy <- nc$list[[hys[i]]]
@@ -136,7 +136,7 @@ setMethod('matchEnvData', 'data.frame',
               # no filename provided means dont download all, do smaller
               if(is.null(fileName)) {
                   plan <- as.character(planDownload(data, nc, thresh=20))
-                  
+
                   if(progress) {
                       cat('Downloading data...\n')
                       pb <- txtProgressBar(min=0, max = length(unique(plan)), style=3)
@@ -173,7 +173,7 @@ setMethod('matchEnvData', 'data.frame',
                   }
                   return(result)
               }
-              
+
               # file name provided means get big all at once
               if(!grepl('\\.nc$', fileName)) {
                   fileName <- paste0(fileName, '.nc')
