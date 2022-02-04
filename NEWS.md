@@ -8,6 +8,10 @@ than 16 (bugs in `seewave` functions do not pass along bit rate properly)
 * Changed defaults in `matchEnvData` and `ncToData` to only calculate `mean`, not
 `median` and `sd`
 
+* `matchEnvData` and `ncToData` have a `depth` parameter you can use to specify
+matching depth values to use. This makes it possibly to specify a range of depths
+to summarise over for a single coordinate (previously only single depth or all)
+
 # PAMmisc 1.8.0
 
 * Reworking of enviro functions to make HYCOM datasets easier to use. Will now

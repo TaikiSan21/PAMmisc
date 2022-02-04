@@ -92,12 +92,12 @@ downloadEnv <- function(data, edinfo, fileName = NULL, buffer = c(0, 0, 0), prog
             envData <- try(suppressMessages(GET(url,
                                                 # verbose(),
                                                 progress(),
-                                                timeout(600),
+                                                timeout(1200),
                                                 write_disk(fileName, overwrite = TRUE))))
         } else {
             envData <- try(suppressMessages(GET(url,
                                                 # verbose(),
-                                                timeout(600),
+                                                timeout(1200),
                                                 write_disk(fileName, overwrite = TRUE))))
         }
         if(envData$status_code != 200) {

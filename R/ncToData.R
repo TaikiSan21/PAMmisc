@@ -18,6 +18,10 @@
 #' @param keepMatch logical flag to keep the matched coordinates, these are useful to make sure
 #'   the closest point is actually close to your XYZT
 #' @param progress logical flag to show progress bar for matching data
+#' @param depth depth values (meters) to use for matching, overrides any \code{Depth} column
+#'   in the data or can be used to specify desired depth range when not present in data.
+#'   Variables will be summarised over the range of these depth values. \code{NULL}
+#'   uses all available depth values
 #' @param verbose logical flag to show warning messages for possible coordinate mismatch
 #'
 #' @return original dataframe with three attached columns for each variable in the netcdf
@@ -47,7 +51,7 @@
 #' @export
 #'
 ncToData <- function(data, nc, buffer = c(0,0,0), FUN = c(mean),
-                     raw = FALSE, keepMatch=TRUE, progress=TRUE, verbose=TRUE) {
+                     raw = FALSE, keepMatch=TRUE, progress=TRUE, depth=0, verbose=TRUE) {
     nc <- nc_open(nc)
     on.exit(nc_close(nc))
     nc <- romsCheck(nc)
@@ -89,7 +93,8 @@ ncToData <- function(data, nc, buffer = c(0,0,0), FUN = c(mean),
         names(nc$var[[v]]$dim) <- names(nc$dim)[nc$var[[v]]$dimids + 1]
     }
     for(i in 1:nrow(data)) {
-        varData <- getVarData(data[i,], nc=nc, var=varNames, buffer = buffer, verbose=verbose)
+        varData <- getVarData(data[i,], nc=nc, var=varNames, buffer = buffer,
+                              depth=depth, verbose=verbose)
         for(v in varNames) {
             allVar[[v]][[i]] <- varData[[v]]
         }
@@ -145,7 +150,7 @@ ncToData <- function(data, nc, buffer = c(0,0,0), FUN = c(mean),
     data
 }
 
-getVarData <- function(data, nc, var, buffer, verbose=TRUE) {
+getVarData <- function(data, nc, var, buffer, depth=NULL, verbose=TRUE) {
     xIx <- dimToIx(data$Longitude, nc$dim$Longitude, buffer[1], verbose)
     yIx <- dimToIx(data$Latitude, nc$dim$Latitude, buffer[2], verbose)
     hasT <- 'UTC' %in% names(nc$dim)
@@ -157,13 +162,18 @@ getVarData <- function(data, nc, var, buffer, verbose=TRUE) {
     }
     hasZ <- 'Depth' %in% names(nc$dim)
     if(hasZ) {
-        if('Depth' %in% colnames(data)) {
-            # no buffer for depth
-            zIx <- dimToIx(data$Depth, nc$dim$Depth, 0, verbose=FALSE)
-            zVals <- nc$dim$Depth$vals[zIx$ix]
+        if(is.null(depth)) {
+            if('Depth' %in% colnames(data)) {
+                # no buffer for depth
+                zIx <- dimToIx(data$Depth, nc$dim$Depth, 0, verbose=FALSE)
+                zVals <- nc$dim$Depth$vals[zIx$ix]
+            } else {
+                zIx <- list(start=1, count=-1)
+                zVals <- nc$dim$Depth$vals
+            }
         } else {
-            zIx <- list(start=1, count=-1)
-            zVals <- nc$dim$Depth$vals
+            zIx <- dimToIx(depth, nc$dim$Depth, 0, verbose=FALSE)
+            zVals <- nc$dim$Depth$vals[zIx$ix]
         }
     }
     result <- vector('list', length = length(var) + 3)

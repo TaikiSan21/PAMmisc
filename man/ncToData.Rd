@@ -12,6 +12,7 @@ ncToData(
   raw = FALSE,
   keepMatch = TRUE,
   progress = TRUE,
+  depth = 0,
   verbose = TRUE
 )
 }
@@ -37,6 +38,11 @@ all values within the given buffer and all values for any Z coordinates present.
 the closest point is actually close to your XYZT}
 
 \item{progress}{logical flag to show progress bar for matching data}
+
+\item{depth}{depth values (meters) to use for matching, overrides any \code{Depth} column
+in the data or can be used to specify desired depth range when not present in data.
+Variables will be summarised over the range of these depth values. \code{NULL}
+uses all available depth values}
 
 \item{verbose}{logical flag to show warning messages for possible coordinate mismatch}
 }
