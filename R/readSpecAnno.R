@@ -4,7 +4,7 @@
 #'   and applies some minor formatting
 #'
 #' @param db database file to read data from
-#'
+#' @param table name of the Spectrogram Annotation table to read
 #' @return a dataframe containing spectrogram annotation data
 #'
 #' @author Taiki Sakai \email{taiki.sakai@@noaa.gov}
@@ -18,14 +18,14 @@
 #'
 #' @export
 #'
-readSpecAnno <- function(db) {
+readSpecAnno <- function(db, table='Spectrogram_Annotation') {
     con <- dbConnect(db, drv=SQLite())
     on.exit(dbDisconnect(con))
-    if(!'Spectrogram_Annotation' %in% dbListTables(con)) {
-        warning('No Spectrogram_Annotation table found in db ', db)
+    if(!table %in% dbListTables(con)) {
+        warning('No table named ',table, ' found in database ', db)
         return(NULL)
     }
-    sa <- dbReadTable(con, 'Spectrogram_Annotation')
+    sa <- dbReadTable(con, table)
     sa$UTC <- as.POSIXct(as.character(sa$UTC), format='%Y-%m-%d %H:%M:%OS', tz='UTC')
     sa$id <- as.character(sa$Id)
     sa$start <- sa$UTC
@@ -43,6 +43,7 @@ readSpecAnno <- function(db) {
         sa[[c]] <- str_trim(sa[[c]])
     }
     sa$db <- db
+    sa$tableName <- table
     # doing some reorderin since we renamed and made new stuff
     baseCols <- c('id', 'start', 'end', 'fmin', 'fmax', 'Note', 'Label', 'Duration', 'snr', 'RMS', 'ZeroPeak', 'PeakPeak', 'SEL')
     extraCols <- colnames(sa)[!colnames(sa) %in% baseCols]

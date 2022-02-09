@@ -4,10 +4,12 @@
 \alias{readSpecAnno}
 \title{Read Pamguard Spectrogram Annotation Table}
 \usage{
-readSpecAnno(db)
+readSpecAnno(db, table = "Spectrogram_Annotation")
 }
 \arguments{
 \item{db}{database file to read data from}
+
+\item{table}{name of the Spectrogram Annotation table to read}
 }
 \value{
 a dataframe containing spectrogram annotation data

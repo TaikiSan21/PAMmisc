@@ -1,3 +1,7 @@
+# PAMmisc 1.8.3
+
+* `readSpecAnno` adjusted to allow for different table names
+
 # PAMmisc 1.8.2
 
 * Added `readSpecAnno` function to read Spectrogram_Annotation tables
