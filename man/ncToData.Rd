@@ -8,10 +8,11 @@ ncToData(
   data,
   nc,
   buffer = c(0, 0, 0),
-  FUN = c(mean, median, sd),
+  FUN = c(mean),
   raw = FALSE,
   keepMatch = TRUE,
   progress = TRUE,
+  depth = 0,
   verbose = TRUE
 )
 }
@@ -38,6 +39,11 @@ the closest point is actually close to your XYZT}
 
 \item{progress}{logical flag to show progress bar for matching data}
 
+\item{depth}{depth values (meters) to use for matching, overrides any \code{Depth} column
+in the data or can be used to specify desired depth range when not present in data.
+Variables will be summarised over the range of these depth values. \code{NULL}
+uses all available depth values}
+
 \item{verbose}{logical flag to show warning messages for possible coordinate mismatch}
 }
 \value{
@@ -53,10 +59,10 @@ Extracts all variables from a netcdf file matching Longitude,
 data <- data.frame(Latitude = 32, Longitude = -117,
                    UTC = as.POSIXct('2005-01-01 00:00:00', tz='UTC'))
 nc <- system.file('extdata', 'sst.nc', package='PAMmisc')
-# calculate mean median and stdev
+# default calculates mean
 ncToData(data, nc = nc)
-# calculate only median
-ncToData(data, nc=nc, FUN=median, buffer = c(.01, .01, 86400))
+# calculate mean, median, and sd
+ncToData(data, nc=nc, FUN=c(mean, median, sd), buffer = c(.01, .01, 86400))
 # custom function
 meanPlusOne <- function(x) {
     mean(x, na.rm=TRUE) + 1

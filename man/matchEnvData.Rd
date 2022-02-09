@@ -10,9 +10,10 @@ matchEnvData(
   nc = NULL,
   var = NULL,
   buffer = c(0, 0, 0),
-  FUN = c(mean, median, sd),
+  FUN = c(mean),
   fileName = NULL,
   progress = TRUE,
+  depth = 0,
   ...
 )
 
@@ -21,9 +22,10 @@ matchEnvData(
   nc = NULL,
   var = NULL,
   buffer = c(0, 0, 0),
-  FUN = c(mean, median, sd),
+  FUN = c(mean),
   fileName = NULL,
   progress = TRUE,
+  depth = 0,
   ...
 )
 }
@@ -50,6 +52,11 @@ will attempt to download a single nc file covering the entire range of your data
 If your data spans a large amount of time and space this can be problematic.}
 
 \item{progress}{logical flag to show progress bar}
+
+\item{depth}{depth values (meters) to use for matching, overrides any \code{Depth} column
+in the data or can be used to specify desired depth range when not present in data.
+Variables will be summarised over the range of these depth values. \code{NULL}
+uses all available depth values}
 
 \item{\dots}{other parameters to pass to \link{ncToData}}
 }

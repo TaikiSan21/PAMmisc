@@ -83,7 +83,7 @@ downloadEnv <- function(data, edinfo, fileName = NULL, buffer = c(0, 0, 0), prog
     url <- edinfoToURL(edinfo, ranges=dataBounds)
     # hm shit need some tempdir stuff, either make one in wd with a weird name, or tempdir(),
     # or steal rerddap:::rrcache$cache_path_get() lol
-    
+
     # FOR FILE NAMES LETS DO "DATASET NAME_NUMBER"
     maxTries <- 2
     nTry <- 1
@@ -92,10 +92,12 @@ downloadEnv <- function(data, edinfo, fileName = NULL, buffer = c(0, 0, 0), prog
             envData <- try(suppressMessages(GET(url,
                                                 # verbose(),
                                                 progress(),
+                                                timeout(1200),
                                                 write_disk(fileName, overwrite = TRUE))))
         } else {
             envData <- try(suppressMessages(GET(url,
                                                 # verbose(),
+                                                timeout(1200),
                                                 write_disk(fileName, overwrite = TRUE))))
         }
         if(envData$status_code != 200) {

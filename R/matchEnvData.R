@@ -19,6 +19,10 @@
 #'   will attempt to download a single nc file covering the entire range of your data.
 #'   If your data spans a large amount of time and space this can be problematic.
 #' @param progress logical flag to show progress bar
+#' @param depth depth values (meters) to use for matching, overrides any \code{Depth} column
+#'   in the data or can be used to specify desired depth range when not present in data.
+#'   Variables will be summarised over the range of these depth values. \code{NULL}
+#'   uses all available depth values
 #' @param \dots other parameters to pass to \link{ncToData}
 #'
 #' @return original dataframe with three attached columns for each variable in the netcdf
@@ -54,8 +58,8 @@
 #' @export
 #'
 setGeneric('matchEnvData',
-           function(data, nc=NULL, var=NULL, buffer=c(0,0,0), FUN = c(mean, median, sd),
-                    fileName = NULL, progress=TRUE, ...) standardGeneric('matchEnvData')
+           function(data, nc=NULL, var=NULL, buffer=c(0,0,0), FUN = c(mean),
+                    fileName = NULL, progress=TRUE, depth=0, ...) standardGeneric('matchEnvData')
 )
 
 #' @rdname matchEnvData
@@ -65,8 +69,8 @@ setGeneric('matchEnvData',
 #' @export
 #'
 setMethod('matchEnvData', 'data.frame',
-          function(data, nc=NULL, var=NULL, buffer=c(0,0,0), FUN = c(mean, median, sd),
-                   fileName = NULL, progress=TRUE, ...) {
+          function(data, nc=NULL, var=NULL, buffer=c(0,0,0), FUN = c(mean),
+                   fileName = NULL, progress=TRUE, depth=0, ...) {
               # First just get an edinfo
               if(is.null(nc)) {
                   nc <- browseEdinfo(var=var)
@@ -90,9 +94,9 @@ setMethod('matchEnvData', 'data.frame',
               # if pointing to an ncfile, just do that
               if(is.character(nc) &&
                  file.exists(nc)) {
-                  return(ncToData(data=data, nc=nc, buffer=buffer, FUN=FUN, progress=progress, ...))
+                  return(ncToData(data=data, nc=nc, buffer=buffer, FUN=FUN, progress=progress, depth=depth, ...))
               }
-              
+
               if(!inherits(nc, 'edinfo')) {
                   stop(paste0(nc, ' must be a valid nc file or erddap dataset id.'))
               }
@@ -114,12 +118,12 @@ setMethod('matchEnvData', 'data.frame',
                   hys <- unique(whichHy)
                   result <- vector('list', length=length(hys))
                   fixer <- numeric(0)
-                  
+
                   for(i in seq_along(result)) {
                       if(hys[i] == -1) next
                       thisHy <- nc$list[[hys[i]]]
                       thisHy$varSelect <- nc$varSelect
-                      result[[i]] <- matchEnvData(data[whichHy == hys[i], ], nc=thisHy, var, buffer, FUN, fileName, progress, ...)
+                      result[[i]] <- matchEnvData(data[whichHy == hys[i], ], nc=thisHy, var, buffer, FUN, fileName, progress, depth, ...)
                       fixer <- c(fixer, which(whichHy == hys[i]))
                   }
                   fixer <- sort(fixer, index.return=TRUE)$ix
@@ -136,7 +140,7 @@ setMethod('matchEnvData', 'data.frame',
               # no filename provided means dont download all, do smaller
               if(is.null(fileName)) {
                   plan <- as.character(planDownload(data, nc, thresh=20))
-                  
+
                   if(progress) {
                       cat('Downloading data...\n')
                       pb <- txtProgressBar(min=0, max = length(unique(plan)), style=3)
@@ -161,7 +165,7 @@ setMethod('matchEnvData', 'data.frame',
                   }
                   result <- vector('list', length = nrow(data))
                   for(i in seq_along(result)) {
-                      result[[i]] <- ncToData(data=data[i, ], nc=planFiles[[plan[i]]], buffer=buffer, FUN=FUN, progress=FALSE, ...)
+                      result[[i]] <- ncToData(data=data[i, ], nc=planFiles[[plan[i]]], buffer=buffer, FUN=FUN, progress=FALSE, depth=depth, ...)
                   }
                   if(progress) {
                       cat('\n')
@@ -173,7 +177,7 @@ setMethod('matchEnvData', 'data.frame',
                   }
                   return(result)
               }
-              
+
               # file name provided means get big all at once
               if(!grepl('\\.nc$', fileName)) {
                   fileName <- paste0(fileName, '.nc')
@@ -189,11 +193,11 @@ setMethod('matchEnvData', 'data.frame',
                   colnames(data) <- oldNames
                   dataLeft <- data[left, ]
                   dataRight <- data[!left, ]
-                  return(bind_rows(ncToData(data=dataLeft, nc=ncData[1], buffer=buffer, FUN=FUN, progress=progress, ...),
-                                   ncToData(data=dataRight, nc=ncData[2], buffer=buffer, FUN=FUN, progress=progress, ...))
+                  return(bind_rows(ncToData(data=dataLeft, nc=ncData[1], buffer=buffer, FUN=FUN, progress=progress, depth=depth, ...),
+                                   ncToData(data=dataRight, nc=ncData[2], buffer=buffer, FUN=FUN, progress=progress, depth=depth, ...))
                   )
               }
-              return(ncToData(data=data, nc=ncData, buffer=buffer, FUN=FUN, progress=progress, ...))
+              return(ncToData(data=data, nc=ncData, buffer=buffer, FUN=FUN, progress=progress, depth=depth, ...))
           })
 
 fillNA <- function(x, ix) {
