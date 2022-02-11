@@ -100,7 +100,8 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
         clickAppend$LongDataName <- switch(
             binData$fileInfo$fileHeader$moduleType,
             'Click Detector' = paste0(binData$fileInfo$fileHeader$moduleName, ', ', binData$fileInfo$fileHeader$streamName),
-            'WhistlesMoans' = paste0(binData$fileInfo$fileHeader$moduleName, c(', ', ' Contours'), collapse = '')
+            'WhistlesMoans' = paste0(binData$fileInfo$fileHeader$moduleName, c(', ', ' Contours'), collapse = ''),
+            'GPL Detector' = paste0(binData$fileInfo$fileHeader$moduleName, c(', ', ' Detections'), collapse = '')
         )
         clickAppend$TEMPTIME <- binDf$date
         allAppend[[bin]] <- clickAppend

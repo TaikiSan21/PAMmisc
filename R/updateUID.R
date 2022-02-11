@@ -194,19 +194,47 @@ getEventTables <- function(db) {
     result$detections <- c(result$detections,
                            grep('OfflineClicks', tables, value=TRUE))
     #DGL
-    modules <- dbReadTable(con, 'PamguardModules')
-    dgTables <- modules %>%
-        mutate(Module_Name=str_trim(.data$Module_Name),
-               Module_Type=str_trim(.data$Module_Type)) %>%
-        filter(.data$Module_Name == 'Detection Group Localiser') %>%
-        distinct(.data$Module_Type, .data$Module_Name)
-    if(nrow(dgTables) > 0) {
-        dgNames <- gsub(' ',  '_', dgTables$Module_Type)
-        detTables <- sapply(dgNames, function(x) grep(x, tables, value=TRUE))
-        result$events <- c(result$events, detTables[!grepl('Children', detTables)])
-        result$detections <- c(result$detections, detTables[grepl('Children', detTables)])
+    # modules <- dbReadTable(con, 'PamguardModules')
+    # dgTables <- modules %>%
+    #     mutate(Module_Name=str_trim(.data$Module_Name),
+    #            Module_Type=str_trim(.data$Module_Type)) %>%
+    #     filter(.data$Module_Name == 'Detection Group Localiser') %>%
+    #     distinct(.data$Module_Type, .data$Module_Name)
+    dgNames <- findModuleNames(con, 'Detection Group Localiser')
+    if(length(dgNames) > 0) {
+        # detTables <- sapply(dgNames, function(x) grep(x, tables, value=TRUE))
+        result$events <- c(result$events, dgNames)
+        result$detections <- c(result$detections, paste0(dgNames, '_Children'))
     }
     result
+}
+
+findModuleNames <- function(con, module='Detection Group Localiser') {
+    tbls <- c('Pamguard_Settings', 'Pamguard_Settings_Last', 'Pamguard_Settings_Viewer', 'PamguardModules')
+    typeCols <- c('unitType','unitType', 'unitType', 'Module_Name')
+    nameCols <- c('unitName','unitName', 'unitName', 'Module_Type')
+    result <- vector('list', length=length(tbls))
+    for(i in seq_along(result)) {
+        if(!tbls[i] %in% dbListTables(con)) next
+        mods <- dbReadTable(con, tbls[i])
+        if(nrow(mods) == 0) next
+        dgTables <- mods[c(typeCols[i], nameCols[i])]
+        names(dgTables) <- c('type', 'name')
+        dgTables$type <- str_trim(dgTables$type)
+        dgTables$name <- str_trim(dgTables$name)
+        dgTables <- dgTables[dgTables$type == module, ]
+        if(nrow(dgTables) == 0) next
+        dgTables <- distinct(dgTables)
+        result[[i]] <- dgTables
+    }
+    result <- bind_rows(result)
+    if(is.null(result) ||
+       nrow(result) == 0) {
+        return(NULL)
+    }
+    result <- distinct(result)
+    result$name <- gsub(' ', '_', dgTables$name)
+    result$name[result$name %in% dbListTables(con)]
 }
 
 # db is db path, table is table name, uids is df Id, UID (new)
