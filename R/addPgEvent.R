@@ -73,6 +73,7 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
     UIDs <- sort(UIDs)
     UIDsToAdd <- UIDs
     allAppend <- vector('list', length = length(binary))
+    addTime <- as.character(nowUTC())
     names(allAppend) <- binary
     for(bin in binary) {
         if(length(UIDsToAdd) == 0) break
@@ -89,6 +90,8 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
         clickAppend$ClickNo <- binDf$UID - floor(binDf$UID / 1e5) * 1e5 - 1 # java index start at 0
         clickAppend$UTC <- binDf$dbDate
         clickAppend$UTCMilliseconds <- binDf$millis
+        clickAppend$PCLocalTime <- clickAppend$UTC
+        clickAppend$PCTime <- addTime
         clickAppend$UID <- binDf$UID
         clickAppend$parentID <- evId
         clickAppend$parentUID <- evUID
@@ -116,6 +119,8 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
     eventAppend$Id <- evId
     eventAppend$UID <- evUID
     eventAppend$UTC <- allAppend$UTC[which.min(allAppend$TEMPTIME)]
+    eventAppend$PCLocalTime <- eventAppend$UTC
+    eventAppend$PCTime <- addTime
     eventAppend$EventEnd <- allAppend$UTC[which.max(allAppend$TEMPTIME)]
     eventAppend$UTCMilliseconds <- allAppend$UTCMilliseconds[which.min(allAppend$TEMPTIME)]
     allAppend['TEMPTIME'] <- NULL
