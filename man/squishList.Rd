@@ -4,10 +4,12 @@
 \alias{squishList}
 \title{Compress a List by Name}
 \usage{
-squishList(myList)
+squishList(myList, unique = FALSE)
 }
 \arguments{
 \item{myList}{a list with named elements to be compressed}
+
+\item{unique}{logical flag to try and reduce result to only unique values}
 }
 \value{
 a list with one element for every unique name in the original list
@@ -20,7 +22,7 @@ Attempts to compress a list by combining elements with
 \details{
 items with the same name are assumed to have the same structure
   and will be combined. Dataframes will be combined with bind_rows, vectors
-  just be collapsed into one vector, matrices will be combined with rbind, 
+  just be collapsed into one vector, matrices will be combined with rbind,
   lists will be combined recursively with another call to \code{squishList}
 }
 \examples{

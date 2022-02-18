@@ -2,6 +2,8 @@
 
 * `readSpecAnno` adjusted to allow for different table names
 
+* Added option `unique` to `squishList` to try and simplify results to only unique values
+
 # PAMmisc 1.8.2
 
 * Added `readSpecAnno` function to read Spectrogram_Annotation tables
