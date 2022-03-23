@@ -4,7 +4,15 @@
 \alias{addPgEvent}
 \title{Add Pamguard Event to Database}
 \usage{
-addPgEvent(db, UIDs, binary, eventType, comment = NA, tableName = NULL)
+addPgEvent(
+  db,
+  UIDs,
+  binary,
+  eventType,
+  comment = NA,
+  tableName = NULL,
+  type = c("click", "dg")
+)
 }
 \arguments{
 \item{db}{database file to add an event to}
@@ -22,6 +30,10 @@ present in the database, it will be added to the "Lookup" table}
 event table you want to add to. This only needs to be specified if you have
 more than one click detector, it defaults to the first "NAME_OfflineEvents"
 table in the database.}
+
+\item{type}{type of event data to add, either \code{'click'} to add event data using
+the Click Detector module, or \code{'dg'} to add event data using the Detection
+Grouper module}
 }
 \value{
 Adds to the database \code{db}, invisibly returns \code{TRUE} if successful

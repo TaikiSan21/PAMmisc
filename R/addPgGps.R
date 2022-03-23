@@ -36,7 +36,7 @@
 #'
 #' @export
 #'
-addPgGps <- function(db, gps, source = c('SPOTcsv', 'SPOTgpx', 'csv'), 
+addPgGps <- function(db, gps, source = c('SPOTcsv', 'SPOTgpx', 'csv'),
                      format = c('%m/%d/%Y %H:%M:%S', '%m-%d-%Y %H:%M:%S',
                                 '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M:%S'),
                      tz='UTC') {
@@ -72,8 +72,9 @@ addPgGps <- function(db, gps, source = c('SPOTcsv', 'SPOTgpx', 'csv'),
             MagneticVariation DOUBLE,
             GPSError INTEGER,
             DataStatus CHARACTER(3),
-            PRIMARY KEY (Id))")
-        on.exit(dbClearResult(tbl), add=TRUE, after=FALSE)
+            PRIMARY KEY (Id))"
+        )
+        dbClearResult(tbl)
     }
     dbGps <- dbReadTable(con, 'gpsData')
     if(nrow(dbGps) > 0) {
@@ -224,9 +225,13 @@ parseToUTC <- function(x, format, tz) {
             stop('Timezone not recognized, see function OlsonNames() for accepted options', call.=FALSE)
         }
     })
-    origTz <- parse_date_time(x, orders=format, tz=tz, exact=TRUE, truncated=2)
-    if(!inherits(origTz, 'POSIXct')) {
-        stop('Unable to convert to POSIXct time.', call.=FALSE)
+    if(!inherits(x, 'POSIXct')) {
+        origTz <- parse_date_time(x, orders=format, tz=tz, exact=TRUE, truncated=2)
+        if(!inherits(origTz, 'POSIXct')) {
+            stop('Unable to convert to POSIXct time.', call.=FALSE)
+        }
+    } else {
+        origTz <- x
     }
     with_tz(origTz, tzone='UTC')
 }

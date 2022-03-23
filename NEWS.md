@@ -1,3 +1,10 @@
+# PAMmisc 1.9.0
+
+* Added `addPgAnno` function to add spectrogram annotations to Pamguard databases
+
+* `addPgEvent` now has a type argument to specify adding Click Detector events vs
+Detection Grouper events
+
 # PAMmisc 1.8.3
 
 * `readSpecAnno` adjusted to allow for different table names

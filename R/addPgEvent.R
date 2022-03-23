@@ -14,6 +14,9 @@
 #'   event table you want to add to. This only needs to be specified if you have
 #'   more than one click detector, it defaults to the first "NAME_OfflineEvents"
 #'   table in the database.
+#' @param type type of event data to add, either \code{'click'} to add event data using
+#'   the Click Detector module, or \code{'dg'} to add event data using the Detection
+#'   Grouper module
 #'
 #' @return Adds to the database \code{db}, invisibly returns \code{TRUE} if successful
 #'
@@ -33,19 +36,37 @@
 #'
 #' @export
 #'
-addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NULL) {
+addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NULL, type=c('click', 'dg')) {
     if(!file.exists(db)) {
         stop('Could not find database file', db, call. = FALSE)
     }
+    type <- match.arg(type)
     con <- dbConnect(db, drv = SQLite())
     on.exit(dbDisconnect(con))
     tableList <- dbListTables(con)
-    if(is.null(tableName)) {
-        getName <- grep('OfflineClicks', tableList, value=TRUE)[1]
-        tableName <- gsub('_OfflineClicks', '', getName)
-    }
-    clickTableName <- paste0(tableName, '_OfflineClicks')
-    eventTableName <- paste0(tableName, '_OfflineEvents')
+    switch(type,
+           'click' = {
+               getName <- grep('OfflineClicks', tableList, value=TRUE)[1]
+               tableName <- gsub('_OfflineClicks', '', getName)
+               clickTableName <- paste0(tableName, '_OfflineClicks')
+               eventTableName <- paste0(tableName, '_OfflineEvents')
+               commentCol <- 'comment'
+               lookupTopic <- 'OfflineRCEvents'
+               endTimeCol <- 'EventEnd'
+               nCol <- 'nClicks'
+           },
+           'dg' = {
+               getName <- grep('_Children', tableList, value=TRUE)[1]
+               tableName <- gsub('_Children', '', getName)
+               clickTableName <- paste0(tableName, '_Children')
+               eventTableName <- tableName
+               commentCol <- 'Text_Annotation'
+               lookupTopic <- 'DGEventType'
+               endTimeCol <- 'EndTime'
+               nCol <- 'DataCount'
+           }
+    )
+
     if(!(clickTableName %in% tableList) ||
        !(eventTableName %in% tableList)) {
         stop('Could not find Click tables in database, check tableName or create',
@@ -60,7 +81,6 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
         evUID <- 1
         evColor <- 0
     } else {
-
         evId <- max(eventData$Id, na.rm=TRUE) + 1
         evUID <- max(eventData$UID, na.rm=TRUE) + 1
         evColor <- (eventData$colour[nrow(eventData)] + 1) %% 13
@@ -87,7 +107,6 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
                                binDf$millis)
         clickAppend <- clickData[FALSE, ]
         clickAppend[1:nrow(binDf), ] <- NA
-        clickAppend$ClickNo <- binDf$UID - floor(binDf$UID / 1e5) * 1e5 - 1 # java index start at 0
         clickAppend$UTC <- binDf$dbDate
         clickAppend$UTCMilliseconds <- binDf$millis
         clickAppend$PCLocalTime <- clickAppend$UTC
@@ -95,7 +114,10 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
         clickAppend$UID <- binDf$UID
         clickAppend$parentID <- evId
         clickAppend$parentUID <- evUID
-        clickAppend$EventId <- evId
+        if(type == 'click') {
+            clickAppend$EventId <- evId
+            clickAppend$ClickNo <- binDf$UID - floor(binDf$UID / 1e5) * 1e5 - 1 # java index start at 0
+        }
         clickAppend$BinaryFile <- basename(bin)
         for(c in chanCols) {
             clickAppend[[c]] <- binDf$channelMap
@@ -121,10 +143,16 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
     eventAppend$UTC <- allAppend$UTC[which.min(allAppend$TEMPTIME)]
     eventAppend$PCLocalTime <- eventAppend$UTC
     eventAppend$PCTime <- addTime
-    eventAppend$EventEnd <- allAppend$UTC[which.max(allAppend$TEMPTIME)]
+    eventAppend[[endTimeCol]] <- allAppend$UTC[which.max(allAppend$TEMPTIME)]
     eventAppend$UTCMilliseconds <- allAppend$UTCMilliseconds[which.min(allAppend$TEMPTIME)]
     allAppend['TEMPTIME'] <- NULL
-    eventAppend$nClicks <- nrow(allAppend)
+    eventAppend[[nCol]] <- nrow(allAppend)
+    if(!'eventType' %in% colnames(eventData)) {
+        addColQ <- paste0('ALTER TABLE ', eventTableName,
+                          ' ADD COLUMN eventType CHAR(12)')
+        colQ <- dbSendQuery(con, addColQ)
+        dbClearResult(colQ)
+    }
     eventAppend$eventType <- eventType
     for(c in chanCols) {
         eventAppend[[c]] <- unique(clickAppend$ChannelBitmap)[1]
@@ -132,17 +160,23 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
     if(is.na(comment)) {
         comment <- paste0('Created by PAMmisc v', packageVersion('PAMmisc'))
     }
-    eventAppend$comment <- comment
-
-    eventAppend$colour <- evColor
-
+    if(!commentCol %in% colnames(eventData)) {
+        addColQ <- paste0('ALTER TABLE ', eventTableName,
+                          ' ADD COLUMN ', commentCol, ' CHAR(80)')
+        colQ <- dbSendQuery(con, addColQ)
+        dbClearResult(colQ)
+    }
+    eventAppend[[commentCol]] <- comment
+    if(type == 'click') {
+        eventAppend$colour <- evColor
+    }
     # clickData$Id <- NA
     # eventData$Id <- NA
 
     # dbAppendTable(con, clickTableName, allAppend)
     if(nrow(eventData) == 0 ||
-       nrow(setdiff(eventAppend[c('UTC', 'UTCMilliseconds', 'EventEnd', 'eventType')],
-               eventData[c('UTC', 'UTCMilliseconds', 'EventEnd', 'eventType')])) > 0) {
+       nrow(setdiff(eventAppend[c('UTC', 'UTCMilliseconds', endTimeCol, 'eventType')],
+               eventData[c('UTC', 'UTCMilliseconds', endTimeCol, 'eventType')])) > 0) {
         dbAppendTable(con, clickTableName, allAppend)
         dbAppendTable(con, eventTableName, eventAppend)
     } else {
@@ -166,9 +200,13 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
         dbClearResult(tbl)
     }
     lookup <- dbReadTable(con, 'Lookup')
-    if(eventType %in% str_trim(lookup$Code)) {
-        return(invisible(TRUE)) # dont need to add, just exit
+    if(nrow(lookup) > 0 &&
+        (eventType %in% str_trim(lookup$Code[str_trim(lookup$Topic) == lookupTopic]))) {
+        return(invisible(TRUE))
     }
+    # if(eventType %in% str_trim(lookup$Code)) {
+    #     return(invisible(TRUE)) # dont need to add, just exit
+    # }
     lookAppend <- lookup[FALSE, ]
     lookAppend[1, ] <- NA
     if(nrow(lookup) == 0) {
@@ -178,7 +216,7 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
         lookAppend$Id <- max(lookup$Id, na.rm=TRUE) + 1
         lookAppend$DisplayOrder <- max(lookup$DisplayOrder, na.rm=TRUE) + 10
     }
-    lookAppend$Topic <- 'OfflineRCEvents'
+    lookAppend$Topic <- lookupTopic
     lookAppend$Code <- eventType
     lookAppend$ItemText <- eventType
     lookAppend$isSelectable <- 1
@@ -268,7 +306,60 @@ createClickTables <- function(con) {
             TMComment2 CHAR(80),
             PRIMARY KEY (Id))")
     on.exit(dbClearResult(eventTbl), add=TRUE, after=FALSE)
+}
 
+createUDFDropdown <- function(con) {
+    UDFtbl <- dbSendQuery(con,
+                            "CREATE TABLE UDF_Dropdown
+            (Id INTEGER,
+            Order INTEGER,
+            Type CHAR(50),
+            Title CHAR(50),
+            PostTitle CHAR(50),
+            DbTitle CHAR(50),
+            Length INTEGER,
+            Topic CHAR(50),
+            NMEA_Module CHAR(50),
+            NMEA_String CHAR(50),
+            NMEA_Position INTEGER,
+            Required BOOLEAN,
+            AutoUpdate INTEGER,
+            Autoclear BOOLEAN,
+            ForceGps BOOELAN,
+            Hint CHAR(100),
+            ADC_Channel INTEGER,
+            ADC_Gain DOUBLE,
+            Analog_Multiply DOUBLE,
+            Analog_Add DOUBLE,
+            Plot BOOLEAN,
+            Height INTEGER,
+            Colour CHAR(20),
+            MinValue DOUBLE,
+            MaxValue DOUBLE,
+            ReadOnly BOOLEAN,
+            Send_Control_Name CHAR(50),
+            Control_on_Subform CHAR(50),
+            Get_Control_Data CHAR(50),
+            Default CHAR(50),
+            PRIMARY KEY (Id))")
+    dbClearResult(UDFtbl)
+    udf <- dbReadTable(con, 'UDF_Dropdown')
+    appendUDF <- udf[FALSE,]
+    appendUDF[1:2,] <- NA
+    appendUDF$Id <- 1:2
+    appendUDF$Order <- c(10, 20)
+    appendUDF$Type <- c('ORDER', 'LOOKUP')
+    appendUDF$Title[2] <- 'eventTypeDropdown'
+    appendUDF$PostTitle[2] <- 'eventType'
+    appendUDF$DbTitle[2] <- 'eventType'
+    appendUDF$Length <- c(1, 12)
+    appendUDF$Topic[2] <- 'DGEventType'
+    appendUDF$Required <- c(0, 1)
+    appendUDF$Autoclear <- c(0, 0)
+    appendUDF$ForceGps <- c(0, 0)
+    appendUDF$Plot <- c(0, 0)
+    appendUDF$ReadOnly <- c(0, 0)
+    dbAppendTable(con, 'UDF_Dropdown', appendUDF)
 }
 # Loop through all binary files until all UIDs are found. Warn if UIDs not found.
 # Dont like update option - should be add only, not modify/delete

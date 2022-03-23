@@ -38,7 +38,7 @@ test_that('Test gps adding', {
     expect_identical(gpxData$UTC, fromDb$UTC[11:nrow(fromDb)])
     expect_identical(gpxData$Latitude, fromDb$Latitude[11:nrow(fromDb)])
     expect_error(addPgGps(db='DNE'))
-   
+
     # clean up test rows
     del <- dbSendQuery(con,
                        'DELETE FROM gpsData WHERE Id > 200'
@@ -59,8 +59,8 @@ test_that('Test event adding', {
     bin <- system.file('extdata', 'Click.pgdf', package='PAMmisc')
     hm <- loadPamguardBinaryFile(bin)
     uids <- c(4000001, 4000002, 4000004)
-    addPgEvent(db = tmpDb, UIDs = uids, binary = bin, eventType = 'MyNewEvent')
-    addPgEvent(db = tmpDb, UIDs = uids, binary = bin, eventType = 'MyNewEvent')
+    addPgEvent(db = tmpDb, UIDs = uids, binary = bin, eventType = 'MyNewEvent', type='click')
+    addPgEvent(db = tmpDb, UIDs = uids, binary = bin, eventType = 'MyNewEvent', type='click')
 
     con <- dbConnect(tmpDb, drv=SQLite())
     ev <- dbReadTable(con, 'Click_Detector_OfflineEvents')
@@ -83,6 +83,31 @@ test_that('Test event adding', {
     del <- dbSendQuery(con, "DELETE FROM Lookup WHERE Code = 'MyNewEvent'")
     dbClearResult(del)
     dbDisconnect(con)
+    # Add DG style
+    addPgEvent(db = tmpDb, UIDs = uids, binary = bin, eventType = 'MyNewEventDG', type='dg', comment='DG')
+    addPgEvent(db = tmpDb, UIDs = uids, binary = bin, eventType = 'MyNewEventDG', type='dg')
+
+    con <- dbConnect(tmpDb, drv=SQLite())
+    ev <- dbReadTable(con, 'Detection_Grouper')
+    expect_equal(nrow(ev), 1)
+    click <- dbReadTable(con, 'Detection_Grouper_Children')
+    lookup <- dbReadTable(con, 'Lookup')
+    # test matching data got added
+    expect_true('MyNewEventDG' %in% lookup$Code)
+    expect_equal(click$UID, uids)
+    expect_equal(ev$UID, unique(click$parentUID))
+    expect_equal(ev$DataCount, nrow(click))
+    expect_equal(ev$eventType, 'MyNewEventDG')
+    expect_equal(ev$EndTime, click$UTC[3])
+    expect_equal(ev$Text_Annotation, 'DG')
+    # clean up test rows
+    del <- dbSendQuery(con, 'DELETE FROM Detection_Grouper')
+    dbClearResult(del)
+    del <- dbSendQuery(con, 'DELETE FROM Detection_Grouper_Children')
+    dbClearResult(del)
+    del <- dbSendQuery(con, "DELETE FROM Lookup WHERE Code = 'MyNewEventDG'")
+    dbClearResult(del)
+    dbDisconnect(con)
     unlink(tmpDb)
     expect_true(!file.exists(tmpDb))
 })
@@ -102,6 +127,25 @@ test_that('Test update UID', {
     expect_equal(det$newUID[1:5], goodUIDs)
     expect_equal(det$newUID[6:26], det$UID[6:26])
     dbDisconnect(con)
+    unlink(tmpDb)
+    expect_true(!file.exists(tmpDb))
+})
+
+test_that('Test spectrogram annotation', {
+    db <- system.file('extdata', 'PgDb.sqlite3', package='PAMmisc')
+    td <- tempdir()
+    file.copy(from = db, to = td)
+    tmpDb <- file.path(td, basename(db))
+    expect_true(file.exists(tmpDb))
+    readAnno <- readSpecAnno(tmpDb, 'Spectrogram_Annotation')
+    expect_equal(nrow(readAnno), 3)
+    addAnno <- addPgAnno(tmpDb, readAnno, tableName='Spectrogram_Annotation', source='pammisc')
+    expect_equal(nrow(addAnno), 0)
+    newAnno <- data.frame(UTC='2020/10/23 12:11:10', Duration=.5, f1=2300, f2=3600)
+    addAnno <- addPgAnno(tmpDb, newAnno, tableName='Spectrogram_Annotation', source='manual')
+    expect_equal(nrow(addAnno), 1)
+    addAnno <- addPgAnno(tmpDb, newAnno, tableName='Spectrogram_Annotation', source='manual')
+    expect_equal(nrow(addAnno), 0)
     unlink(tmpDb)
     expect_true(!file.exists(tmpDb))
 })
