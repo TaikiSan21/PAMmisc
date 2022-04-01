@@ -1,3 +1,7 @@
+# PAMmisc 1.9.1
+
+* Adding `soundtrapQAQC` function
+
 # PAMmisc 1.9.0
 
 * Added `addPgAnno` function to add spectrogram annotations to Pamguard databases

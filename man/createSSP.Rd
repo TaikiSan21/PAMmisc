@@ -13,7 +13,7 @@ createSSP(
 )
 }
 \arguments{
-\item{x}{a data.frame with columns \code{UTC}, \code{Longitude}, and 
+\item{x}{a data.frame with columns \code{UTC}, \code{Longitude}, and
 \code{Latitude} to create sound speed profiles for}
 
 \item{f}{the frequency (Hz) to generate the profile for}
@@ -22,12 +22,12 @@ createSSP(
 \code{NULL} (default) these will be downloaded from HYCOM servers}
 
 \item{ncVars}{names of the salinity and temperature variables (in that order)
-in your netcdf file, only change these if you are providing your own file 
+in your netcdf file, only change these if you are providing your own file
 to \code{nc}}
 
 \item{dropNA}{logical flag to drop NA values from soundspeeed profile from outputs.
-SSP will be calculated up to the maximum depth at each coordinate, which can vary. 
-Setting this option to \code{FALSE} ensures that outputs are the same length for 
+SSP will be calculated up to the maximum depth at each coordinate, which can vary.
+Setting this option to \code{FALSE} ensures that outputs are the same length for
 each coordinate, which can be useful}
 }
 \value{
