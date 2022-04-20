@@ -35,6 +35,7 @@
 #' @importFrom xml2 read_xml xml_find_all xml_contents
 #' @importFrom graphics axis.POSIXct mtext par
 #' @importFrom grDevices dev.off png
+#' @importFrom dplyr bind_rows
 #'
 #' @export
 #'
@@ -51,8 +52,12 @@ soundtrapQAQC <- function(dir, outDir=NULL, xlim=NULL, label=NULL, plot=TRUE) {
     } else {
         stop('"dir" must be length 1 or 3.')
     }
-    xmlInfo <- bind_rows(lapply(xmlFiles, doOneQAQC))
-    xmlInfo$xmlName <- basename(xmlFiles)
+    xmlInfo <- bind_rows(lapply(xmlFiles, function(x) {
+        result <- doOneQAQC(x)
+        result$xmlName <- basename(x)
+        result
+    }))
+    # xmlInfo$xmlName <- basename(xmlFiles)
     sudInfo <- data.frame(sudName=basename(sudFiles),
                           sudSize = sapply(sudFiles, file.size))
     wavInfo <- data.frame(wavName=basename(wavFiles),
