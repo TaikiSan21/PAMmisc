@@ -181,15 +181,13 @@ doOneQAQC <- function(xml) {
     result <- list()
     startNode <- xml_find_all(xml, '//@SamplingStartTimeUTC')
     if(length(startNode) > 0) {
-        result$startUTC <- as.POSIXct(as.character(xml_contents(startNode)),
-                               format='%Y-%m-%dT%H:%M:%S', tz='UTC')
+        result$startUTC <- stToPosix(as.character(xml_contents(startNode)))
     } else {
         result$startUTC <- NA
     }
     endNode <- xml_find_all(xml, '//@SamplingStopTimeUTC')
     if(length(endNode) > 0) {
-        result$endUTC <- as.POSIXct(as.character(xml_contents(endNode)),
-                               format='%Y-%m-%dT%H:%M:%S', tz='UTC')
+        result$endUTC <- stToPosix(as.character(xml_contents(endNode)))
     } else {
         result$endUTC <- NA
     }
@@ -224,4 +222,8 @@ doOneQAQC <- function(xml) {
         result$sampleCount <- NA
     }
     result
+}
+
+stToPosix <- function(x) {
+    parse_date_time(x, orders=c('%Y-%m-%dT%H:%M:%S', '%m/%d/%Y %I:%M:%S %p'), tz='UTC', exact=TRUE)
 }
