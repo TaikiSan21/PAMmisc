@@ -1,3 +1,7 @@
+# PAMmisc 1.9.2
+
+* Fixed a bug where error message in `matchEnvData` could cause R to crash (oh the irony)
+
 # PAMmisc 1.9.1
 
 * Adding `soundtrapQAQC` function

@@ -98,7 +98,7 @@ setMethod('matchEnvData', 'data.frame',
               }
 
               if(!inherits(nc, 'edinfo')) {
-                  stop(paste0(nc, ' must be a valid nc file or erddap dataset id.'))
+                  stop(paste0('"nc" must be a valid nc file or erddap dataset id.'))
               }
               if(is.null(nc$varSelect) ||
                  !any(nc$varSelect)) {
