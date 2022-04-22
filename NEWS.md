@@ -6,6 +6,8 @@
 
 * `ncToData` also bug if some vars had depth and others did not
 
+* LEV is lev is Depth
+
 # PAMmisc 1.9.1
 
 * Adding `soundtrapQAQC` function

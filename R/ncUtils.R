@@ -166,8 +166,8 @@ dataIs180 <- function(data) {
 # just holds this dataframe so i can see it / add to it easily instead of storing it as an rdata
 getCoordNameMatch <- function() {
     data.frame(
-        current = c('lon', 'long', 'lat', 'time', 'longitude', 'latitude', 'utc', 'date', 'dayofyear', 'altitude', 'depth', 'level'),
-        standard = c('Longitude', 'Longitude', 'Latitude', 'UTC', 'Longitude', 'Latitude', 'UTC', 'UTC', 'UTC', 'Depth', 'Depth', 'Depth'),
+        current = c('lon', 'long', 'lat', 'time', 'longitude', 'latitude', 'utc', 'date', 'dayofyear', 'altitude', 'depth', 'level', 'lev'),
+        standard = c('Longitude', 'Longitude', 'Latitude', 'UTC', 'Longitude', 'Latitude', 'UTC', 'UTC', 'UTC', 'Depth', 'Depth', 'Depth', 'Depth'),
         stringsAsFactors = FALSE
     )
 }
