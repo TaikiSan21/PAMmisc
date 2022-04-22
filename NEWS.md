@@ -2,6 +2,8 @@
 
 * Fixed a bug where error message in `matchEnvData` could cause R to crash (oh the irony)
 
+* `ncToData` was not behaving well if columns were not `Latitude` and `Longitude`
+
 # PAMmisc 1.9.1
 
 * Adding `soundtrapQAQC` function

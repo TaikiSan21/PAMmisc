@@ -92,7 +92,7 @@ dimToIx <- function(data, dim, buffer=0, verbose=TRUE) {
             warning(warnMsg)
         }
     }
-    list(ix=ix, start=start, count=count, diff=diff)
+    list(ix=start:end, start=start, count=count, diff=diff)
 }
 
 # make everything Latitude Longitude UTC, see getCoordNameMatch() for conversions

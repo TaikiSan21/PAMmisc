@@ -108,8 +108,7 @@ ncToData <- function(data, nc, buffer = c(0,0,0), FUN = c(mean),
     if(raw) {
         return(transpose(allVar))
     }
-    # change back to whatever they were using, then add new data
-    colnames(data) <- oldNames
+
     # if its a single function make a list for looping
     if(is.list(FUN) &&
        is.null(names(FUN))) {
@@ -147,6 +146,8 @@ ncToData <- function(data, nc, buffer = c(0,0,0), FUN = c(mean),
         }
     }
     data <- to180(data, inverse=!data180)
+    # change back to whatever they were using
+    colnames(data)[1:length(oldNames)] <- oldNames
     data
 }
 
