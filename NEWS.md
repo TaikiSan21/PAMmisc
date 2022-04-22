@@ -4,6 +4,8 @@
 
 * `ncToData` was not behaving well if columns were not `Latitude` and `Longitude`
 
+* `ncToData` also bug if some vars had depth and others did not
+
 # PAMmisc 1.9.1
 
 * Adding `soundtrapQAQC` function

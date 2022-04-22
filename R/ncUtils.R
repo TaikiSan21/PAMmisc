@@ -19,6 +19,9 @@ ncTimeToPosix <- function(vals, units) {
     if(units == 'posix') {
         return(vals)
     }
+    if(units == 'hours since 1950-01-01') {
+        return(as.POSIXct(vals * 3600, origin = '1950-01-01', tz='UTC'))
+    }
     stop('Dont know how to deal with time with units ', units)
 }
 

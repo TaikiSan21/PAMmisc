@@ -184,13 +184,13 @@ getVarData <- function(data, nc, var, buffer, depth=NULL, verbose=TRUE) {
         start <- c(xIx$start, yIx$start)
         count <- c(xIx$count, yIx$count)
         thisVar <- nc[['var']][[v]]
-        hasZ <- 'Depth' %in% names(thisVar$dim)
-        if(hasZ) {
+        thisHasZ <- 'Depth' %in% names(thisVar$dim)
+        if(thisHasZ) {
             start <- c(start, zIx$start)
             count <- c(count, zIx$count)
         }
-        hasT <- 'UTC' %in% names(thisVar$dim)
-        if(hasT) {
+        thisHasT <- 'UTC' %in% names(thisVar$dim)
+        if(thisHasT) {
             start <- c(start, tIx$start)
             count <- c(count, tIx$count)
         }
