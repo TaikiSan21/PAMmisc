@@ -1,5 +1,10 @@
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/TaikiSan21/PAMmisc/workflows/R-CMD-check/badge.svg)](https://github.com/TaikiSan21/PAMmisc/actions)
+[![CRAN version](http://www.r-pkg.org/badges/version/PAMmisc?color=red)](https://cran.r-project.org/package=PAMmisc)
+[![CRAN last day downloads](http://cranlogs.r-pkg.org/badges/last-day/PAMmisc?color=red)](https://cran.r-project.org/package=PAMmisc)
+[![CRAN last week downloads](http://cranlogs.r-pkg.org/badges/last-week/PAMmisc?color=red)](https://cran.r-project.org/package=PAMmisc)
+[![CRAN last month downloads](http://cranlogs.r-pkg.org/badges/PAMmisc?color=red)](https://cran.r-project.org/package=PAMmisc)
+[![CRAN total downloads](http://cranlogs.r-pkg.org/badges/grand-total/PAMmisc?color=red)](https://cran.r-project.org/package=PAMmisc)  
 <!-- badges: end -->
 
 # PAMmisc
