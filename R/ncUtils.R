@@ -13,6 +13,9 @@ ncTimeToPosix <- function(vals, units) {
     if(units == 'seconds since 1970-01-01T00:00:00Z') {
         return( as.POSIXct(vals, origin = '1970-01-01 00:00:00', tz='UTC'))
     }
+    if(units == 'seconds since 1981-01-01 00:00:00') {
+        return( as.POSIXct(vals, origin = '1981-01-01 00:00:00', tz='UTC'))
+    }
     if(units == 'count') {
         return(vals)
     }
