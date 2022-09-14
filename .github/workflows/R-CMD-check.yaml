@@ -35,16 +35,22 @@ jobs:
         run: |
           sudo apt update
           sudo apt-get install -y xorg
-    
+
       - name: Start Xvfb virtual display
         if: runner.os == 'Linux'
         run: |
           sudo /usr/bin/Xvfb $DISPLAY -screen 0 1280x1024x24 &
-          
+
       - name: Install XQuarts macOS
         if: runner.os == 'macOS'
         run: brew install xquartz --cask
-          
+
+      - name: Install OpenSSL on Windows (vcpkg)
+        if: startsWith(matrix.config.os, 'windows')
+        run: |
+          c:\vcpkg\vcpkg install --recurse openssl --triplet ${{ matrix.config.vcpkg_triplet }}
+        shell: cmd
+
       - uses: actions/checkout@v2
 
       - uses: r-lib/actions/setup-pandoc@v1

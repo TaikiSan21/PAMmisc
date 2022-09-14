@@ -36,7 +36,7 @@
 #'
 #' @export
 #'
-addPgGps <- function(db, gps, source = c('SPOTcsv', 'SPOTgpx', 'csv'),
+addPgGps <- function(db, gps, source = c('csv', 'SPOTcsv', 'SPOTgpx'),
                      format = c('%m/%d/%Y %H:%M:%S', '%m-%d-%Y %H:%M:%S',
                                 '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M:%S'),
                      tz='UTC') {
