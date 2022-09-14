@@ -90,7 +90,9 @@ ncToData <- function(data, nc, buffer = c(0,0,0), FUN = c(mean),
         pb <- txtProgressBar(min=0, max=nrow(data), style=3)
     }
     for(v in varNames) {
+      if(!is_null(nc$var[[v]]$dim)) {
         names(nc$var[[v]]$dim) <- names(nc$dim)[nc$var[[v]]$dimids + 1]
+      }
     }
     for(i in 1:nrow(data)) {
         varData <- getVarData(data[i,], nc=nc, var=varNames, buffer = buffer,
