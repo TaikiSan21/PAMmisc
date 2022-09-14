@@ -45,11 +45,11 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install xquartz --cask
 
-      - name: Install OpenSSL on Windows (vcpkg)
-        if: startsWith(matrix.config.os, 'windows')
-        run: |
-          c:\vcpkg\vcpkg install --recurse openssl --triplet "x64-windows"
-        shell: cmd
+      # - name: Install OpenSSL on Windows (vcpkg)
+      #   if: startsWith(matrix.config.os, 'windows')
+      #   run: |
+      #     c:\vcpkg\vcpkg install --recurse openssl --triplet "x64-windows"
+      #   shell: cmd
 
       - uses: actions/checkout@v2
 

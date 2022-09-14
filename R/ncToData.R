@@ -66,8 +66,11 @@ ncToData <- function(data, nc, buffer = c(0,0,0), FUN = c(mean),
     }
     # for each variable, make the ncvar_get call which needs start and count#
     # these are XYZT if Z is present, -1 count means get all
-    # OPTION TO ONLY GET A CERTAIN Z VALUE LIKE DEPTH FIRST VALUE SOMEHOW
+    # sometimes coords are stored as variables, drop these
     dropVar <- c('latitude', 'longitude', 'month', 'day', 'year', 'lon', 'lat')
+    # also drop anything with no dimensions - we can't match them anyway and they cause errors
+    nDim <- lapply(nc$var, function(v) v$ndim)
+    dropVar <- c(dropVar, names(nc$var)[which(nDim == 0)])
     varNames <- names(nc$var)[!(names(nc$var) %in% dropVar)]
     names(nc$dim) <- standardCoordNames(names(nc$dim))
     if('Depth' %in% names(nc$dim)) {
@@ -180,20 +183,49 @@ getVarData <- function(data, nc, var, buffer, depth=NULL, verbose=TRUE) {
     result <- vector('list', length = length(var) + 3)
     names(result) <- c(var, 'matchLong', 'matchLat', 'matchTime')
     for(v in var) {
-        # create start and count for each var, depends if they use T and Z dims
-        start <- c(xIx$start, yIx$start)
-        count <- c(xIx$count, yIx$count)
         thisVar <- nc[['var']][[v]]
-        thisHasZ <- 'Depth' %in% names(thisVar$dim)
-        if(thisHasZ) {
-            start <- c(start, zIx$start)
-            count <- c(count, zIx$count)
+        thisDim <- names(nc$dim)[thisVar$dimids+1]
+        start <- numeric(0)
+        count <- numeric(0)
+        # build start/count vectors. Typically in XYZT order, but occasionally there
+        # are differences. So go in order of dimids (which is 0 indexed so +1)
+        for(d in seq_along(thisDim)) {
+            switch(thisDim[d],
+                   'Longitude' = {
+                       start <- c(start, xIx$start)
+                       count <- c(count, xIx$count)
+                   },
+                   'Latitude' = {
+                       start <- c(start, yIx$start)
+                       count <- c(count, yIx$count)
+                   },
+                   'Depth' = {
+                       start <- c(start, zIx$start)
+                       count <- c(count, zIx$count)
+                   },
+                   'UTC' = {
+                       start <- c(start, tIx$start)
+                       count <- c(count, tIx$count)
+                   },
+                   # if random other variable, only option is to read all of it
+                   {
+                       start <- c(start, 1)
+                       count <- c(count, -1)
+                   }
+            )
         }
-        thisHasT <- 'UTC' %in% names(thisVar$dim)
-        if(thisHasT) {
-            start <- c(start, tIx$start)
-            count <- c(count, tIx$count)
-        }
+        # start <- c(xIx$start, yIx$start)
+        # count <- c(xIx$count, yIx$count)
+        # thisHasZ <- 'Depth' %in% names(thisVar$dim)
+        # if(thisHasZ) {
+        #     start <- c(start, zIx$start)
+        #     count <- c(count, zIx$count)
+        # }
+        # thisHasT <- 'UTC' %in% names(thisVar$dim)
+        # if(thisHasT) {
+        #     start <- c(start, tIx$start)
+        #     count <- c(count, tIx$count)
+        # }
         result[[v]] <- ncvar_get(nc, varid=v, start=start, count=count)
     }
     result$matchLong <- nc$dim$Longitude$vals[xIx$ix]
