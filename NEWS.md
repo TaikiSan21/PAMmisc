@@ -1,3 +1,7 @@
+# PAMmisc 1.9.4
+
+* Bug fix for bad XML files in `soundtrapQAQC`
+
 # PAMmisc 1.9.3
 
 * Pull request adding a new time format for `ncToData`

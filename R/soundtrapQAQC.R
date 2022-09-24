@@ -40,6 +40,10 @@
 #' @export
 #'
 soundtrapQAQC <- function(dir, outDir=NULL, xlim=NULL, label=NULL, plot=TRUE) {
+    if(!is.null(outDir) &&
+       !dir.exists(outDir)) {
+        dir.create(outDir)
+    }
     if(length(dir) == 1) {
         allFiles <- list.files(dir, recursive=TRUE, full.names=TRUE, pattern='sud$|wav$|xml$')
         wavFiles <- allFiles[grepl('wav$', allFiles)]
@@ -54,6 +58,9 @@ soundtrapQAQC <- function(dir, outDir=NULL, xlim=NULL, label=NULL, plot=TRUE) {
     }
     xmlInfo <- bind_rows(lapply(xmlFiles, function(x) {
         result <- doOneQAQC(x)
+        if(is.null(result)) {
+            return(NULL)
+        }
         result$xmlName <- basename(x)
         result
     }))
@@ -178,7 +185,12 @@ doQAQCPlot <- function(x, outDir=NULL, xlim=NULL, label=NULL) {
 
 doOneQAQC <- function(xml) {
     if(is.character(xml)) {
-        xml <- read_xml(xml)
+        tryXml <- try(read_xml(xml))
+        if(inherits(tryXml, 'try-error')) {
+            warning('Unable to read file ', xml)
+            return(NULL)
+        }
+        xml <- tryXml
     }
     if(!inherits(xml, 'xml_document')) {
         return(NULL)
