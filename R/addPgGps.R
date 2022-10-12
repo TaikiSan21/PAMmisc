@@ -95,7 +95,7 @@ addPgGps <- function(db, gps, source = c('csv', 'SPOTcsv', 'SPOTgpx'),
     } else {
         newIds <- 1:nrow(gps) + max(dbGps$Id, na.rm=TRUE)
     }
-    timeChar <- as.character(gps$UTC)
+    timeChar <- format(gps$UTC, format='%Y-%m-%d %H:%M:%S')
     milliChar <- sprintf('%.3f', as.numeric(gps$UTC) - floor(as.numeric(gps$UTC)))
     milliChar <- gsub('^0', '', milliChar)
     timeChar <- paste0(timeChar, milliChar)
@@ -226,7 +226,7 @@ parseToUTC <- function(x, format, tz) {
         }
     })
     if(!inherits(x, 'POSIXct')) {
-        origTz <- parse_date_time(x, orders=format, tz=tz, exact=TRUE, truncated=2)
+        origTz <- parse_date_time(x, orders=format, tz=tz, exact=TRUE, truncated=3)
         if(!inherits(origTz, 'POSIXct')) {
             stop('Unable to convert to POSIXct time.', call.=FALSE)
         }

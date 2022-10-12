@@ -93,7 +93,7 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
     UIDs <- sort(UIDs)
     UIDsToAdd <- UIDs
     allAppend <- vector('list', length = length(binary))
-    addTime <- as.character(nowUTC())
+    addTime <- format(nowUTC(), format='%Y-%m-%d %H:%M:%S')
     names(allAppend) <- binary
     for(bin in binary) {
         if(length(UIDsToAdd) == 0) break
@@ -103,7 +103,7 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
            nrow(binDf) == 0) next
         UIDsToAdd <- UIDsToAdd[!(UIDsToAdd %in% binDf$UID)]
         binDf$millis <- binDf$millis - floor(binDf$date) * 1e3
-        binDf$dbDate <- paste0(as.character(convertPgDate(binDf$date)), '.',
+        binDf$dbDate <- paste0(format(convertPgDate(binDf$date), format='%Y-%m-%d %H:%M:%S'), '.',
                                binDf$millis)
         clickAppend <- clickData[FALSE, ]
         clickAppend[1:nrow(binDf), ] <- NA

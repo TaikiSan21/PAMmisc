@@ -79,10 +79,10 @@ addPgAnno <- function(db, anno, tableName=NULL, channel=1,
     } else {
         newIds <- 1:nrow(anno) + max(c(dbAnno$Id, dbAnno$UID), na.rm=TRUE)
     }
-    timeChar <- as.character(anno$UTC)
+    timeChar <- format(anno$UTC, format='%Y-%m-%d %H:%M:%OS3')
     milliChar <- sprintf('%.3f', as.numeric(anno$UTC) - floor(as.numeric(anno$UTC)))
     milliChar <- gsub('^0', '', milliChar)
-    timeChar <- paste0(timeChar, milliChar)
+    # timeChar <- paste0(timeChar, milliChar)
     annoAppend$UTC <- annoAppend$PCLocalTime <- annoAppend$PCTime <- timeChar
     # do just UTC
     annoAppend$UTCMilliseconds <- as.numeric(milliChar) * 1e3

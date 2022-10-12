@@ -26,7 +26,7 @@ readSpecAnno <- function(db, table='Spectrogram_Annotation') {
         return(NULL)
     }
     sa <- dbReadTable(con, table)
-    sa$UTC <- as.POSIXct(as.character(sa$UTC), format='%Y-%m-%d %H:%M:%OS', tz='UTC')
+    sa$UTC <- as.POSIXct(format(sa$UTC, format='%Y-%m-%d %H:%M:%OS3'), format='%Y-%m-%d %H:%M:%OS', tz='UTC')
     sa$id <- as.character(sa$Id)
     sa$start <- sa$UTC
     sa$end <- sa$start + sa$Duration

@@ -66,7 +66,7 @@ updateUID <- function(db, binaries, verbose=TRUE, progress=TRUE) {
         thisTbl <- dbReadTable(con, d)
         if(nrow(thisTbl) == 0) next
         thisTbl$BinaryFile <- str_trim(thisTbl$BinaryFile)
-        thisTbl$UTC <- as.POSIXct(as.character(thisTbl$UTC), format='%Y-%m-%d %H:%M:%OS', tz='UTC')
+        thisTbl$UTC <- as.POSIXct(format(thisTbl$UTC, format='%Y-%m-%d %H:%M:%OS3'), format='%Y-%m-%d %H:%M:%OS', tz='UTC')
         if(progress) {
             cat('\nUpdating table "', d, '" ...\n', sep='')
             pb <- txtProgressBar(min = 0, max = length(unique(thisTbl$BinaryFile)), style=3)

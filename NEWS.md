@@ -1,3 +1,7 @@
+# PAMmisc 1.9.5
+
+* Fixing as.character(POSIX) errors for r-devel update
+
 # PAMmisc 1.9.4
 
 * Bug fix for bad XML files in `soundtrapQAQC`

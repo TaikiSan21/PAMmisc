@@ -64,7 +64,6 @@ setGeneric('matchEnvData',
 
 #' @rdname matchEnvData
 #' @importFrom dplyr bind_rows bind_cols
-#' @importFrom rerddap cache_delete
 #' @importFrom hoardr hoard
 #' @export
 #'
