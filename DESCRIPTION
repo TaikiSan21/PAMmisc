@@ -33,8 +33,7 @@ Imports:
     geosphere,
     tcltk,
     stringr,
-    viridisLite,
-    viridis
+    viridisLite
 Suggests: 
     testthat
 Depends: 

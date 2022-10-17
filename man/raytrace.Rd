@@ -36,7 +36,7 @@ Traces the ray of a sound through a varying soundspeed profile
   for a fixed amount of time. Also plots the provided sound speed profile and
   all traces generated. All code here is based on MATLAB code originally
   written by Val Schmidt from the University of New Hampshire
-  Val Schmidt (2021). raytrace 
+  Val Schmidt (2021). raytrace
   https://www.mathworks.com/matlabcentral/fileexchange/26253-raytrace), MATLAB Central File Exchange. Retrieved June 29, 2021.
 }
 \examples{

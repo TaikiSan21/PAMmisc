@@ -4,7 +4,7 @@
 #'   for a fixed amount of time. Also plots the provided sound speed profile and
 #'   all traces generated. All code here is based on MATLAB code originally
 #'   written by Val Schmidt from the University of New Hampshire
-#'   Val Schmidt (2021). raytrace 
+#'   Val Schmidt (2021). raytrace
 #'   https://www.mathworks.com/matlabcentral/fileexchange/26253-raytrace), MATLAB Central File Exchange. Retrieved June 29, 2021.
 #'
 #' @param x0 starting horizontal coordinate in meters
@@ -26,14 +26,14 @@
 #'  in the output is a list with one entry for each \code{theta0} provided.
 #'
 #' @examples
-#' 
+#'
 #' #  Setup the sound speed profile
 #' zz <- seq(from=0, to=5000, by=1)
 #' cc <- 1520 + zz * -.05
 #' cc[751:length(cc)] <- cc[750] + (zz[751:length(zz)] - zz[750])*.014
 #' rt <- raytrace(0, 0, 5, 120, zz, cc, TRUE)
 #'
-#' @importFrom viridis viridis
+#' @importFrom viridisLite viridis
 #' @importFrom graphics title lines legend
 #' @export
 #'
@@ -43,7 +43,7 @@ raytrace <- function(x0, z0, theta0, tt, zz, cc, plot=TRUE, progress=FALSE) {
         zz <- c(0, zz)
         cc <- c(cc[1], cc)
     }
-    
+
     # initialize variables
     MAXBOUNCE <- 20
     nTheta <- length(theta0)
@@ -56,10 +56,10 @@ raytrace <- function(x0, z0, theta0, tt, zz, cc, plot=TRUE, progress=FALSE) {
     for(m in seq_along(theta0)) {
         Nsvp <- length(zz)
         zzend <- zz[Nsvp]
-        
+
         dz <- diff(zz)
         dc <- diff(cc)
-        
+
         if(theta0[m] < 0 && z0 > 0) {
             z <- rev(zz)
             zzz <- c(zz[1], zz[1] + cumsum(rev(dz)))
@@ -96,20 +96,20 @@ raytrace <- function(x0, z0, theta0, tt, zz, cc, plot=TRUE, progress=FALSE) {
         # start with the standard defintions
         dz <- diff(zzz)                          # depth steps
         g <- diff(ccc) / dz                      # sound speed gradient
-        
+
         # starting index (set to depth closest to z0
         # browser()
         idx <- which.min(abs(z[1:Nsvp]-z0))
         q <- idx[1]
         qstart <- q
-        
+
         # init vars
         theta <- rep(NA, length(dz))  # ray angle
         theta[q] <- abs(theta0[m]) * pi / 180
         x <- rep(NA, Nsvp)    # x distance of ray path
         dx <- rep(NA, Nsvp)
         x[q] <- x0
-        
+
         t <- 0   # cumulative travel time
         d <- 0   # cumulative travel distance
         # ttt <- t
@@ -117,13 +117,13 @@ raytrace <- function(x0, z0, theta0, tt, zz, cc, plot=TRUE, progress=FALSE) {
             pb <- txtProgressBar(min = 0, max=tt, style=3)
         }
         while(t < tt) {
-            
+
             if(q > length(g)) {
                 warning('CCOM:outofBounds Not enough bounces specified for',
                         'time requested. Increase MAXBOUNCES')
                 break
             }
-            
+
             # handle constant 0 gradient (no refraction)
             if(g[q] == 0) {
                 theta[q+1] <- theta[q]
@@ -132,7 +132,7 @@ raytrace <- function(x0, z0, theta0, tt, zz, cc, plot=TRUE, progress=FALSE) {
                 } else {
                     dx[q] <- abs(dz[q] / tan(theta[q]))
                 }
-                
+
                 dd <- sqrt(dx[q]^2 + dz[q]^2)
                 dt <- dd / ccc[q]
             } else {
@@ -156,7 +156,7 @@ raytrace <- function(x0, z0, theta0, tt, zz, cc, plot=TRUE, progress=FALSE) {
                     # % speed at the caustic so we can omit the portion of the
                     # % sound speed profile where we are to the bottom and back
                     # % up to our caustic locaiton. That's what this next find
-                    #     % statement does. 
+                    #     % statement does.
                     #     %tmp = find(ccc((q+1):end) == ccc(q));
                     tmp <- tryCatch({
                         which.min(abs(z[(q+1):(q+2*length(cc))] - z[q]))
@@ -169,7 +169,7 @@ raytrace <- function(x0, z0, theta0, tt, zz, cc, plot=TRUE, progress=FALSE) {
                                 'time requested. Increase MAXBOUNCES')
                         break
                     }
-                    
+
                     ccc <- c(ccc[1:q], ccc[(q + tmp[1]):length(ccc)])
                     zshift <- zzz[q + tmp[1] + 1] - zzz[q]
                     zzz <- c(zzz[1:q], zzz[(q+tmp[1]):length(zzz)] - zshift)
@@ -183,18 +183,18 @@ raytrace <- function(x0, z0, theta0, tt, zz, cc, plot=TRUE, progress=FALSE) {
                     theta[q+1] <- acos(tmpCos)
                     if(theta[q] > 0) {
                         dx[q] <- Rc * (sin(theta[q+1]) - sin(theta[q]))
-                        dt <- -2/g[q] * (atanh(tan(theta[q+1]/2)) - 
+                        dt <- -2/g[q] * (atanh(tan(theta[q+1]/2)) -
                                              atanh(tan(theta[q]/2)))
                     } else {
                         dx[q] <- abs(Rc * -1*(sin(theta[q+1]) - sin(theta[q])))
-                        dt <- -2/g[q] * (atanh(tan(theta[q+1]/2)) - 
+                        dt <- -2/g[q] * (atanh(tan(theta[q+1]/2)) -
                                              atanh(tan(theta[q]/2)))
                     }
-                    
+
                     dd <- dt * (ccc[q] + g[q]/2)
                 }
             }
-            
+
             t <- t + dt
             # ttt[q+1] <- t
             x[q+1] <- x[q] + dx[q]
@@ -204,10 +204,10 @@ raytrace <- function(x0, z0, theta0, tt, zz, cc, plot=TRUE, progress=FALSE) {
                 setTxtProgressBar(pb, value=t)
             }
         }
-        
+
         x <- x[!is.na(x)]
         z <- z[qstart:(qstart + length(x) -1)]
-        
+
         corrector <- (tt - (t-dt))/dt
         x[length(x)] <- x[length(x)-1] + (x[length(x)] - x[length(x)-1])*corrector
         z[length(z)] <- z[length(z)-1] + (z[length(z)] - z[length(z)-1])*corrector
