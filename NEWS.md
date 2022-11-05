@@ -1,3 +1,11 @@
+# PAMmisc 1.10.0
+
+* Adding `plotPresBar` and `plotPresGrid` plotting functions
+
+# PAMmisc 1.9.6
+
+* Updating `soundtrapQAQC` to have option for internal/external battery voltage
+
 # PAMmisc 1.9.5
 
 * Fixing as.character(POSIX) errors for r-devel update

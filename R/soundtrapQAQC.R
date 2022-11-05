@@ -10,6 +10,7 @@
 #' @param outDir if provided, output plots and data will be written to this folder
 #' @param xlim date limit for plots
 #' @param label label to be used for plots and names of exported files
+#' @param voltSelect one of "internal" or "external" to select which battery voltage to use
 #' @param plot logical flag to create output plots
 #'
 #' @return list of dataframes with summary data for \code{$xmlInfo}, \code{$sudInfo},
@@ -39,7 +40,7 @@
 #'
 #' @export
 #'
-soundtrapQAQC <- function(dir, outDir=NULL, xlim=NULL, label=NULL, plot=TRUE) {
+soundtrapQAQC <- function(dir, outDir=NULL, xlim=NULL, label=NULL, voltSelect = c('internal', 'external'), plot=TRUE) {
     if(!is.null(outDir) &&
        !dir.exists(outDir)) {
         dir.create(outDir)
@@ -57,7 +58,7 @@ soundtrapQAQC <- function(dir, outDir=NULL, xlim=NULL, label=NULL, plot=TRUE) {
         stop('"dir" must be length 1 or 3.')
     }
     xmlInfo <- bind_rows(lapply(xmlFiles, function(x) {
-        result <- doOneQAQC(x)
+        result <- doOneQAQC(x, voltSelect)
         if(is.null(result)) {
             return(NULL)
         }
@@ -71,7 +72,7 @@ soundtrapQAQC <- function(dir, outDir=NULL, xlim=NULL, label=NULL, plot=TRUE) {
                           wavSize = sapply(wavFiles, file.size))
     outs <- list(xmlInfo=xmlInfo, sudInfo=sudInfo, wavInfo=wavInfo)
     if(plot) {
-        doQAQCPlot(outs, outDir=outDir, xlim=xlim, label=label)
+        doQAQCPlot(outs, outDir=outDir, xlim=xlim, label=label, voltSelect = voltSelect)
     }
     if(!is.null(outDir)) {
         saveRDS(outs, file=file.path(outDir, paste0(label, '_Data.rds')))
@@ -79,12 +80,15 @@ soundtrapQAQC <- function(dir, outDir=NULL, xlim=NULL, label=NULL, plot=TRUE) {
     outs
 }
 
-doQAQCPlot <- function(x, outDir=NULL, xlim=NULL, label=NULL) {
+doQAQCPlot <- function(x, outDir=NULL, xlim=NULL, label=NULL, voltSelect=c('internal', 'external')) {
     # Can only plot these if num files is equal
     xmlInfo <- x$xmlInfo
     sudInfo <- x$sudInfo
     wavInfo <- x$wavInfo
-
+    if(length(voltSelect) > 1) {
+        voltSelect <- modelToVoltSelect(xmlInfo$model[1])
+    }
+    voltSelect <- match.arg(voltSelect)
     if(is.null(xlim)) {
         xlim <- range(xmlInfo$startUTC)
     }
@@ -96,11 +100,14 @@ doQAQCPlot <- function(x, outDir=NULL, xlim=NULL, label=NULL) {
     }
     op <- par(mar=c(5, 4, 4, 6) + 0.1)
     on.exit(par(op))
-
+    battLab <- switch(voltSelect,
+                      'internal' = 'Internal Battery, V',
+                      'external' = 'External Battery, V'
+    )
     ## Plot first set of data and draw its axis
     plot(x=xmlInfo$startUTC, y=xmlInfo$batt,
          xaxt='n', yaxt='n', xlab="", ylab="", type="l",col="darkblue")
-    mtext("External Battery, V",side=2, col='darkblue', line=3)
+    mtext(battLab,side=2, col='darkblue', line=3)
     axis(2, ylim=xmlInfo$temp,las=1, col='darkblue', col.axis='darkblue')
     title(label)
     par(new=TRUE)
@@ -183,7 +190,17 @@ doQAQCPlot <- function(x, outDir=NULL, xlim=NULL, label=NULL) {
     }
 }
 
-doOneQAQC <- function(xml) {
+modelToVoltSelect <- function(x) {
+    if(x %in% c('ST4300')) {
+
+    }
+    if(x %in% c('ST640')) {
+
+    }
+    'internal'
+}
+
+doOneQAQC <- function(xml, voltSelect=c('internal', 'external')) {
     if(is.character(xml)) {
         tryXml <- try(read_xml(xml))
         if(inherits(tryXml, 'try-error')) {
@@ -196,6 +213,18 @@ doOneQAQC <- function(xml) {
         return(NULL)
     }
     result <- list()
+
+    # try for auto-select based on HARDWARE_ID
+    hardwareNode <- xml_find_all(xml, '//HARDWARE_ID')
+    result$model <- as.character(gsub(' ', '', xml_contents(hardwareNode)))
+    # decide based on model if appropriate
+    if(length(voltSelect) > 1) {
+        voltSelect <- modelToVoltSelect(result$model)
+    }
+    voltNode <- switch(match.arg(voltSelect),
+        'internal' = '//INT_BATT',
+        'external' = '//EX_BATT'
+    )
     startNode <- xml_find_all(xml, '//@SamplingStartTimeUTC')
     if(length(startNode) > 0) {
         result$startUTC <- stToPosix(as.character(xml_contents(startNode)))
@@ -208,7 +237,8 @@ doOneQAQC <- function(xml) {
     } else {
         result$endUTC <- NA
     }
-    battNode <- xml_find_all(xml, '//EX_BATT')
+    # voltSelect internal or external, change to //INT_BATT
+    battNode <- xml_find_all(xml, voltNode)
     if(length(battNode) > 0) {
         result$batt <- as.numeric(gsub(' ', '', as.character(xml_contents(battNode)))) * .001
     } else {

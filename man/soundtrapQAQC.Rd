@@ -4,7 +4,14 @@
 \alias{soundtrapQAQC}
 \title{Perform QA/QC on Soundtrap Files}
 \usage{
-soundtrapQAQC(dir, outDir = NULL, xlim = NULL, label = NULL, plot = TRUE)
+soundtrapQAQC(
+  dir,
+  outDir = NULL,
+  xlim = NULL,
+  label = NULL,
+  voltSelect = c("internal", "external"),
+  plot = TRUE
+)
 }
 \arguments{
 \item{dir}{directory containing Soundtrap XML logs, wav files, and SUD files.
@@ -17,6 +24,8 @@ wav files, and XML files (in that order - alphabetical S-W-X)}
 \item{xlim}{date limit for plots}
 
 \item{label}{label to be used for plots and names of exported files}
+
+\item{voltSelect}{one of "internal" or "external" to select which battery voltage to use}
 
 \item{plot}{logical flag to create output plots}
 }
