@@ -1,3 +1,7 @@
+# PAMmisc 1.10.1
+
+* Adding `trainSplitPermute` function
+
 # PAMmisc 1.10.0
 
 * Adding `plotPresBar` and `plotPresGrid` plotting functions
