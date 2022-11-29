@@ -1,3 +1,7 @@
+# PAMmisc 1.10.2
+
+* Adding some type checks for `plotPresBar` and `plotPresGrid` functions
+
 # PAMmisc 1.10.1
 
 * Adding `trainSplitPermute` function

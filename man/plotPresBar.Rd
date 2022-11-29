@@ -13,7 +13,9 @@ plotPresBar(
   presBin = c("hour", "day", "week", "minute"),
   by = NULL,
   title = TRUE,
-  fill = "grey35"
+  fill = "grey35",
+  format = c("\%m/\%d/\%Y \%H:\%M:\%S", "\%m-\%d-\%Y \%H:\%M:\%S",
+    "\%Y/\%m/\%d \%H:\%M:\%S", "\%Y-\%m-\%d \%H:\%M:\%S")
 )
 }
 \arguments{
@@ -46,6 +48,8 @@ used for the title of the plot.}
 
 \item{fill}{the fill color for the bars, only used if \code{by} is \code{NULL}, otherwise bars are
 colored by species using the default \link{ggplot2} palette}
+
+\item{format}{date format if \code{UTC} column of \code{x} is a character}
 }
 \value{
 a ggplot2 object

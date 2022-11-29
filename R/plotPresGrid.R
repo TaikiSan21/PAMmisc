@@ -19,6 +19,7 @@
 #'   shaded dark region in the background of the plot. The data.frame must have columns "UTC",
 #'   "Latitude", and "Longitude". If columns "Latitude" and "Longitude" are present in \code{x},
 #'   then these values will be used and you do not need to provide separate GPS data here
+#' @param format date format if \code{UTC} column of \code{x} is a character
 #' @param fill the fill color for the boxes, only used if \code{type} is "presence"
 #' @param color the outline color for the boxes, only used if \code{type} is "presence"
 #' @param cmap the colormap to use for the boxes, only used if \code{type} is "density"
@@ -50,10 +51,21 @@
 #' @import ggplot2
 #' @import dplyr
 #'
-plotPresGrid <- function(x, start=NULL, end=NULL,
+plotPresGrid <- function(x, start=NULL, end=NULL, 
                          timeBin=c('hour', 'minute', '30min', '15min'),
-                         type=c('presence', 'density'), gps=NULL, fill='blue', color=NA,
+                         type=c('presence', 'density'), gps=NULL,
+                         format = c('%m/%d/%Y %H:%M:%S', '%m-%d-%Y %H:%M:%S',
+                                    '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M:%S'),
+                         fill='blue', color=NA,
                          cmap=viridis(25), title=TRUE) {
+    if(!'UTC' %in% colnames(x)) {
+        stop('"x" must have column UTC')
+    }
+    if(is.character(x$UTC) ||
+       is.factor(x$UTC)) {
+        x$UTC <- parseToUTC(as.character(x$UTC), format=format, tz='UTC')
+    }
+    
     if(is.null(start)) {
         start <- floor_date(min(x$UTC), unit='day')
     }

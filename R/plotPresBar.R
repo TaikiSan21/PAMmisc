@@ -23,6 +23,7 @@
 #'   used for the title of the plot.
 #' @param fill the fill color for the bars, only used if \code{by} is \code{NULL}, otherwise bars are
 #'   colored by species using the default \link{ggplot2} palette
+#' @param format date format if \code{UTC} column of \code{x} is a character
 #'
 #' @returns a ggplot2 object
 #'
@@ -47,9 +48,18 @@ plotPresBar <- function(x, start=NULL, end=NULL,
                         timeBin=c('day', 'week', 'month', 'hour'),
                         type=c('presence', 'density'),
                         presBin = c('hour', 'day', 'week', 'minute'),
-                        by=NULL, title=TRUE, fill='grey35') {
+                        by=NULL, title=TRUE, fill='grey35',
+                        format = c('%m/%d/%Y %H:%M:%S', '%m-%d-%Y %H:%M:%S',
+                                   '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M:%S')) {
     type <- match.arg(type)
     timeBin <- match.arg(timeBin)
+    if(!'UTC' %in% colnames(x)) {
+        stop('"x" must have column UTC')
+    }
+    if(is.character(x$UTC) ||
+       is.factor(x$UTC)) {
+        x$UTC <- parseToUTC(as.character(x$UTC), format=format, tz='UTC')
+    }
     x$timeBin <- floor_date(x$UTC, unit=timeBin)
 
     if(is.null(start)) {

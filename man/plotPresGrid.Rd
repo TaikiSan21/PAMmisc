@@ -11,6 +11,8 @@ plotPresGrid(
   timeBin = c("hour", "minute", "30min", "15min"),
   type = c("presence", "density"),
   gps = NULL,
+  format = c("\%m/\%d/\%Y \%H:\%M:\%S", "\%m-\%d-\%Y \%H:\%M:\%S",
+    "\%Y/\%m/\%d \%H:\%M:\%S", "\%Y-\%m-\%d \%H:\%M:\%S"),
   fill = "blue",
   color = NA,
   cmap = viridis(25),
@@ -39,6 +41,8 @@ of \code{x}. These are used to calculate sunrise and sunset information which is
 shaded dark region in the background of the plot. The data.frame must have columns "UTC",
 "Latitude", and "Longitude". If columns "Latitude" and "Longitude" are present in \code{x},
 then these values will be used and you do not need to provide separate GPS data here}
+
+\item{format}{date format if \code{UTC} column of \code{x} is a character}
 
 \item{fill}{the fill color for the boxes, only used if \code{type} is "presence"}
 

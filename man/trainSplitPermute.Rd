@@ -72,15 +72,15 @@ df <- data.frame(
 # try a split with n=3
 split <- trainSplitPermute(df, probs=c(.7, .15, .15), n=3, label='species', splitBy='site')
 # assign the best split as the split cateogry
-df$cat <- split[[1]]$splitVec
+df$split <- split[[1]]$splitVec
 # distribution is not close to our desired .7, .15, .15 split because n is too low
-round(table(df$species, df$cat) /
+round(table(df$species, df$split) /
     matrix(rep(table(df$species), 3), nrow=5), 2)
 
 # rerun with higher n to get closer to desired distribution
 split <- trainSplitPermute(df, probs=c(.7, .15, .15), n=1e3, label='species', splitBy='site')
-df$cat <- split[[1]]$splitVec
-round(table(df$species, df$cat) /
+df$split <- split[[1]]$splitVec
+round(table(df$species, df$split) /
     matrix(rep(table(df$species), 3), nrow=5), 2)
     
 # adding a new site that has significantly more detections than others
@@ -88,21 +88,21 @@ addSite <- data.frame(
     species = sample(letters[1:5], 500, replace=TRUE),
     site = rep(LETTERS[13], 500),
     event = 1001:1500)
-df$cat <- NULL
+df$split <- NULL
 df <- rbind(df, addSite)
 
 # now just splitting by site does not result in a balanced split for our number of species
 # it splits the sites to approx .7, .15, .15 but this does not result in balanced species
 split <- trainSplitPermute(df, probs=c(.7, .15, .15), n=1e3, label='species', splitBy='site')
-df$cat <- split[[1]]$splitVec
-round(table(df$species, df$cat) /
+df$split <- split[[1]]$splitVec
+round(table(df$species, df$split) /
     matrix(rep(table(df$species), 3), nrow=5), 2)
 
 # adding 'event' as a countCol fixes this
 split <- trainSplitPermute(df, probs=c(.7, .15, .15), n=1e3, label='species', 
     splitBy='site', countCol='event')
-df$cat <- split[[1]]$splitVec
-round(table(df$species, df$cat) /
+df$split <- split[[1]]$splitVec
+round(table(df$species, df$split) /
     matrix(rep(table(df$species), 3), nrow=5), 2)
 
 
