@@ -1,21 +1,20 @@
 source('soundtrapRenamer.R')
+#------------------------------#
+# Changes in new version (12/1/2022):
+# 1) Now changes all different file types in one batch
+# 2) Changes file names twice - first to a temporary name,
+#    then to the new name. This is to avoid problems where
+#    there is overlap between your new & old file names - ex
+#    ex if you have files exactly 7 hours apart, but want to
+#    add 7 hours to the time. 
+# 3) If offset=NULL it will look for log files first. If no log
+#    files are found it will prompt you to enter an offset value.
+#-------------------------------#
+
 # change this to whatever file endings you want to change
 suffixes <- c('wav', 'sud', 'log.xml', 'accel.csv')
 # Change this to whatever folder these files are in
-dir <- '../Data/Renamer/'
+dir <- '../Data/Renamer/orig/'
 
-# this will run through process for all file types and create separate log files
-# I think you said +7 hours, so offset=7 should work
-for(s in suffixes) {
-    prep <- prepTzFix(dir, offset=7, suffix=s)
-    fixStTz(dir, prep, suffix=s)
-}
-
-# TODO
-# adjust the "dont break shit" section to check
-# if there are any overlap first, then check iff all(not average)
-# are same direction.
-# if they aren't, then figure out which aren't and mark something as
-# NA so the rename doesnt run, we can either have these run the code
-# again (so name conflict shouldnt happen maybe?) or use temporary
-# names and rename twice
+prep <- prepTzFix(dir, offset=NULL, suffix=suffixes)
+fixStTz(dir, prep)

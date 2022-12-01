@@ -1,6 +1,17 @@
 library(dplyr)
 library(xml2)
-### Fixes on 12-15 to account for possible re-name overlap resulting in a bunch of mssing files
+#--------------------------#
+### Fixes on 2021-12-15 to account for possible re-name overlap resulting in a bunch of mssing files
+# Changes in new version (2022-12-01):
+# 1) Now changes all different file types in one batch
+# 2) Changes file names twice - first to a temporary name,
+#    then to the new name. This is to avoid problems where
+#    there is overlap between your new & old file names - ex
+#    ex if you have files exactly 7 hours apart, but want to
+#    add 7 hours to the time. 
+# 3) If offset=NULL it will look for log files first. If no log
+#    files are found it will prompt you to enter an offset value.
+#-------------------------#
 getStTz <- function(x) {
     xml <- read_xml(x)
     tzNode <- xml_find_all(xml, '//WavFileHandler[@OffloaderTimeZone]')
@@ -24,8 +35,14 @@ getStTz <- function(x) {
     tzOut
 }
 
-prepTzFix <- function(x, offset=NULL, suffix='wav') {
-    wavList <- list.files(x, full.names=FALSE, recursive = FALSE, pattern=paste0('\\.',suffix, '$'))
+prepTzFix <- function(x, offset=NULL, suffix=c('wav', 'sud', 'log.xml', 'accel.csv')) {
+    suffix <- paste0('\\.',suffix, '$', collapse='|')
+    suffix <- paste0('(', suffix, ')')
+    # wavList <- list.files(x, full.names=FALSE, recursive = FALSE, pattern=paste0('\\.',suffix, '$', collapse='|'))
+    wavList <- list.files(x, full.names=FALSE, recursive = FALSE, pattern=suffix)
+    if(length(wavList) == 0) {
+        stop('No files in this folder matching those suffixes')
+    }
     tAdj <- data.frame(oldName=wavList)
     if(!is.na(processStWavNames(wavList[1], type = 'st', suffix=suffix))) {
         type <- 'st'
@@ -50,6 +67,16 @@ prepTzFix <- function(x, offset=NULL, suffix='wav') {
         tAdj$offset <- offset
     }
     naOff <- is.na(tAdj$offset)
+    if(any(naOff)) {
+        cat('Could not find matching logs for all files, enter a desired offset (hours):')
+        userOff <- readline()
+        userNum <- as.numeric(userOff)
+        if(is.na(userNum)) {
+            warning('"', userOff, '" is not a valid numeric value.')
+        }
+        tAdj$offset[naOff] <- userNum
+        naOff <- is.na(tAdj$offset)
+    }
     if(all(naOff)) {
         tAdj$newTime <- NA
         tAdj$newName <- NA
@@ -58,11 +85,16 @@ prepTzFix <- function(x, offset=NULL, suffix='wav') {
     }
     tAdj$newTime <- tAdj$oldTime + tAdj$offset * 3600
     tAdj$newName <- NA
+    tAdj$tempName <- NA
     for(i in 1:nrow(tAdj)) {
         if(is.na(tAdj$offset[i])) next
         newTime <- processStWavNames(tAdj$newTime[i], type=type, suffix=suffix)
-        oldPrefix <-  processStWavNames(tAdj$oldName[i], prefix=TRUE, type=type, suffix=suffix)
-        tAdj$newName[i] <- paste0(oldPrefix, newTime, '.', suffix)
+        oldTime <- processStWavNames(tAdj$oldTime[i], type=type, suffix=suffix)
+        tAdj$newName[i] <- gsub(oldTime, newTime, tAdj$oldName[i])
+        tAdj$tempName[i] <- gsub(oldTime, paste0('TEMP', i), tAdj$oldName[i])
+        # oldPrefix <-  processStWavNames(tAdj$oldName[i], prefix=TRUE, type=type, suffix=suffix)
+        # tAdj$tempName[i] <- paste0(oldPrefix, 'TEMP', i, '.', suffix)
+        # tAdj$newName[i] <- paste0(oldPrefix, newTime, '.', suffix)
     }
     if(any(naOff)) {
         cat(sum(naOff), ' files out of ', length(naOff), ' could not be adjusted.\n', sep='')
@@ -75,11 +107,11 @@ processStWavNames <- function(x, type=c('st', 'sm3m'), prefix=FALSE, suffix='wav
     switch(type,
            'st' = {
                format <- '%y%m%d%H%M%S'
-               pattern <- paste0('(.*\\.)([0-9]{12})\\.', suffix, '$')
+               pattern <- paste0('(.*\\.)([0-9]{12})', suffix, '$')
            },
            'sm3m' = {
                format <- '%Y%m%d_%H%M%S'
-               pattern <- paste0('(.*_)([0-9]{8}_[0-9]{6})\\.', suffix, '$')
+               pattern <- paste0('(.*_)([0-9]{8}_[0-9]{6})', suffix, '$')
            }
     )
     if(isTRUE(prefix)) {
@@ -94,39 +126,45 @@ processStWavNames <- function(x, type=c('st', 'sm3m'), prefix=FALSE, suffix='wav
     NULL
 }
 
-fixStTz <- function(dir, prep, reverse=FALSE, logname='STRenameLog', suffix='wav') {
+fixStTz <- function(dir, prep, reverse=FALSE, logname='STRenameLog') {
     if(isTRUE(reverse)) {
         revPrep <- rename(prep, oldName=newName, oldTime=newTime, newName=oldName, newTime=oldTime)
         revPrep <- revPrep[!is.na(revPrep$oldName), ]
         revPrep$offset <- revPrep$offset * -1
-        return(fixStTz(dir,revPrep, FALSE, logname='STReverseLog', suffix=suffix))
+        return(fixStTz(dir,revPrep, FALSE, logname='STReverseLog'))
     }
-    wavList <- list.files(dir, pattern=paste0(suffix, '$'), recursive=FALSE)
+    wavList <- list.files(dir, recursive=FALSE)
     if(!all(prep$oldName %in% wavList)) {
         warning('Not all wav files in prep file are in directory, run prep again')
         return(NULL)
     }
-    cat('\nRenaming files...\n')
-    pb <- txtProgressBar(min=0, max=nrow(prep), style=3)
     prep$renamed <- FALSE
-    if(mean(prep$offset, na.rm=TRUE) > 0) {
-        prep <- arrange(prep, desc(oldTime))
-    } else {
-        prep <- arrange(prep, oldTime)
-    }
-    on.exit(write.csv(prep, file=file.path(dir, paste0(logname, '_', suffix, '.csv')), row.names = FALSE))
+    on.exit(write.csv(prep, file=file.path(dir, paste0(logname, '.csv')), row.names = FALSE))
+    cat('\nRenaming files to temporary name...\n')
+    pb <- txtProgressBar(min=0, max=nrow(prep), style=3)
     for(i in 1:nrow(prep)) {
         if(any(is.na(prep[i, ]))) {
             setTxtProgressBar(pb, value=i)
             next
         }
         file.rename(from=file.path(dir, prep$oldName[i]),
+                    to = file.path(dir, prep$tempName[i]))
+        setTxtProgressBar(pb, value=i)
+    }
+    cat('\nRenaming files to new name...\n')
+    pb <- txtProgressBar(min=0, max=nrow(prep), style=3)
+    for(i in 1:nrow(prep)) {
+        if(any(is.na(prep[i, ]))) {
+            setTxtProgressBar(pb, value=i)
+            next
+        }
+        file.rename(from=file.path(dir, prep$tempName[i]),
                     to = file.path(dir, prep$newName[i]))
         prep$renamed[i] <- TRUE
         setTxtProgressBar(pb, value=i)
     }
-    cat('\nRenamed ', sum(prep$renamed),
-        ' out of ', nrow(prep),
-        ' files\n.')
+    cat('\nRenamed', sum(prep$renamed),
+        'out of', nrow(prep),
+        'files.\n')
     invisible(prep)
 }
