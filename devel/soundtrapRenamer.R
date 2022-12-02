@@ -55,7 +55,7 @@ prepTzFix <- function(x, offset=NULL, suffix=c('wav', 'sud', 'log.xml', 'accel.c
     if(is.null(offset)) {
         logList <- list.files(x, full.names=TRUE, recursive = FALSE, pattern = '\\.log\\.xml$')
         tAdj$offset <- sapply(basename(tAdj$oldName), function(w) {
-            w <- gsub(paste0('\\.',suffix, '$'), '', w)
+            w <- gsub(suffix, '', w)
             match <- which(w %in% gsub('\\.log\\.xml$', '', basename(logList)))[1]
             if(length(match) == 0 ||
                is.na(match)) {
@@ -99,6 +99,12 @@ prepTzFix <- function(x, offset=NULL, suffix=c('wav', 'sud', 'log.xml', 'accel.c
     if(any(naOff)) {
         cat(sum(naOff), ' files out of ', length(naOff), ' could not be adjusted.\n', sep='')
     }
+    if(all(tAdj$offset[!naOff] == 0)) {
+        cat('All files were already in UTC. Yay!\n')
+    } else {
+        cat('Files will be updated with offset', round(mean(tAdj$offset[!naOff]), 1), 'hours\n')
+    }
+        
     tAdj
 }
 
@@ -147,6 +153,10 @@ fixStTz <- function(dir, prep, reverse=FALSE, logname='STRenameLog') {
             setTxtProgressBar(pb, value=i)
             next
         }
+        if(prep$oldName[i] == prep$newName[i]) {
+            setTxtProgressBar(pb, value=i)
+            next
+        }
         file.rename(from=file.path(dir, prep$oldName[i]),
                     to = file.path(dir, prep$tempName[i]))
         setTxtProgressBar(pb, value=i)
@@ -155,6 +165,11 @@ fixStTz <- function(dir, prep, reverse=FALSE, logname='STRenameLog') {
     pb <- txtProgressBar(min=0, max=nrow(prep), style=3)
     for(i in 1:nrow(prep)) {
         if(any(is.na(prep[i, ]))) {
+            setTxtProgressBar(pb, value=i)
+            next
+        }
+        if(prep$oldName[i] == prep$newName[i]) {
+            prep$renamed[i] <- TRUE
             setTxtProgressBar(pb, value=i)
             next
         }
