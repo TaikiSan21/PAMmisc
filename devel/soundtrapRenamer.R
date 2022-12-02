@@ -11,9 +11,24 @@ library(xml2)
 #    add 7 hours to the time. 
 # 3) If offset=NULL it will look for log files first. If no log
 #    files are found it will prompt you to enter an offset value.
+# Change on 2022-12-2:
+# 1) Re-working timezone checking to compare UTCSampleStart & file time
+#    because offloader timezone does not do DST and is sometimes wrong
 #-------------------------#
 getStTz <- function(x) {
     xml <- read_xml(x)
+    # new version to compare UTC sample time to file time
+    fileTime <- processStWavNames(basename(x), suffix='.log.xml')
+    utcNode <- xml_find_all(xml, '//WavFileHandler[@SamplingStartTimeUTC]')
+    utcChar <- unique(xml_attr(utcNode,'SamplingStartTimeUTC'))
+    if(!is.null(utcChar) &&
+       length(utcChar) > 0) {
+        utcLog <- as.POSIXct(utcChar, format='%Y-%m-%dT%H:%M:%S', tz='UTC')
+        hourDiff <- round(as.numeric(difftime(utcLog, fileTime, units='hours')), 0)
+        if(!is.na(hourDiff)) {
+            return(hourDiff)
+        }
+    }
     tzNode <- xml_find_all(xml, '//WavFileHandler[@OffloaderTimeZone]')
     tzChar <- unique(xml_attr(tzNode, 'OffloaderTimeZone'))
     if(is.null(tzChar) || length(tzChar) == 0) {
@@ -56,7 +71,7 @@ prepTzFix <- function(x, offset=NULL, suffix=c('wav', 'sud', 'log.xml', 'accel.c
         logList <- list.files(x, full.names=TRUE, recursive = FALSE, pattern = '\\.log\\.xml$')
         tAdj$offset <- sapply(basename(tAdj$oldName), function(w) {
             w <- gsub(suffix, '', w)
-            match <- which(w %in% gsub('\\.log\\.xml$', '', basename(logList)))[1]
+            match <- which(gsub('\\.log\\.xml$', '', basename(logList)) %in% w)[1]
             if(length(match) == 0 ||
                is.na(match)) {
                 return(NA)
@@ -102,9 +117,9 @@ prepTzFix <- function(x, offset=NULL, suffix=c('wav', 'sud', 'log.xml', 'accel.c
     if(all(tAdj$offset[!naOff] == 0)) {
         cat('All files were already in UTC. Yay!\n')
     } else {
-        cat('Files will be updated with offset', round(mean(tAdj$offset[!naOff]), 1), 'hours\n')
+        cat('Files will be updated with average offset', round(mean(tAdj$offset[!naOff]), 1), 'hours\n')
     }
-        
+    
     tAdj
 }
 
