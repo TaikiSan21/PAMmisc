@@ -6,11 +6,13 @@
 \usage{
 addPgEvent(
   db,
-  UIDs,
+  UIDs = NULL,
   binary,
   eventType,
   comment = NA,
   tableName = NULL,
+  start = NULL,
+  end = NULL,
   type = c("click", "dg")
 )
 }
@@ -30,6 +32,10 @@ present in the database, it will be added to the "Lookup" table}
 event table you want to add to. This only needs to be specified if you have
 more than one click detector, it defaults to the first "NAME_OfflineEvents"
 table in the database.}
+
+\item{start}{(optional) start time of event. Mandatory if no detections are added}
+
+\item{end}{(optional) end time of event. Mandatory if no detections are added}
 
 \item{type}{type of event data to add, either \code{'click'} to add event data using
 the Click Detector module, or \code{'dg'} to add event data using the Detection

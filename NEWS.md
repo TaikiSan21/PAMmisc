@@ -1,3 +1,9 @@
+# PAMmisc 1.10.3
+
+* Updating `addPgEvent` to work with events that have 0 detections, and also
+allow for manual setting of start/end times (useful for creating validation
+events)
+
 # PAMmisc 1.10.2
 
 * Adding some type checks for `plotPresBar` and `plotPresGrid` functions

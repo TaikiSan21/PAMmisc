@@ -14,6 +14,8 @@
 #'   event table you want to add to. This only needs to be specified if you have
 #'   more than one click detector, it defaults to the first "NAME_OfflineEvents"
 #'   table in the database.
+#' @param start (optional) start time of event. Mandatory if no detections are added
+#' @param end (optional) end time of event. Mandatory if no detections are added
 #' @param type type of event data to add, either \code{'click'} to add event data using
 #'   the Click Detector module, or \code{'dg'} to add event data using the Detection
 #'   Grouper module
@@ -36,7 +38,8 @@
 #'
 #' @export
 #'
-addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NULL, type=c('click', 'dg')) {
+addPgEvent <- function(db, UIDs=NULL, binary, eventType, comment = NA, 
+                       tableName = NULL, start=NULL, end=NULL,type=c('click', 'dg')) {
     if(!file.exists(db)) {
         stop('Could not find database file', db, call. = FALSE)
     }
@@ -66,7 +69,7 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
                nCol <- 'DataCount'
            }
     )
-
+    
     if(!(clickTableName %in% tableList) ||
        !(eventTableName %in% tableList)) {
         stop('Could not find Click tables in database, check tableName or create',
@@ -86,66 +89,92 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
         evColor <- (eventData$colour[nrow(eventData)] + 1) %% 13
         eventData$eventType <- str_trim(eventData$eventType)
     }
-
     clickData <- dbReadTable(con, clickTableName)
     chanCols <- c('ChannelBitmap', 'Channels')
     chanCols <- chanCols[chanCols %in% colnames(clickData)]
-    UIDs <- sort(UIDs)
-    UIDsToAdd <- UIDs
-    allAppend <- vector('list', length = length(binary))
+    if(!is.null(start)) {
+        startMillis <- 0
+    }
     addTime <- format(nowUTC(), format='%Y-%m-%d %H:%M:%S')
-    names(allAppend) <- binary
-    for(bin in binary) {
-        if(length(UIDsToAdd) == 0) break
-        binData <- loadPamguardBinaryFile(bin, skipLarge=TRUE, keepUIDs = UIDsToAdd)
-        binDf <- pbToDf(binData)
-        if(is.null(binDf) ||
-           nrow(binDf) == 0) next
-        UIDsToAdd <- UIDsToAdd[!(UIDsToAdd %in% binDf$UID)]
-        binDf$millis <- binDf$millis - floor(binDf$date) * 1e3
-        binDf$dbDate <- paste0(format(convertPgDate(binDf$date), format='%Y-%m-%d %H:%M:%S'), '.',
-                               binDf$millis)
-        clickAppend <- clickData[FALSE, ]
-        clickAppend[1:nrow(binDf), ] <- NA
-        clickAppend$UTC <- binDf$dbDate
-        clickAppend$UTCMilliseconds <- binDf$millis
-        clickAppend$PCLocalTime <- clickAppend$UTC
-        clickAppend$PCTime <- addTime
-        clickAppend$UID <- binDf$UID
-        clickAppend$parentID <- evId
-        clickAppend$parentUID <- evUID
-        if(type == 'click') {
-            clickAppend$EventId <- evId
-            clickAppend$ClickNo <- binDf$UID - floor(binDf$UID / 1e5) * 1e5 - 1 # java index start at 0
+    #------------ Adding detection data----
+    if(length(UIDs) == 0) {
+        allAppend <- clickData[FALSE, ]
+        addChan <- NA
+        if(is.null(start) ||
+           is.null(end)) {
+            stop('If event has no detections must specify start/end time')
         }
-        clickAppend$BinaryFile <- basename(bin)
-        for(c in chanCols) {
-            clickAppend[[c]] <- binDf$channelMap
+    } else {
+        UIDs <- sort(UIDs)
+        UIDsToAdd <- UIDs
+        allAppend <- vector('list', length = length(binary))
+        names(allAppend) <- binary
+        for(bin in binary) {
+            if(length(UIDsToAdd) == 0) break
+            binData <- loadPamguardBinaryFile(bin, skipLarge=TRUE, keepUIDs = UIDsToAdd)
+            binDf <- pbToDf(binData)
+            if(is.null(binDf) ||
+               nrow(binDf) == 0) next
+            UIDsToAdd <- UIDsToAdd[!(UIDsToAdd %in% binDf$UID)]
+            binDf$millis <- binDf$millis - floor(binDf$date) * 1e3
+            binDf$dbDate <- paste0(format(convertPgDate(binDf$date), format='%Y-%m-%d %H:%M:%S'), '.',
+                                   binDf$millis)
+            clickAppend <- clickData[FALSE, ]
+            clickAppend[1:nrow(binDf), ] <- NA
+            clickAppend$UTC <- binDf$dbDate
+            clickAppend$UTCMilliseconds <- binDf$millis
+            clickAppend$PCLocalTime <- clickAppend$UTC
+            clickAppend$PCTime <- addTime
+            clickAppend$UID <- binDf$UID
+            clickAppend$parentID <- evId
+            clickAppend$parentUID <- evUID
+            if(type == 'click') {
+                clickAppend$EventId <- evId
+                clickAppend$ClickNo <- binDf$UID - floor(binDf$UID / 1e5) * 1e5 - 1 # java index start at 0
+            }
+            clickAppend$BinaryFile <- basename(bin)
+            for(c in chanCols) {
+                clickAppend[[c]] <- binDf$channelMap
+            }
+            clickAppend$LongDataName <- switch(
+                binData$fileInfo$fileHeader$moduleType,
+                'Click Detector' = paste0(binData$fileInfo$fileHeader$moduleName, ', ', binData$fileInfo$fileHeader$streamName),
+                'WhistlesMoans' = paste0(binData$fileInfo$fileHeader$moduleName, c(', ', ' Contours'), collapse = ''),
+                'GPL Detector' = paste0(binData$fileInfo$fileHeader$moduleName, c(', ', ' Detections'), collapse = '')
+            )
+            clickAppend$TEMPTIME <- binDf$date
+            allAppend[[bin]] <- clickAppend
         }
-        clickAppend$LongDataName <- switch(
-            binData$fileInfo$fileHeader$moduleType,
-            'Click Detector' = paste0(binData$fileInfo$fileHeader$moduleName, ', ', binData$fileInfo$fileHeader$streamName),
-            'WhistlesMoans' = paste0(binData$fileInfo$fileHeader$moduleName, c(', ', ' Contours'), collapse = ''),
-            'GPL Detector' = paste0(binData$fileInfo$fileHeader$moduleName, c(', ', ' Detections'), collapse = '')
-        )
-        clickAppend$TEMPTIME <- binDf$date
-        allAppend[[bin]] <- clickAppend
+        if(length(UIDsToAdd) > 0) {
+            warning('Could not find UID(s) ', paste0(UIDsToAdd, collapse=', '),
+                    ' in binary files.')
+        }
+        allAppend <- bind_rows(allAppend)
+        if(is.null(start)) {
+            start <- allAppend$UTC[which.min(allAppend$TEMPTIME)]
+            startMillis <- allAppend$UTCMilliseconds[which.min(allAppend$TEMPTIME)]
+        }
+        if(is.null(end)) {
+            end <- allAppend$UTC[which.max(allAppend$TEMPTIME)]
+        }
+        addChan <- unique(allAppend$ChannelBitmap)[1]
+        allAppend['TEMPTIME'] <- NULL
     }
-    if(length(UIDsToAdd) > 0) {
-        warning('Could not find UID(s) ', paste0(UIDsToAdd, collapse=', '),
-                ' in binary files.')
-    }
-    allAppend <- bind_rows(allAppend)
+    # ----- working on event data ----
+    start <- format(start, format='%Y-%m-%d %H:%M:%S')
+    end <- format(end, format='%Y-%m-%d %H:%M:%S')
     chanCols <- c('ChannelBitmap', 'channels')
     chanCols <- chanCols[chanCols %in% colnames(eventAppend)]
     eventAppend$Id <- evId
     eventAppend$UID <- evUID
-    eventAppend$UTC <- allAppend$UTC[which.min(allAppend$TEMPTIME)]
+    
+    eventAppend$UTC <- start
     eventAppend$PCLocalTime <- eventAppend$UTC
     eventAppend$PCTime <- addTime
-    eventAppend[[endTimeCol]] <- allAppend$UTC[which.max(allAppend$TEMPTIME)]
-    eventAppend$UTCMilliseconds <- allAppend$UTCMilliseconds[which.min(allAppend$TEMPTIME)]
-    allAppend['TEMPTIME'] <- NULL
+    
+    eventAppend[[endTimeCol]] <- end
+    eventAppend$UTCMilliseconds <- startMillis
+    
     eventAppend[[nCol]] <- nrow(allAppend)
     if(!'eventType' %in% colnames(eventData)) {
         addColQ <- paste0('ALTER TABLE ', eventTableName,
@@ -155,7 +184,7 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
     }
     eventAppend$eventType <- eventType
     for(c in chanCols) {
-        eventAppend[[c]] <- unique(clickAppend$ChannelBitmap)[1]
+        eventAppend[[c]] <- addChan
     }
     if(is.na(comment)) {
         comment <- paste0('Created by PAMmisc v', packageVersion('PAMmisc'))
@@ -172,21 +201,22 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
     }
     # clickData$Id <- NA
     # eventData$Id <- NA
-
-    # dbAppendTable(con, clickTableName, allAppend)
+    
+    
+    # Do append if there was no data or if data we want to add doesnt already exist
     if(nrow(eventData) == 0 ||
        nrow(setdiff(eventAppend[c('UTC', 'UTCMilliseconds', endTimeCol, 'eventType')],
-               eventData[c('UTC', 'UTCMilliseconds', endTimeCol, 'eventType')])) > 0) {
+                    eventData[c('UTC', 'UTCMilliseconds', endTimeCol, 'eventType')])) > 0) {
         dbAppendTable(con, clickTableName, allAppend)
         dbAppendTable(con, eventTableName, eventAppend)
     } else {
         return(FALSE)
     }
-
+    
     # Add eventType to Lookup table if it isnt there, also create Lookup if not there
     if(!('Lookup' %in% tableList)) {
         tbl <- dbSendQuery(con,
-                    "CREATE TABLE Lookup
+                           "CREATE TABLE Lookup
             (Id INTEGER,
             Topic CHARACTER(50),
             DisplayOrder INTEGER,
@@ -201,7 +231,7 @@ addPgEvent <- function(db, UIDs, binary, eventType, comment = NA, tableName = NU
     }
     lookup <- dbReadTable(con, 'Lookup')
     if(nrow(lookup) > 0 &&
-        (eventType %in% str_trim(lookup$Code[str_trim(lookup$Topic) == lookupTopic]))) {
+       (eventType %in% str_trim(lookup$Code[str_trim(lookup$Topic) == lookupTopic]))) {
         return(invisible(TRUE))
     }
     # if(eventType %in% str_trim(lookup$Code)) {
@@ -231,7 +261,7 @@ createClickTables <- function(con) {
     # dbCreateTable(con, 'gpsData', GPSDF) then dbAppendTable(con, 'gpsData', GPSDF)
     # is sort of an option if we convert UTC to character first
     clickTbl <- dbSendQuery(con,
-                       "CREATE TABLE Click_Detector_OfflineClicks
+                            "CREATE TABLE Click_Detector_OfflineClicks
             (Id INTEGER,
             UID BIGINT,
             UTC TIMESTAMP,
@@ -251,7 +281,7 @@ createClickTables <- function(con) {
             PRIMARY KEY (Id))")
     dbClearResult(clickTbl)
     eventTbl <- dbSendQuery(con,
-                       "CREATE TABLE Click_Detector_OfflineEvents
+                            "CREATE TABLE Click_Detector_OfflineEvents
             (Id INTEGER,
             UID BIGINT,
             UTC TIMESTAMP,
@@ -310,7 +340,7 @@ createClickTables <- function(con) {
 
 createUDFDropdown <- function(con) {
     UDFtbl <- dbSendQuery(con,
-                            "CREATE TABLE UDF_Dropdown
+                          "CREATE TABLE UDF_Dropdown
             (Id INTEGER,
             Order INTEGER,
             Type CHAR(50),
