@@ -50,7 +50,7 @@ getStTz <- function(x) {
     tzOut
 }
 
-prepTzFix <- function(x, offset=NULL, suffix=c('wav', 'sud', 'log.xml', 'accel.csv')) {
+prepTzFix <- function(x, offset=NULL, suffix=c('wav', 'sud', 'log.xml', 'accel.csv', 'temp.csv')) {
     suffix <- paste0('\\.',suffix, '$', collapse='|')
     suffix <- paste0('(', suffix, ')')
     # wavList <- list.files(x, full.names=FALSE, recursive = FALSE, pattern=paste0('\\.',suffix, '$', collapse='|'))

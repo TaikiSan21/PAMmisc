@@ -57,6 +57,11 @@ addPgEvent <- function(db, UIDs=NULL, binary, eventType, comment = NA,
                lookupTopic <- 'OfflineRCEvents'
                endTimeCol <- 'EventEnd'
                nCol <- 'nClicks'
+               if(!(clickTableName %in% tableList) ||
+                  !(eventTableName %in% tableList)) {
+                   stop('Could not find Click tables in database, check "tableName" or create ',
+                        'Click Detector in Pamguard first.')
+               }
            },
            'dg' = {
                getName <- grep('_Children', tableList, value=TRUE)[1]
@@ -67,14 +72,15 @@ addPgEvent <- function(db, UIDs=NULL, binary, eventType, comment = NA,
                lookupTopic <- 'DGEventType'
                endTimeCol <- 'EndTime'
                nCol <- 'DataCount'
+               if(!(clickTableName %in% tableList) ||
+                  !(eventTableName %in% tableList)) {
+                   stop('Could not find Detection Grouper tables in database, check "tableName" or create ',
+                        'Detection Grouper in Pamguard first.')
+               }
            }
     )
     
-    if(!(clickTableName %in% tableList) ||
-       !(eventTableName %in% tableList)) {
-        stop('Could not find Click tables in database, check tableName or create',
-             'Click Detector in Pamguard first.')
-    }
+    
     # intiialise event and click tables to add
     eventData <- dbReadTable(con, eventTableName)
     eventAppend <- eventData[FALSE, ]
