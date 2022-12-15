@@ -1,3 +1,8 @@
+# PAMmisc 1.10.4
+
+* Changing `downloadEnv` timeout time to 120s. Not sure why it was set to 1200
+previously, either type or misunderstanding of units?
+
 # PAMmisc 1.10.3
 
 * Updating `addPgEvent` to work with events that have 0 detections, and also
