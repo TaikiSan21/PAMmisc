@@ -14,6 +14,8 @@ library(xml2)
 # Change on 2022-12-2:
 # 1) Re-working timezone checking to compare UTCSampleStart & file time
 #    because offloader timezone does not do DST and is sometimes wrong
+# Change on 2022-12-19:
+# 1) Adding check for Triton decimated files ending in .d##.wav
 #-------------------------#
 getStTz <- function(x) {
     xml <- read_xml(x)
@@ -125,14 +127,17 @@ prepTzFix <- function(x, offset=NULL, suffix=c('wav', 'sud', 'log.xml', 'accel.c
 
 processStWavNames <- function(x, type=c('st', 'sm3m'), prefix=FALSE, suffix='wav') {
     type <- match.arg(type)
+    # checking for possible triton decimation tag
+    tritonDeci <- '(\\.d[0-9]{0,3})?'
+    suffix <- paste0(tritonDeci, suffix, '$')
     switch(type,
            'st' = {
                format <- '%y%m%d%H%M%S'
-               pattern <- paste0('(.*\\.)([0-9]{12})', suffix, '$')
+               pattern <- paste0('(.*\\.)([0-9]{12})', suffix)
            },
            'sm3m' = {
                format <- '%Y%m%d_%H%M%S'
-               pattern <- paste0('(.*_)([0-9]{8}_[0-9]{6})', suffix, '$')
+               pattern <- paste0('(.*_)([0-9]{8}_[0-9]{6})', suffix)
            }
     )
     if(isTRUE(prefix)) {
