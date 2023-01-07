@@ -10,7 +10,8 @@
 #'   If left as default \code{NULL}, user will be prompted to select which
 #'   variables to keep. If not \code{NULL}, can either be a single \code{TRUE}
 #'   to select all variables, or a logical vector of length equal to the number
-#'   of variables in \code{edinfo}
+#'   of variables in \code{edinfo}. Can also be a vector of variable names to
+#'   select.
 #'
 #' @author Taiki Sakai \email{taiki.sakai@@noaa.gov}
 #'
@@ -32,6 +33,9 @@
 #' @export
 #'
 varSelect <- function(edinfo, select=NULL) {
+    if(is.character(select)) {
+        select <- edinfo$vars %in% select
+    }
     if(length(select) == 1) {
         select <- rep(select, length(edinfo$vars))
     }

@@ -6,6 +6,8 @@
 #' @param data dataframe containing Longitude, Latitude, and UTC to extract matching
 #'   variables from the netcdf file
 #' @param nc name of a netcdf file
+#' @param var (optional) character vector of variable names to match. If \code{NULL}, all
+#'   variables present in \code{nc} will be used
 #' @param buffer vector of Longitude, Latitude, and Time (seconds) to buffer around
 #'   each datapoint. All values within the buffer will be used to report the mean,
 #'   median, and standard deviation
@@ -50,7 +52,7 @@
 #'
 #' @export
 #'
-ncToData <- function(data, nc, buffer = c(0,0,0), FUN = c(mean),
+ncToData <- function(data, nc, var=NULL, buffer = c(0,0,0), FUN = c(mean),
                      raw = FALSE, keepMatch=TRUE, progress=TRUE, depth=0, verbose=TRUE) {
     nc <- nc_open(nc)
     on.exit(nc_close(nc))
@@ -72,6 +74,20 @@ ncToData <- function(data, nc, buffer = c(0,0,0), FUN = c(mean),
     nDim <- lapply(nc$var, function(v) v$ndim)
     dropVar <- c(dropVar, names(nc$var)[which(nDim == 0)])
     varNames <- names(nc$var)[!(names(nc$var) %in% dropVar)]
+    if(!is.null(var)) {
+        hasVar <- var %in% varNames
+        if(!any(hasVar)) {
+            stop('None of the desired variables (',
+                 paste0(var, collapse=','),
+                 ') were present in the NC file.')
+        }
+        if(!all(hasVar)) {
+            warning('Some of the desired variables (',
+                    paste0(var[!hasVar], collapse=','),
+                    ') were missing from the NC file.')
+        }
+        varNames <- var[hasVar]
+    }
     names(nc$dim) <- standardCoordNames(names(nc$dim))
     if('Depth' %in% names(nc$dim)) {
         matchDims <- c('matchLong', 'matchLat', 'matchTime', 'matchDepth')

@@ -1,3 +1,11 @@
+# PAMmisc 1.10.5
+
+* Bug fix so that environmental data functions work properly with NA values 
+(they are just not matched, previously would error)
+
+* Change to `varSelect`, `ncToData`, and `matchEnvData` to be able to use
+variable names in `var` argument to select without interaction
+
 # PAMmisc 1.10.4
 
 * Changing `downloadEnv` timeout time to 120s. Not sure why it was set to 1200

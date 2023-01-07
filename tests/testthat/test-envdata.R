@@ -5,12 +5,13 @@ test_that('Test variable selection on edi object', {
 
     ediSelectAll <- varSelect(edi, select=TRUE)
     ediSelectAll2 <- varSelect(edi, select=rep(TRUE,4))
-
+    ediSelectAll3 <- varSelect(edi, select=c('analysed_sst', 'analysis_error',
+                                             'mask', 'sea_ice_fraction'))
     expect_is(ediSelectAll, 'edinfo')
     expect_is(edi, 'edinfo')
     expect_error(varSelect(edi, select=c(TRUE, FALSE)))
     expect_warning(varSelect(edi, select=FALSE))
-    expect_identical(ediSelectAll, ediSelectAll2)
+    expect_identical(ediSelectAll, ediSelectAll2, ediSelectAll3)
 })
 
 test_that('Making data range for URL requests', {
@@ -42,16 +43,21 @@ test_that('Matching .nc data to a dataframe', {
     expect_identical(gps, matched[, 1:ncol(gps)])
     expect_true(all(paste0('analysed_sst_', c('mean')) %in% colnames(matched)))
     expect_identical(matched, matchEnvData(gps, nc, progress=FALSE))
+    # var naming
+    matchName <- ncToData(gps, nc, var='analysed_sst', progress=FALSE)
+    expect_true('analysed_sst_mean' %in% colnames(matchName))
+    expect_warning(ncToData(gps, nc, var=c('analysed_sst', 'extra_variable', progress=FALSE)), 'Some of')
+    expect_error(ncToData(gps, nc, var='wrong_variable', progress=FALSE), 'None of')
     # all within buffer
     raw <- ncToData(gps, nc, raw=TRUE, buffer=c(.01, .01, 86400), progress = FALSE)
     expect_is(raw, 'list')
     expect_equal(length(raw), nrow(gps))
     # new functions
     meanPlusOne <- function(x) mean(x, na.rm=TRUE) + 1
-    plusOne <- ncToData(gps, nc, FUN = c(mean, meanPlusOne), progress=FALSE)
+    plusOne <- ncToData(gps, nc, var='analysed_sst', FUN = c(mean, meanPlusOne), progress=FALSE)
     expect_true(all(paste0('analysed_sst_', c('mean', 'meanPlusOne')) %in% colnames(plusOne)))
     expect_identical(plusOne$analysed_sst_mean + 1, plusOne$analysed_sst_meanPlusOne)
-    expect_identical(plusOne, matchEnvData(gps, nc, FUN=c(mean, meanPlusOne), progress=FALSE))
+    expect_identical(plusOne, matchEnvData(gps, nc, var='analysed_sst', FUN=c(mean, meanPlusOne), progress=FALSE))
     # test warn if seems out of data bounds
     gpsOOB <- data.frame(Latitude = 33, Longitude = -116, UTC = as.POSIXct('2005-01-01 00:00:00', tz='UTC'))
     expect_warning(ncToData(gpsOOB, nc, progress=FALSE))

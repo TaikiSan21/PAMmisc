@@ -7,6 +7,7 @@
 ncToData(
   data,
   nc,
+  var = NULL,
   buffer = c(0, 0, 0),
   FUN = c(mean),
   raw = FALSE,
@@ -21,6 +22,9 @@ ncToData(
 variables from the netcdf file}
 
 \item{nc}{name of a netcdf file}
+
+\item{var}{(optional) character vector of variable names to match. If \code{NULL}, all
+variables present in \code{nc} will be used}
 
 \item{buffer}{vector of Longitude, Latitude, and Time (seconds) to buffer around
 each datapoint. All values within the buffer will be used to report the mean,

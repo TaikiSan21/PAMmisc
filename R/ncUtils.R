@@ -311,8 +311,8 @@ nowUTC <- function() {
 
 estDownloadSize <- function(x, edi, verbose=FALSE) {
     spacing <- edi$spacing
-    nLats <- floor(diff(range(x$Latitude)) / spacing$Latitude) + 3
-    nLongs <- floor(diff(range(x$Longitude)) / spacing$Longitude) + 3
+    nLats <- floor(diff(range(x$Latitude, na.rm=TRUE)) / spacing$Latitude) + 3
+    nLongs <- floor(diff(range(x$Longitude, na.rm=TRUE)) / spacing$Longitude) + 3
     if(is.null(spacing$UTC) || is.na(spacing$UTC)) {
         nTimes <- 1
     } else {
@@ -323,7 +323,7 @@ estDownloadSize <- function(x, edi, verbose=FALSE) {
     } else {
         if('Depth' %in% colnames(x) &&
            edi$source != 'hycom') {
-            nDepths <- floor(diff(range(x$Depth)) / spacing$Depth) + 3
+            nDepths <- floor(diff(range(x$Depth, na.rm=TRUE)) / spacing$Depth) + 3
         } else {
             nDepths <- floor(diff(edi$limits$Depth) / spacing$Depth) + 3
         }
@@ -343,11 +343,13 @@ planDownload <- function(x, edi, last=0, thresh=50) {
     if(estSize$size <= thresh) {
         return(rep(last + 1, nrow(x)))
     }
-    whichLow <- x[[estSize$biggest]] <= mean(range(x[[estSize$biggest]]))
-    lows <- planDownload(x[whichLow, ], edi, last, thresh)
-    highs <- planDownload(x[!whichLow, ], edi, max(lows), thresh)
+    whichLow <- x[[estSize$biggest]] <= mean(range(x[[estSize$biggest]], na.rm=TRUE))
+    isNa <- is.na(whichLow)
+    lows <- planDownload(x[whichLow & !isNa, ], edi, last, thresh)
+    highs <- planDownload(x[!whichLow & !isNa, ], edi, max(lows), thresh)
     out <- rep(NA, nrow(x))
-    out[whichLow] <- lows
-    out[!whichLow] <- highs
+    out[whichLow & !isNa] <- lows
+    out[!whichLow & !isNa] <- highs
+    out[isNa] <- -1
     out
 }

@@ -72,11 +72,11 @@ setMethod('matchEnvData', 'data.frame',
                    fileName = NULL, progress=TRUE, depth=0, ...) {
               # First just get an edinfo
               if(is.null(nc)) {
-                  nc <- browseEdinfo(var=var)
+                  nc <- browseEdinfo()
               }
               if(is.character(nc) &&
                  !file.exists(nc)) {
-                  nc <- try(erddapToEdinfo(nc, chooseVars = TRUE))
+                  nc <- try(erddapToEdinfo(nc, chooseVars = FALSE))
                   if(inherits(nc, 'try-error')) {
                       stop(paste0(nc, ' must be a valid nc file or erddap dataset id.'))
                   }
@@ -93,7 +93,7 @@ setMethod('matchEnvData', 'data.frame',
               # if pointing to an ncfile, just do that
               if(is.character(nc) &&
                  file.exists(nc)) {
-                  return(ncToData(data=data, nc=nc, buffer=buffer, FUN=FUN, progress=progress, depth=depth, ...))
+                  return(ncToData(data=data, nc=nc, var=var, buffer=buffer, FUN=FUN, progress=progress, depth=depth, ...))
               }
 
               if(!inherits(nc, 'edinfo')) {
@@ -101,7 +101,7 @@ setMethod('matchEnvData', 'data.frame',
               }
               if(is.null(nc$varSelect) ||
                  !any(nc$varSelect)) {
-                  nc <- varSelect(nc)
+                  nc <- varSelect(nc, var)
               }
               # browser()
               if(inherits(nc, 'hycomList')) {
@@ -148,6 +148,13 @@ setMethod('matchEnvData', 'data.frame',
                   planFiles <- vector('list', length=length(unique(plan)))
                   names(planFiles) <- unique(plan)
                   for(p in unique(plan)) {
+                      if(p == '-1') {
+                          if(progress) {
+                              pbix <- pbix + 1
+                              setTxtProgressBar(pb, value = pbix)
+                          }
+                          next
+                      }
                       thisFile <- fileNameManager(suffix=p)
                       planFiles[[p]] <- downloadEnv(data=data[plan == p, ],fileName = thisFile, edinfo = nc, buffer = buffer)
                       #####################################
@@ -164,7 +171,11 @@ setMethod('matchEnvData', 'data.frame',
                   }
                   result <- vector('list', length = nrow(data))
                   for(i in seq_along(result)) {
-                      result[[i]] <- ncToData(data=data[i, ], nc=planFiles[[plan[i]]], buffer=buffer, FUN=FUN, progress=FALSE, depth=depth, ...)
+                      if(plan[i] == '-1') {
+                          result[[i]] <- data[i, ]
+                          next
+                      }
+                      result[[i]] <- ncToData(data=data[i, ], nc=planFiles[[plan[i]]], var=var, buffer=buffer, FUN=FUN, progress=FALSE, depth=depth, ...)
                   }
                   if(progress) {
                       cat('\n')
@@ -192,11 +203,11 @@ setMethod('matchEnvData', 'data.frame',
                   colnames(data) <- oldNames
                   dataLeft <- data[left, ]
                   dataRight <- data[!left, ]
-                  return(bind_rows(ncToData(data=dataLeft, nc=ncData[1], buffer=buffer, FUN=FUN, progress=progress, depth=depth, ...),
-                                   ncToData(data=dataRight, nc=ncData[2], buffer=buffer, FUN=FUN, progress=progress, depth=depth, ...))
+                  return(bind_rows(ncToData(data=dataLeft, nc=ncData[1], var=var, buffer=buffer, FUN=FUN, progress=progress, depth=depth, ...),
+                                   ncToData(data=dataRight, nc=ncData[2], var=var, buffer=buffer, FUN=FUN, progress=progress, depth=depth, ...))
                   )
               }
-              return(ncToData(data=data, nc=ncData, buffer=buffer, FUN=FUN, progress=progress, depth=depth, ...))
+              return(ncToData(data=data, nc=ncData, var=var, buffer=buffer, FUN=FUN, progress=progress, depth=depth, ...))
           })
 
 fillNA <- function(x, ix) {

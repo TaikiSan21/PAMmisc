@@ -14,7 +14,8 @@ varSelect(edinfo, select = NULL)
 If left as default \code{NULL}, user will be prompted to select which
 variables to keep. If not \code{NULL}, can either be a single \code{TRUE}
 to select all variables, or a logical vector of length equal to the number
-of variables in \code{edinfo}}
+of variables in \code{edinfo}. Can also be a vector of variable names to
+select.}
 }
 \value{
 the same object as \code{edinfo} with an updated \code{varSelect} field
