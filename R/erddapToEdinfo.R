@@ -6,6 +6,7 @@
 #' @param dataset an ERDDAP or HYCOM dataset id, or the result from \link[rerddap]{info}
 #' @param baseurl the base URL of an ERDDAP/HYCOM server
 #' @param chooseVars logical flag whether or not to select which variables you want now
+#'   or character vector naming variables to select
 #'
 #' @author Taiki Sakai \email{taiki.sakai@@noaa.gov}
 #'
@@ -99,8 +100,10 @@ erddapToEdinfo <- function(dataset, baseurl='https://upwell.pfeg.noaa.gov/erddap
     }
     result$is180 <- dataIs180(result$limits$Longitude)
     result$source <- 'erddap'
-    if(chooseVars) {
+    if(isTRUE(chooseVars)) {
         result <- varSelect(result)
+    } else if(is.character(chooseVars)) {
+        result <- varSelect(result, chooseVars)
     }
     class(result) <- c('edinfo', 'list')
     result
@@ -165,8 +168,10 @@ hycomToEdinfo <- function(dataset='GLBy0.08/expt_93.0',
                    source='hycom'
     )
     result$is180 <- dataIs180(result$limits$Longitude)
-    if(chooseVars) {
+    if(isTRUE(chooseVars)) {
         result <- varSelect(result)
+    } else if(is.character(chooseVars)) {
+        result <- varSelect(result, chooseVars)
     }
     class(result) <- c('edinfo', 'list')
     result

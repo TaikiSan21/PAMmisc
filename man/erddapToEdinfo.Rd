@@ -22,7 +22,8 @@ hycomToEdinfo(
 
 \item{baseurl}{the base URL of an ERDDAP/HYCOM server}
 
-\item{chooseVars}{logical flag whether or not to select which variables you want now}
+\item{chooseVars}{logical flag whether or not to select which variables you want now
+or character vector naming variables to select}
 }
 \value{
 an edinfo list object that can be used to download environmental data
