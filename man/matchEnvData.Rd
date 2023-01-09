@@ -70,24 +70,24 @@ Extracts all variables from a netcdf file matching Longitude,
 }
 \examples{
 data <- data.frame(Latitude = 32, Longitude = -117,
-                   UTC = as.POSIXct('2000-01-01 00:00:00', tz='UTC'))
+                   UTC = as.POSIXct('2004-12-31 09:00:00', tz='UTC'))
 \dontrun{
 # Not run because downloads files
-sstEdi <- getEdinfo()[['jplMURSST41']]
-sstEdi <- varSelect(sstEdi, TRUE)
 # default calculates mean, median, and standard deviation
-matchEnvData(data, sstEdi)
+matchEnvData(data, nc='jplMURSST41', var=c('analysed_sst', 'analysis_error'))
 # get just mean within a buffer around coordinates
-matchEnvData(data, sstEdi, FUN = mean, buffer = c(.01, .01, 86400))
+matchEnvData(data, nc='jplMURSST41', var=c('analysed_sst', 'analysis_error'),
+             FUN = mean, buffer = c(.01, .01, 86400))
+}
 # Can also work from an existing nc file
-nc <- downloadEnv(data, sstEdi, buffer = c(.01, .01, 86400))
+nc <- system.file('extdata', 'sst.nc', package='PAMmisc')
 matchEnvData(data, nc = nc)
 # Using a custom function
 meanPlusOne <- function(x) {
   mean(x, na.rm=TRUE) + 1
 }
 matchEnvData(data, nc=nc, FUN=c(mean, meanPlusOne))
-}
+
 
 }
 \author{
