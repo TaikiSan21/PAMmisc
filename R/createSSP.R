@@ -35,7 +35,7 @@
 #' @importFrom seewave wasp
 #' @export
 #'
-createSSP <- function(x, f=30e3, nc=NULL, ncVars=c('salinity', 'water_temp'), dropNA=TRUE, progress, ...) {
+createSSP <- function(x, f=30e3, nc=NULL, ncVars=c('salinity', 'water_temp'), dropNA=TRUE, progress=TRUE, ...) {
     if(!all(c('UTC', 'Longitude', 'Latitude') %in% names(x))) {
         warning('Need UTC, Longitude, and Latitude columns')
         return(NULL)

@@ -10,7 +10,7 @@ createSSP(
   nc = NULL,
   ncVars = c("salinity", "water_temp"),
   dropNA = TRUE,
-  progress,
+  progress = TRUE,
   ...
 )
 }
