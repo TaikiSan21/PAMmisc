@@ -10,6 +10,7 @@
 #'   \code{NULL}, data will be saved to a temporary folder
 #' @param buffer numeric vector of the amount to buffer the Longitude, Latitude, and
 #'   UTC coordinates by
+#' @param timeout number of seconds before timeout stops download attempt
 #' @param progress logical flag to show download progress
 #'
 #' @return if download is successful, invisibly returns the filename. If it fails returns
@@ -40,7 +41,7 @@
 #'
 #' @export
 #'
-downloadEnv <- function(data, edinfo, fileName = NULL, buffer = c(0, 0, 0), progress=TRUE) {
+downloadEnv <- function(data, edinfo, fileName = NULL, buffer = c(0, 0, 0), timeout=120, progress=TRUE) {
     if(is.character(edinfo)) {
         # do some erddap info checking shit and make a URL for it
         # list above needs base, vars, dataset, fileType, source
@@ -92,12 +93,12 @@ downloadEnv <- function(data, edinfo, fileName = NULL, buffer = c(0, 0, 0), prog
             envData <- try(suppressMessages(GET(url,
                                                 # verbose(),
                                                 progress(),
-                                                timeout(120),
+                                                timeout(timeout),
                                                 write_disk(fileName, overwrite = TRUE))))
         } else {
             envData <- try(suppressMessages(GET(url,
                                                 # verbose(),
-                                                timeout(120),
+                                                timeout(timeout),
                                                 write_disk(fileName, overwrite = TRUE))))
         }
         if(envData$status_code != 200) {

@@ -9,7 +9,9 @@ createSSP(
   f = 30000,
   nc = NULL,
   ncVars = c("salinity", "water_temp"),
-  dropNA = TRUE
+  dropNA = TRUE,
+  progress,
+  ...
 )
 }
 \arguments{
@@ -29,6 +31,10 @@ to \code{nc}}
 SSP will be calculated up to the maximum depth at each coordinate, which can vary.
 Setting this option to \code{FALSE} ensures that outputs are the same length for
 each coordinate, which can be useful}
+
+\item{progress}{logical flag to show progress bar for SST download}
+
+\item{\dots}{additional arguments to pass to \link{matchEnvData}}
 }
 \value{
 a list with one element for each row of \code{x}, each element is a list

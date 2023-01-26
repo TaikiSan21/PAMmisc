@@ -1,3 +1,9 @@
+# PAMmisc 1.10.6
+
+* `matchEnvData` can now set timeout length with `timeout` arg
+
+* `createSSP` has new args `progress` and `...` to pass to `matchEnvData`
+
 # PAMmisc 1.10.5
 
 * Bug fix so that environmental data functions work properly with NA values 
