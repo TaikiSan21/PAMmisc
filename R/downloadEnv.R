@@ -12,7 +12,8 @@
 #'   UTC coordinates by
 #' @param timeout number of seconds before timeout stops download attempt
 #' @param progress logical flag to show download progress
-#'
+#' @param \dots not used
+#' 
 #' @return if download is successful, invisibly returns the filename. If it fails returns
 #'   \code{FALSE}.
 #'
@@ -41,7 +42,7 @@
 #'
 #' @export
 #'
-downloadEnv <- function(data, edinfo, fileName = NULL, buffer = c(0, 0, 0), timeout=120, progress=TRUE) {
+downloadEnv <- function(data, edinfo, fileName = NULL, buffer = c(0, 0, 0), timeout=120, progress=TRUE, ...) {
     if(is.character(edinfo)) {
         # do some erddap info checking shit and make a URL for it
         # list above needs base, vars, dataset, fileType, source
@@ -50,7 +51,7 @@ downloadEnv <- function(data, edinfo, fileName = NULL, buffer = c(0, 0, 0), time
             stop('Not a valid erddap dataset')
         }
         edinfo <- erddapToEdinfo(info)
-        return(downloadEnv(data, edinfo, fileName, buffer))
+        return(downloadEnv(data, edinfo, fileName, buffer, timeout, progress, ...))
     }
     colnames(data) <- standardCoordNames(colnames(data))
     fileName <- fileNameManager(fileName)
@@ -60,8 +61,8 @@ downloadEnv <- function(data, edinfo, fileName = NULL, buffer = c(0, 0, 0), time
         left <- to180(data$Longitude) > 0
         dataLeft <- data[left, ]
         dataRight <- data[!left, ]
-        return(c(downloadEnv(dataLeft, edinfo, fileNameManager(fileName, 'leftLong'), buffer),
-                 downloadEnv(dataRight, edinfo, fileNameManager(fileName, 'rightLong'), buffer)))
+        return(c(downloadEnv(dataLeft, edinfo, fileNameManager(fileName, 'leftLong'), buffer, timeout, progress, ...),
+                 downloadEnv(dataRight, edinfo, fileNameManager(fileName, 'rightLong'), buffer, timeout, progress, ...)))
     }
 
     buffer <- bufferToSpacing(buffer, edinfo)

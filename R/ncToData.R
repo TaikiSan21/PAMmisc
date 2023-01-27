@@ -25,6 +25,7 @@
 #'   Variables will be summarised over the range of these depth values. \code{NULL}
 #'   uses all available depth values
 #' @param verbose logical flag to show warning messages for possible coordinate mismatch
+#' @param \dots not used
 #'
 #' @return original dataframe with three attached columns for each variable in the netcdf
 #'   file, one for each of mean, median, and standard deviation of all values within the buffer
@@ -53,7 +54,7 @@
 #' @export
 #'
 ncToData <- function(data, nc, var=NULL, buffer = c(0,0,0), FUN = c(mean),
-                     raw = FALSE, keepMatch=TRUE, progress=TRUE, depth=0, verbose=TRUE) {
+                     raw = FALSE, keepMatch=TRUE, progress=TRUE, depth=0, verbose=TRUE, ...) {
     nc <- nc_open(nc)
     on.exit(nc_close(nc))
     nc <- romsCheck(nc)

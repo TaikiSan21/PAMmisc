@@ -10,7 +10,8 @@ downloadEnv(
   fileName = NULL,
   buffer = c(0, 0, 0),
   timeout = 120,
-  progress = TRUE
+  progress = TRUE,
+  ...
 )
 }
 \arguments{
@@ -29,6 +30,8 @@ UTC coordinates by}
 \item{timeout}{number of seconds before timeout stops download attempt}
 
 \item{progress}{logical flag to show download progress}
+
+\item{\dots}{not used}
 }
 \value{
 if download is successful, invisibly returns the filename. If it fails returns
