@@ -1,3 +1,9 @@
+# PAMmisc 1.11.0
+
+* Added `getFigshareInfo` function
+
+* Dropped `stringr` dependency (was only using `str_trim` before)
+
 # PAMmisc 1.10.6
 
 * `matchEnvData` can now set timeout length with `timeout` arg

@@ -40,7 +40,7 @@ readSpecAnno <- function(db, table='Spectrogram_Annotation') {
     sa <- sa[, keepCols, drop=FALSE]
     isChar <- which(sapply(sa, function(x) inherits(x, 'character')))
     for(c in isChar) {
-        sa[[c]] <- str_trim(sa[[c]])
+        sa[[c]] <- gsub('^\\s+|\\s+$', '', sa[[c]])
     }
     sa$db <- db
     sa$tableName <- table

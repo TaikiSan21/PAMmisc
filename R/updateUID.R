@@ -25,7 +25,6 @@
 #' updateUID(db, bin)
 #' }
 #'
-#' @importFrom stringr str_trim
 #' @importFrom RSQLite dbRemoveTable dbListFields
 #' @importFrom dplyr distinct desc arrange
 #'
@@ -65,7 +64,7 @@ updateUID <- function(db, binaries, verbose=TRUE, progress=TRUE) {
     for(d in detTables) {
         thisTbl <- dbReadTable(con, d)
         if(nrow(thisTbl) == 0) next
-        thisTbl$BinaryFile <- str_trim(thisTbl$BinaryFile)
+        thisTbl$BinaryFile <- gsub('^\\s+|\\s+$', '', thisTbl$BinaryFile)
         thisTbl$UTC <- as.POSIXct(format(thisTbl$UTC, format='%Y-%m-%d %H:%M:%OS3'), format='%Y-%m-%d %H:%M:%OS', tz='UTC')
         if(progress) {
             cat('\nUpdating table "', d, '" ...\n', sep='')
@@ -220,8 +219,8 @@ findModuleNames <- function(con, module='Detection Group Localiser') {
         if(nrow(mods) == 0) next
         dgTables <- mods[c(typeCols[i], nameCols[i])]
         names(dgTables) <- c('type', 'name')
-        dgTables$type <- str_trim(dgTables$type)
-        dgTables$name <- str_trim(dgTables$name)
+        dgTables$type <- gsub('^\\s+|\\s+$', '', dgTables$type)
+        dgTables$name <- gsub('^\\s+|\\s+$', '', dgTables$name)
         dgTables <- dgTables[dgTables$type == module, ]
         if(nrow(dgTables) == 0) next
         dgTables <- distinct(dgTables)
