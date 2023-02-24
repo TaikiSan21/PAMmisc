@@ -89,7 +89,10 @@ ncToData <- function(data, nc, var=NULL, buffer = c(0,0,0), FUN = c(mean),
         }
         varNames <- var[hasVar]
     }
-    names(nc$dim) <- standardCoordNames(names(nc$dim))
+    usedDim <- unique(unlist(sapply(nc$var, function(x) x$dimids+1)))
+    usedDim <- usedDim[!is.na(usedDim)]
+    names(nc$dim)[usedDim] <- standardCoordNames(names(nc$dim)[usedDim])
+        
     if('Depth' %in% names(nc$dim)) {
         matchDims <- c('matchLong', 'matchLat', 'matchTime', 'matchDepth')
     } else {
@@ -175,10 +178,13 @@ getVarData <- function(data, nc, var, buffer, depth=NULL, verbose=TRUE) {
     xIx <- dimToIx(data$Longitude, nc$dim$Longitude, buffer[1], verbose)
     yIx <- dimToIx(data$Latitude, nc$dim$Latitude, buffer[2], verbose)
     hasT <- 'UTC' %in% names(nc$dim)
-    if(hasT) {
+    multiT <- sum(names(nc$dim) == 'UTC') > 1
+    if(hasT &&
+       !multiT) {
         tIx <- dimToIx(data$UTC, nc$dim$UTC, buffer[3], verbose)
         tVals <- ncTimeToPosix(nc$dim$UTC$vals[tIx$ix], units = nc$dim$UTC$units)
-    } else {
+    }
+    if(!hasT) {
         tVals <- NA
     }
     hasZ <- 'Depth' %in% names(nc$dim)
@@ -201,7 +207,8 @@ getVarData <- function(data, nc, var, buffer, depth=NULL, verbose=TRUE) {
     names(result) <- c(var, 'matchLong', 'matchLat', 'matchTime')
     for(v in var) {
         thisVar <- nc[['var']][[v]]
-        thisDim <- names(nc$dim)[thisVar$dimids+1]
+        thisDimId <- thisVar$dimids+1
+        thisDim <- names(nc$dim)[thisDimId]
         start <- numeric(0)
         count <- numeric(0)
         # build start/count vectors. Typically in XYZT order, but occasionally there
@@ -221,6 +228,11 @@ getVarData <- function(data, nc, var, buffer, depth=NULL, verbose=TRUE) {
                        count <- c(count, zIx$count)
                    },
                    'UTC' = {
+                       if(multiT) {
+                           tIx <- dimToIx(data$UTC, nc$dim[[thisDimId[d]]], buffer[3], verbose)
+                           tVals <- ncTimeToPosix(nc$dim[[thisDimId[d]]]$vals[tIx$ix], 
+                                              units = nc$dim[[thisDimId[d]]]$units)
+                       }
                        start <- c(start, tIx$start)
                        count <- c(count, tIx$count)
                    },

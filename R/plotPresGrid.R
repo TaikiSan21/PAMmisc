@@ -9,7 +9,7 @@
 #'   time in \code{x}
 #' @param end the ending datetime of the plot, if \code{NULL} will be set to the maximum
 #'   time in \code{x}
-#' @param timeBin the unit of time for each rectangle in the grid, must be one of "hour", "minute",
+#' @param bin the unit of time for each rectangle in the grid, must be one of "hour", "minute",
 #'   "30min", or "15min"
 #' @param type one of either "presence" or "density". If "density", then boxes will be colored according
 #'   to the number of detections in each \code{timeBin} will be plotted. If "presence", then each box
@@ -34,13 +34,13 @@
 #'
 #' df <- data.frame(UTC = as.POSIXct(runif(1e2, min=0, max=7*24*3600),
 #'                                   origin='1970-01-01 00:00:00', tz='UTC'))
-#' plotPresGrid(df, type='presence', timeBin='hour')
-#' plotPresGrid(df, type='density', timeBin='hour')
-#' plotPresGrid(df, type='density', timeBin='30min')
+#' plotPresGrid(df, type='presence', bin='hour')
+#' plotPresGrid(df, type='density', bin='hour')
+#' plotPresGrid(df, type='density', bin='30min')
 #' gps <- data.frame(UTC = as.POSIXct('1970-01-01 00:00:00', tz='UTC'),
 #'                  Latitude=32.4,
 #'                  Longitude = -118)
-#' plotPresGrid(df, gps=gps, timeBin='hour')
+#' plotPresGrid(df, gps=gps, bin='hour')
 #'
 #' @export
 #'
@@ -52,7 +52,7 @@
 #' @import dplyr
 #'
 plotPresGrid <- function(x, start=NULL, end=NULL, 
-                         timeBin=c('hour', 'minute', '30min', '15min'),
+                         bin=c('hour', 'minute', '30min', '15min'),
                          type=c('presence', 'density'), gps=NULL,
                          format = c('%m/%d/%Y %H:%M:%S', '%m-%d-%Y %H:%M:%S',
                                     '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M:%S'),
@@ -86,7 +86,7 @@ plotPresGrid <- function(x, start=NULL, end=NULL,
         scale_x_continuous(expand=c(0,0), limits=c(0, 24)) +
         scale_y_datetime(expand=c(0, 0), limits=c(start - period(0, 'day'), end + period(1, 'day'))) +
         labs(x='Hour')
-    switch(match.arg(timeBin),
+    switch(match.arg(bin),
            'hour' = {
                x$plot_min = hour(x$UTC)
                x$plot_max = hour(x$UTC) + 1

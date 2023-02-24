@@ -1,3 +1,12 @@
+# PAMmisc 1.11.1
+
+* Changed `plotPresGrid` and `plotPresBar` arguments to be more intuitive.
+Both now just use `bin` for the binning, and `plotPresBar` can be specified
+as `hours/day` instead of having to remember which was which. 
+
+* Updates to `ncToData` to allow more flexible time specification. Should
+work with a larger variety of netcdf files with more arbitrary time specs
+
 # PAMmisc 1.11.0
 
 * Added `getFigshareInfo` function

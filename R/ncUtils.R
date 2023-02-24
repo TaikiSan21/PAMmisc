@@ -1,5 +1,7 @@
 # converts nc time dimension values to posix , either giving
 # units explicitly or just passing the whole time dimension
+#' @importFrom lubridate parse_date_time
+#'
 ncTimeToPosix <- function(vals, units) {
     # if sending the whole dimension extract bits
     if(is.list(vals) &&
@@ -7,25 +9,51 @@ ncTimeToPosix <- function(vals, units) {
         units <- vals$units
         vals <- vals$vals
     }
-    if(units == 'hours since 2000-01-01 00:00:00') {
-        return(as.POSIXct(vals * 3600, origin = '2000-01-01 00:00:00', tz='UTC'))
+    if(grepl('hours? since', units, ignore.case=TRUE)) {
+        or <- gsub('hours? since ', '', units, ignore.case=TRUE)
+        or <- ymd_hms_fast(or)
+        out <- as.POSIXct(vals * 3600, origin=or, tz='UTC')
+        if(anyNA(out)) {
+            warning('Conversion failed for units ', units)
+        }
+        return(out)
     }
-    if(units == 'seconds since 1970-01-01T00:00:00Z') {
-        return( as.POSIXct(vals, origin = '1970-01-01 00:00:00', tz='UTC'))
+    # if(units == 'hours since 2000-01-01 00:00:00') {
+    #     return(as.POSIXct(vals * 3600, origin = '2000-01-01 00:00:00', tz='UTC'))
+    # }
+    if(grepl('seconds? since', units, ignore.case=TRUE)) {
+        or <- gsub('seconds? since ', '', units, ignore.case=TRUE)
+        or <- ymd_hms_fast(or)
+        out <- as.POSIXct(vals, origin=or, tz='UTC')
+        if(anyNA(out)) {
+            warning('Conversion failed for units ', units)
+        }
+        return(out)
     }
-    if(units == 'seconds since 1981-01-01 00:00:00') {
-        return( as.POSIXct(vals, origin = '1981-01-01 00:00:00', tz='UTC'))
-    }
+    # if(units == 'seconds since 1970-01-01T00:00:00Z') {
+    #     return( as.POSIXct(vals, origin = '1970-01-01 00:00:00', tz='UTC'))
+    # }
+    # if(units == 'seconds since 1981-01-01 00:00:00') {
+    #     return( as.POSIXct(vals, origin = '1981-01-01 00:00:00', tz='UTC'))
+    # }
     if(units == 'count') {
         return(vals)
     }
     if(units == 'posix') {
         return(vals)
     }
-    if(units == 'hours since 1950-01-01') {
-        return(as.POSIXct(vals * 3600, origin = '1950-01-01', tz='UTC'))
-    }
+    # if(units == 'hours since 1950-01-01') {
+    #     return(as.POSIXct(vals * 3600, origin = '1950-01-01', tz='UTC'))
+    # }
     stop('Dont know how to deal with time with units ', units)
+}
+
+ymd_hms_fast <- function(x) {
+    ords <- c('%Y-%m-%d %H:%M:%S',
+              '%Y-%m-%dT%H:%M:%SZ',
+              '%Y/%m/%d %H:%M:%S',
+              '%Y-%m-%dT%H:%M:%S')
+    parse_date_time(x, orders=ords, truncated=3, exact=TRUE)
 }
 
 #
@@ -169,8 +197,14 @@ dataIs180 <- function(data) {
 # just holds this dataframe so i can see it / add to it easily instead of storing it as an rdata
 getCoordNameMatch <- function() {
     data.frame(
-        current = c('lon', 'long', 'lat', 'time', 'longitude', 'latitude', 'utc', 'date', 'dayofyear', 'altitude', 'depth', 'level', 'lev'),
-        standard = c('Longitude', 'Longitude', 'Latitude', 'UTC', 'Longitude', 'Latitude', 'UTC', 'UTC', 'UTC', 'Depth', 'Depth', 'Depth', 'Depth'),
+        current = c('lon', 'long', 'lat', 'time', 'longitude', 'latitude', 
+                    'utc', 'date', 'dayofyear', 'altitude', 'depth', 'level',
+                    'lev', 'height_above_ground2', 'height_above_ground1',
+                    'time1', 'validtime6', 'validtime5', 'validtime9'),
+        standard = c('Longitude', 'Longitude', 'Latitude', 'UTC', 'Longitude', 'Latitude', 
+                     'UTC', 'UTC', 'UTC', 'Depth', 'Depth', 'Depth', 
+                     'Depth', 'Depth', 'Depth', 
+                     'UTC', 'UTC', 'UTC', 'UTC'),
         stringsAsFactors = FALSE
     )
 }
