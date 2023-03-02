@@ -8,7 +8,7 @@ plotPresGrid(
   x,
   start = NULL,
   end = NULL,
-  timeBin = c("hour", "minute", "30min", "15min"),
+  bin = c("hour", "minute", "30min", "15min"),
   type = c("presence", "density"),
   gps = NULL,
   format = c("\%m/\%d/\%Y \%H:\%M:\%S", "\%m-\%d-\%Y \%H:\%M:\%S",
@@ -29,7 +29,7 @@ time in \code{x}}
 \item{end}{the ending datetime of the plot, if \code{NULL} will be set to the maximum
 time in \code{x}}
 
-\item{timeBin}{the unit of time for each rectangle in the grid, must be one of "hour", "minute",
+\item{bin}{the unit of time for each rectangle in the grid, must be one of "hour", "minute",
 "30min", or "15min"}
 
 \item{type}{one of either "presence" or "density". If "density", then boxes will be colored according
@@ -64,13 +64,13 @@ Creates a grid plot of the presence or density of detections across time
 
 df <- data.frame(UTC = as.POSIXct(runif(1e2, min=0, max=7*24*3600),
                                   origin='1970-01-01 00:00:00', tz='UTC'))
-plotPresGrid(df, type='presence', timeBin='hour')
-plotPresGrid(df, type='density', timeBin='hour')
-plotPresGrid(df, type='density', timeBin='30min')
+plotPresGrid(df, type='presence', bin='hour')
+plotPresGrid(df, type='density', bin='hour')
+plotPresGrid(df, type='density', bin='30min')
 gps <- data.frame(UTC = as.POSIXct('1970-01-01 00:00:00', tz='UTC'),
                  Latitude=32.4,
                  Longitude = -118)
-plotPresGrid(df, gps=gps, timeBin='hour')
+plotPresGrid(df, gps=gps, bin='hour')
 
 }
 \author{

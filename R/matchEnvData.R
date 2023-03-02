@@ -156,7 +156,7 @@ setMethod('matchEnvData', 'data.frame',
                           next
                       }
                       thisFile <- fileNameManager(suffix=p)
-                      planFiles[[p]] <- downloadEnv(data=data[plan == p, ],fileName = thisFile, edinfo = nc, buffer = buffer)
+                      planFiles[[p]] <- downloadEnv(data=data[plan == p, ],fileName = thisFile, edinfo = nc, buffer = buffer, ...)
                       #####################################
                       on.exit({
                           tmpFiles <- list.files(hoard()$cache_path_set('PAMmisc'), full.names=TRUE)
@@ -192,7 +192,7 @@ setMethod('matchEnvData', 'data.frame',
               if(!grepl('\\.nc$', fileName)) {
                   fileName <- paste0(fileName, '.nc')
               }
-              ncData <- downloadEnv(data=data, edinfo = nc, fileName = fileName, buffer = buffer)
+              ncData <- downloadEnv(data=data, edinfo = nc, fileName = fileName, buffer = buffer, ...)
               # browser()
               if(length(ncData) > 1) {
                   message('Data crossed the dateline, download split into two files: ',

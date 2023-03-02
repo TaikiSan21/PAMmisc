@@ -93,7 +93,7 @@ addPgEvent <- function(db, UIDs=NULL, binary, eventType, comment = NA,
         evId <- max(eventData$Id, na.rm=TRUE) + 1
         evUID <- max(eventData$UID, na.rm=TRUE) + 1
         evColor <- (eventData$colour[nrow(eventData)] + 1) %% 13
-        eventData$eventType <- str_trim(eventData$eventType)
+        eventData$eventType <- gsub('^\\s+|\\s+$', '', eventData$eventType)
     }
     clickData <- dbReadTable(con, clickTableName)
     chanCols <- c('ChannelBitmap', 'Channels')
@@ -237,7 +237,8 @@ addPgEvent <- function(db, UIDs=NULL, binary, eventType, comment = NA,
     }
     lookup <- dbReadTable(con, 'Lookup')
     if(nrow(lookup) > 0 &&
-       (eventType %in% str_trim(lookup$Code[str_trim(lookup$Topic) == lookupTopic]))) {
+       (eventType %in% gsub('^\\s+|\\s+$', '', 
+                            lookup$Code[gsub('^\\s+|\\s+$', '', lookup$Topic) == lookupTopic]))) {
         return(invisible(TRUE))
     }
     # if(eventType %in% str_trim(lookup$Code)) {

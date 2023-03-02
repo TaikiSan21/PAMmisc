@@ -31,6 +31,7 @@ getStTz <- function(x) {
             return(hourDiff)
         }
     }
+    # if that didnt work try by timezone
     tzNode <- xml_find_all(xml, '//WavFileHandler[@OffloaderTimeZone]')
     tzChar <- unique(xml_attr(tzNode, 'OffloaderTimeZone'))
     if(is.null(tzChar) || length(tzChar) == 0) {

@@ -15,6 +15,8 @@
 #'   SSP will be calculated up to the maximum depth at each coordinate, which can vary.
 #'   Setting this option to \code{FALSE} ensures that outputs are the same length for
 #'   each coordinate, which can be useful
+#' @param progress logical flag to show progress bar for SST download
+#' @param \dots additional arguments to pass to \link{matchEnvData}
 #'
 #' @author Taiki Sakai \email{taiki.sakai@@noaa.gov}
 #'
@@ -33,7 +35,7 @@
 #' @importFrom seewave wasp
 #' @export
 #'
-createSSP <- function(x, f=30e3, nc=NULL, ncVars=c('salinity', 'water_temp'), dropNA=TRUE) {
+createSSP <- function(x, f=30e3, nc=NULL, ncVars=c('salinity', 'water_temp'), dropNA=TRUE, progress=TRUE, ...) {
     if(!all(c('UTC', 'Longitude', 'Latitude') %in% names(x))) {
         warning('Need UTC, Longitude, and Latitude columns')
         return(NULL)
@@ -43,7 +45,7 @@ createSSP <- function(x, f=30e3, nc=NULL, ncVars=c('salinity', 'water_temp'), dr
         nc$varSelect <- nc$vars %in% ncVars
     }
     result <- vector('list', length=nrow(x))
-    x <- matchEnvData(x, nc=nc, raw=TRUE, depth=NULL)
+    x <- matchEnvData(x, nc=nc, raw=TRUE, depth=NULL, progress=progress, ...)
     for(i in seq_along(result)) {
         ssp <- wasp(f=f, t=x[[i]][[ncVars[2]]], s=x[[i]][[ncVars[1]]], d=x[[i]]$matchDepth, medium='sea')
         if(dropNA) {

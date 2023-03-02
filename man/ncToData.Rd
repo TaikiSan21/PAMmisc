@@ -14,7 +14,8 @@ ncToData(
   keepMatch = TRUE,
   progress = TRUE,
   depth = 0,
-  verbose = TRUE
+  verbose = TRUE,
+  ...
 )
 }
 \arguments{
@@ -49,6 +50,8 @@ Variables will be summarised over the range of these depth values. \code{NULL}
 uses all available depth values}
 
 \item{verbose}{logical flag to show warning messages for possible coordinate mismatch}
+
+\item{\dots}{not used}
 }
 \value{
 original dataframe with three attached columns for each variable in the netcdf

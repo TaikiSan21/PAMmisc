@@ -9,7 +9,9 @@ downloadEnv(
   edinfo,
   fileName = NULL,
   buffer = c(0, 0, 0),
-  progress = TRUE
+  timeout = 120,
+  progress = TRUE,
+  ...
 )
 }
 \arguments{
@@ -25,7 +27,11 @@ or an ERDDAP dataset ID}
 \item{buffer}{numeric vector of the amount to buffer the Longitude, Latitude, and
 UTC coordinates by}
 
+\item{timeout}{number of seconds before timeout stops download attempt}
+
 \item{progress}{logical flag to show download progress}
+
+\item{\dots}{not used}
 }
 \value{
 if download is successful, invisibly returns the filename. If it fails returns
