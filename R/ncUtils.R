@@ -339,6 +339,24 @@ planDownload <- function(x, edi, last=0, thresh=50) {
     if(nrow(x) == 1) {
         return(last + 1)
     }
+    # hycom requests to only subset 1 day at a time, doing that here
+    if(edi$source == 'hycom') {
+        # x$dayDiff <- 0
+        x$dayDiff <- as.numeric(difftime(x$UTC, min(x$UTC), units='days'))
+        x$dayDiff <- floor(x$dayDiff)
+        days <- unique(x$dayDiff)
+        if(length(days) > 1) {
+            out <- rep(NA, nrow(x))
+            for(d in days) {
+                out[x$dayDiff == d] <- planDownload(x[x$dayDiff == d, ], edi, last, thresh)
+                if(!all(is.na(out))) {
+                    last <- max(out, na.rm=TRUE)
+                }
+            }
+            out[is.na(out)] <- -1
+            return(out)
+        }
+    }
     estSize <- estDownloadSize(x, edi)
     if(estSize$size <= thresh) {
         return(rep(last + 1, nrow(x)))
