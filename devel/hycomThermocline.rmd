@@ -1,0 +1,125 @@
+---
+title: "HYCOM Data Access and Thermocline Variables"
+author: "Taiki Sakai"
+output: html_document
+---
+
+Prep some fake data. Environmental download functions require columns named exatly
+`Longitude`, `Latitude`, and `UTC`. `UTC` must be converted to POSIXct format.
+
+```{r}
+data <- data.frame(Latitude = c(38, 22.2, 15),
+                   Longitude = c(-123.5, -152.9, 144),
+                   UTC = c('2022-09-27 19:00:48',
+                           '2022-09-27 17:57:48',
+                           '2018-07-20 20:49:00'))
+data$UTC <- as.POSIXct(data$UTC, format='%Y-%m-%d %H:%M:%S', tz='UTC')
+```
+
+Install latest PAMmisc from GitHub
+
+```{r, eval=FALSE}
+# only run this chunk once
+devtools::install_github('TaikiSan21/PAMmisc')
+```
+
+## HYCOM Download 
+
+HYCOM has different datasets depending on the date, by passing this `hycomList` object
+`PAMmisc` will sort out which one you need based on your date ranges in your data,
+even figuring out if your download needs to span multiple datasets.
+
+The Hycom servers can be a bit slow, so this may take some time
+
+```{r, cache=TRUE}
+library(PAMmisc)
+hycomData <- matchEnvData(data, nc=PAMmisc::hycomList, var=c('water_temp', 'salinity'), raw=TRUE, depth = 0:1000)
+```
+
+Normally the `matchEnvData` function will just add the environmental variables to your dataframe,
+averaging them over any depth values. By setting `raw=TRUE`, we instead have it return all values
+at the depths so that we can work with them. The output is a list with length equal to the
+number of rows in our dataframe.
+
+```{r}
+print(hycomData[[1]])
+```
+
+The matchXXX data show the coordinate values in the NetCDF files that your data were matched to. The
+function will match your data to the closest value in the NetCDF file.
+
+## Thermocline Varibales
+
+Now lets use the temperature at depth data to estimate thermocline variables. This function
+returns estimates of mixed layer depth (`mldDepth`), mixed layer temperature (`mldTemp`),
+thermocline depth (`ttDepth`), and thermocline temperature (`ttTemp`). You don't need to 
+worry about the xxxMode parameters, they are place holders in case we want to add 
+different estimation methods in the future.
+
+```{r}
+calcThermoVars <- function(depth, temp, mldMode='SST8', thermMode='variso', plot=FALSE) {
+    # depthInterp <- approxfun(x=temp, y=depth)
+    switch(match.arg(mldMode),
+           'SST8' = {
+               mldTemp <- temp[1] - 0.8
+               # first few temps are likely to have repeat values that trigger
+               # warnings for approxfun, so cut off to only values after mldTemp
+               useMin <- min(which(temp <= mldTemp)) - 1
+               useIx <- useMin:length(temp)
+               depthInterp <- approxfun(x=temp[useIx], y=depth[useIx])
+               mld <- depthInterp(mldTemp)
+           }
+    )
+    switch(match.arg(thermMode),
+           'variso' = {
+               t400 <- approx(x=depth, y=temp, xout=400)$y
+               # therm end is half way to t400 temp
+               tEnd <- mldTemp + (t400 - mldTemp)/2
+               # therm temp is midpt from mld to end
+               tt <- (mldTemp + tEnd)/2
+               # tt <- mldTemp - .25 * (mldTemp - t400)
+               ttDepth <- depthInterp(tt)
+               tEndDepth <- depthInterp(tEnd)
+           }
+    )
+    if(plot) {
+        to300 <- depth <= 300
+        plot(x=temp[to300], y=-depth[to300],
+             main = paste0('MixLayer: ', round(mld,0), 'm ', round(mldTemp, 1), 'C',
+                           '\nTherm: ', round(ttDepth, 0), 'm ', round(tt, 1), 'C'),
+             xlab='Temp (C)', ylab='Depth (m)')
+        
+        lines(x=temp[to300], y=-depth[to300])
+        lines(x=c(mldTemp, tEnd), y=c(-mld, -tEndDepth), col='darkgray', lwd=4)
+        points(x=c(mldTemp, tt), y=c(-mld, -ttDepth), col='blue', cex=1.5, pch=15)
+    }
+    list(mldDepth = mld, mldTemp = mldTemp,
+         ttDepth = ttDepth, ttTemp = tt)
+}
+```
+
+We can calculate these and plot the results for our first data point. The points are the temperature
+values at the depths in the HYCOM data. The light gray line is the estimated thermocline based on the 
+calculations in [Fiedler 2010](https://aslopubs.onlinelibrary.wiley.com/doi/epdf/10.4319/lom.2010.8.313).
+The blue squares mark the calculated mixed layer depth and thermocline depth.
+
+```{r}
+calcThermoVars(hycomData[[1]]$matchDepth, hycomData[[1]]$water_temp, plot=TRUE)
+```
+
+And here's how we would connect these to our original dataframe, adding in the temp & salinity
+at 400m. The list `hycomData` is in the same order as the original rows, so we can just `cbind` them.
+
+```{r}
+library(dplyr)
+thermData <- bind_rows(lapply(hycomData, function(x) {
+    # do thermo calcs
+    result <- calcThermoVars(x$matchDepth, x$water_temp)
+    # get specific values
+    result$temp400 <- x$water_temp[x$matchDepth == 400]
+    result$sal400 <- x$salinity[x$matchDepth == 400]
+    result
+}))
+data <- cbind(data, thermData)
+print(data)
+```
