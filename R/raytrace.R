@@ -33,7 +33,6 @@
 #' cc[751:length(cc)] <- cc[750] + (zz[751:length(zz)] - zz[750])*.014
 #' rt <- raytrace(0, 0, 5, 120, zz, cc, TRUE)
 #'
-#' @importFrom viridisLite viridis
 #' @importFrom graphics title lines legend
 #' @export
 #'
@@ -230,7 +229,7 @@ raytrace <- function(x0, z0, theta0, tt, zz, cc, plot=TRUE, progress=FALSE) {
     if(plot[2]) {
         xRange <- range(sapply(xxf, range))
         zRange <- range(sapply(zzf, range))
-        cols <- viridis(32)
+        cols <- viridis_pal()(32)
         colScale <- 31*((theta0 - min(theta0)) / max(theta0 - min(theta0))) + 1
         if(length(theta0) == 1) {
             colScale <- 1
@@ -250,7 +249,7 @@ raytrace <- function(x0, z0, theta0, tt, zz, cc, plot=TRUE, progress=FALSE) {
             leg[c(1, 6, 11)] <- c(min(theta0), mean(range(theta0)), max(theta0))
             legend(x='topright',
                    legend= c(NA,leg),
-                   fill=c(NA,viridis(11)),
+                   fill=c(NA,viridis_pal()(11)),
                    border=NA,
                    y.intersp = .5,
                    cex=1,

@@ -31,7 +31,7 @@
 #'
 #' df <- data.frame(UTC = as.POSIXct(runif(1e2, min=0, max=7*24*3600),
 #'                                   origin='1970-01-01 00:00:00', tz='UTC'),
-#'                  label = sample(letters[1:3], 1e3, replace=TRUE))
+#'                  label = sample(letters[1:3], 1e2, replace=TRUE))
 #' # hours per day with detections
 #' plotPresBar(df, bin='hour/day')
 #' # calls per day - these options are identical
@@ -49,9 +49,6 @@
 #'
 plotPresBar <- function(x, start=NULL, end=NULL,
                         bin = 'hour/day',
-                        # timeBin=c('day', 'week', 'month', 'hour'),
-                        # type=c('presence', 'density'),
-                        # presBin = c('hour', 'day', 'week', 'minute'),
                         by=NULL, title=TRUE, fill='grey35',
                         format = c('%m/%d/%Y %H:%M:%S', '%m-%d-%Y %H:%M:%S',
                                    '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M:%S')) {
@@ -62,7 +59,7 @@ plotPresBar <- function(x, start=NULL, end=NULL,
            '1' = {
                type <- 'density'
                timeBin <- match.arg(binSplit, binChoice)
-               
+
            },
            '2' = {
                if(binSplit[1] == 'call') {

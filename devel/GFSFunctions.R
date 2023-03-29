@@ -43,7 +43,7 @@ matchGFS <- function(df, base='https://rda.ucar.edu/thredds/ncss/grid/files/g/ds
         x$precRate <- x[[vars[3]]]
         x[c(origCols, 'windU', 'windV', 'precRate', 'matchLong_mean', 'matchLat_mean', 'matchTime_mean')]
     })
-    splitDf  
+    bind_rows(splitDf)
 }
 
 formatURL_GFS <- function(range, date=NULL, base='https://rda.ucar.edu/thredds/ncss/grid/files/g/ds084.1/') {
@@ -61,7 +61,7 @@ formatURL_GFS <- function(range, date=NULL, base='https://rda.ucar.edu/thredds/n
         range[[c]] <- round(range[[c]], 3)
     }
     range <- PAMmisc:::to180(range)
-    
+
     date3 <- round_date(date, unit='3hour')
     # if(length(date3) == 1) {
     #     date3 <- rep(date3, 2)
@@ -79,12 +79,12 @@ formatURL_GFS <- function(range, date=NULL, base='https://rda.ucar.edu/thredds/n
                         '.grib2?')
     vars <- c('u-component_of_wind_height_above_ground',
               'v-component_of_wind_height_above_ground')
-    precAvg <- 
+    precAvg <-
         precVar <- ifelse(f == 'f000', 'Precipitation_rate_surface',
                           'Precipitation_rate_surface_3_Hour_Average')
     vars <- c(vars, precVar)
     varPart <- paste0('var=', vars, '&', collapse='')
-    
+
     llPart <- paste0('north=', range[['Latitude']][[2]],
                      '&west=', range[['Longitude']][[1]],
                      '&east=', range[['Longitude']][[2]],
@@ -93,7 +93,7 @@ formatURL_GFS <- function(range, date=NULL, base='https://rda.ucar.edu/thredds/n
     endPart <- '&&&accept=netcdf4-classic'
     timePart <- paste0('time_start=',format(date3[1], '%Y-%m-%dT%H:%M:%SZ'),
                        '&time_end=', format(date3[1], '%Y-%m-%dT%H:%M:%SZ'))
-    url <- paste0(base, 
+    url <- paste0(base,
                   datePart,
                   varPart,
                   llPart,

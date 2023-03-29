@@ -1,3 +1,10 @@
+# PAMmisc 1.11.2
+
+* Added `by` argument to `plotPresGrid` that will either overlay colors
+with an alpha value or split graphs with `facet_wrap`
+
+* Removed `data.table` dependency and changed `viridisLite` to `scales`
+
 # PAMmisc 1.11.1
 
 * Changed `plotPresGrid` and `plotPresBar` arguments to be more intuitive.

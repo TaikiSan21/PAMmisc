@@ -13,6 +13,7 @@ gps$UTC <- ymd_hms(gps$UTC)
 library(patchwork)
 library(PAMpal)
 click <- getClickData(readRDS('../../CV4Ecology/rds/PASCAL_Base_AcSt.rds'))
+click <- filter(click, species %in% c('ZC', 'BB', 'BW37V', 'MS', 'BW43'))
 barSpecMD <- plotCallBar(click, type='presence', by='species', presBin='minute', timeBin='day')
 barSpecHW <- plotCallBar(click, type='presence', by='species', presBin='hour', timeBin='week')
 barDens <- plotCallBar(click, type='density')
@@ -35,3 +36,12 @@ gps <- data.frame(UTC = as.POSIXct('1970-01-01 00:00:00', tz='UTC'),
                   Latitude=32.4,
                   Longitude = -118)
 plotCallGrid(df, gps=gps, timeBin='hour')
+
+
+library(patchwork)
+
+tRange <- range(click$UTC)
+zc <- plotPresGrid(filter(click, species == 'ZC'), start=tRange[1], end=tRange[2], fill='blue', title='ZC')
+zc
+ms <- plotPresGrid(filter(click, species == 'MS'), start=tRange[1], end=tRange[2], fill='orange', title='MS')
+zc + ms

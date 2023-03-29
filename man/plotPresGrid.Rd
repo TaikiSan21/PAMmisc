@@ -10,12 +10,14 @@ plotPresGrid(
   end = NULL,
   bin = c("hour", "minute", "30min", "15min"),
   type = c("presence", "density"),
+  by = NULL,
+  alpha = 0.5,
   gps = NULL,
   format = c("\%m/\%d/\%Y \%H:\%M:\%S", "\%m-\%d-\%Y \%H:\%M:\%S",
     "\%Y/\%m/\%d \%H:\%M:\%S", "\%Y-\%m-\%d \%H:\%M:\%S"),
   fill = "blue",
   color = NA,
-  cmap = viridis(25),
+  cmap = viridis_pal()(25),
   title = TRUE
 )
 }
@@ -35,6 +37,11 @@ time in \code{x}}
 \item{type}{one of either "presence" or "density". If "density", then boxes will be colored according
 to the number of detections in each \code{timeBin} will be plotted. If "presence", then each box
 will be colored by \code{fill}}
+
+\item{by}{(optional) if not \code{NULL}, specifies the name of a column in \code{x} to split and
+color the rectangles by. Only valid for presence plots.}
+
+\item{alpha}{opacity of rectangles, only used if \code{by} is not \code{NULL}}
 
 \item{gps}{(optional) if not \code{NULL}, a data.frame of GPS coordinates covering the date range
 of \code{x}. These are used to calculate sunrise and sunset information which is shown as a
@@ -63,7 +70,8 @@ Creates a grid plot of the presence or density of detections across time
 \examples{
 
 df <- data.frame(UTC = as.POSIXct(runif(1e2, min=0, max=7*24*3600),
-                                  origin='1970-01-01 00:00:00', tz='UTC'))
+                                  origin='1970-01-01 00:00:00', tz='UTC'),
+                 label = sample(letters[1:3], 1e2, replace=TRUE))
 plotPresGrid(df, type='presence', bin='hour')
 plotPresGrid(df, type='density', bin='hour')
 plotPresGrid(df, type='density', bin='30min')
@@ -71,6 +79,16 @@ gps <- data.frame(UTC = as.POSIXct('1970-01-01 00:00:00', tz='UTC'),
                  Latitude=32.4,
                  Longitude = -118)
 plotPresGrid(df, gps=gps, bin='hour')
+# coloring presence grid by label column
+plotPresGrid(df, gps=gps, by='label')
+# can be confusing if there is a lot of overlap, ggplot output can be split
+library(ggplot2)
+plotPresGrid(df, gps=gps, by='label') + facet_wrap(vars(label), ncol=2)
+# using "by" with type="density" defaults to this facet_wrap behavior
+# since color is already being used to represent density
+plotPresGrid(df, gps=gps, by='label', type='density')
+# can adjust facet_wrap parameters by adding it again
+plotPresGrid(df, gps=gps, by='label', type='density') + facet_wrap(vars(label), ncol=2)
 
 }
 \author{

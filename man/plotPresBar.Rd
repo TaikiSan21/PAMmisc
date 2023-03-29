@@ -55,7 +55,7 @@ Creates a bar plot of the presence or density of detections across time
 
 df <- data.frame(UTC = as.POSIXct(runif(1e2, min=0, max=7*24*3600),
                                   origin='1970-01-01 00:00:00', tz='UTC'),
-                 label = sample(letters[1:3], 1e3, replace=TRUE))
+                 label = sample(letters[1:3], 1e2, replace=TRUE))
 # hours per day with detections
 plotPresBar(df, bin='hour/day')
 # calls per day - these options are identical
