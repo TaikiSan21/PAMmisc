@@ -1,3 +1,7 @@
+# PAMmisc 1.11.3
+
+* Fixing `readSpecAnno` if no rows in anno table
+
 # PAMmisc 1.11.2
 
 * Added `by` argument to `plotPresGrid` that will either overlay colors

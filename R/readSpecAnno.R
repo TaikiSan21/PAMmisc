@@ -26,6 +26,9 @@ readSpecAnno <- function(db, table='Spectrogram_Annotation') {
         return(NULL)
     }
     sa <- dbReadTable(con, table)
+    if(nrow(sa) == 0) {
+        return(NULL)
+    }
     sa$UTC <- as.POSIXct(format(sa$UTC, format='%Y-%m-%d %H:%M:%OS3'), format='%Y-%m-%d %H:%M:%OS', tz='UTC')
     sa$id <- as.character(sa$Id)
     sa$start <- sa$UTC
@@ -34,9 +37,7 @@ readSpecAnno <- function(db, table='Spectrogram_Annotation') {
     sa$fmax <- sa$f2
     dropCols <- c('UTC', 'UTCMilliseconds', 'UID', 'PCLocalTime', 'PCTime', 'ChannelBitmap',
                   'SequenceBitmap', 'Sequence', 'f1', 'f2', 'Id')
-    keepCols <- !(colnames(sa) %in%
-                      c('UTC', 'UTCMilliseconds', 'UID', 'PCLocalTime', 'PCTime', 'ChannelBitmap',
-                        'SequenceBitmap', 'Sequence', 'f1', 'f2', 'Id'))
+    keepCols <- !(colnames(sa) %in% dropCols)
     sa <- sa[, keepCols, drop=FALSE]
     isChar <- which(sapply(sa, function(x) inherits(x, 'character')))
     for(c in isChar) {
