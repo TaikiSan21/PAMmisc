@@ -18,7 +18,8 @@ plotPresGrid(
   fill = "blue",
   color = NA,
   cmap = viridis_pal()(25),
-  title = TRUE
+  title = TRUE,
+  plotTz = "UTC"
 )
 }
 \arguments{
@@ -59,6 +60,10 @@ then these values will be used and you do not need to provide separate GPS data 
 
 \item{title}{if \code{TRUE}, a title will automatically created. If any other value, that will be
 used for the title of the plot.}
+
+\item{plotTz}{the timezone to use for plotting the data. Note that inputs must still be in UTC,
+this option allows you to create plots scaled to local time. Valid values come from
+\link{OlsonNames}}
 }
 \value{
 a ggplot2 object

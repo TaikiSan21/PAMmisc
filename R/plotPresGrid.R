@@ -28,6 +28,9 @@
 #' @param cmap the colormap to use for the boxes, only used if \code{type} is "density"
 #' @param title if \code{TRUE}, a title will automatically created. If any other value, that will be
 #'   used for the title of the plot.
+#' @param plotTz the timezone to use for plotting the data. Note that inputs must still be in UTC,
+#'   this option allows you to create plots scaled to local time. Valid values come from
+#'   \link{OlsonNames}
 #'
 #' @returns a ggplot2 object
 #'
@@ -72,7 +75,7 @@ plotPresGrid <- function(x, start=NULL, end=NULL,
                          format = c('%m/%d/%Y %H:%M:%S', '%m-%d-%Y %H:%M:%S',
                                     '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M:%S'),
                          fill='blue', color=NA,
-                         cmap=viridis_pal()(25), title=TRUE) {
+                         cmap=viridis_pal()(25), title=TRUE, plotTz='UTC') {
     if(!'UTC' %in% colnames(x)) {
         stop('"x" must have column UTC')
     }
@@ -80,7 +83,10 @@ plotPresGrid <- function(x, start=NULL, end=NULL,
        is.factor(x$UTC)) {
         x$UTC <- parseToUTC(as.character(x$UTC), format=format, tz='UTC')
     }
-
+    if(!plotTz %in% OlsonNames()) {
+        stop('Specified timezone is invalid, check "OlsonNames()" for accepted names.')
+    }
+    x$UTC <- with_tz(x$UTC, plotTz)
     if(is.null(start)) {
         start <- floor_date(min(x$UTC), unit='day')
     }
@@ -94,13 +100,14 @@ plotPresGrid <- function(x, start=NULL, end=NULL,
     if(is.null(gps)) {
         g <- ggplot()
     } else {
-        sun_df <- makeSunriseDf(start, end, gps)
+        gps$UTC <- with_tz(gps$UTC, plotTz)
+        sun_df <- makeSunriseDf(start, end, gps, plotTz)
         g <- makeSunriseBackground(sun_df, start, end)
     }
     g <- g +
         scale_x_continuous(expand=c(0,0), limits=c(0, 24)) +
         scale_y_datetime(expand=c(0, 0), limits=c(start - period(0, 'day'), end + period(1, 'day'))) +
-        labs(x='Hour')
+        labs(x=paste0('Hour (', plotTz,')'))
     switch(match.arg(bin),
            'hour' = {
                x$plot_min = hour(x$UTC)
@@ -183,7 +190,7 @@ plotPresGrid <- function(x, start=NULL, end=NULL,
 
 globalVariables('closest')
 
-makeSunriseDf <- function(start, end, gps) {
+makeSunriseDf <- function(start, end, gps, tz) {
     gpsCols <- c('UTC', 'Latitude', 'Longitude')
     if(!all(gpsCols %in% colnames(gps))) {
         stop('gps must have columns UTC, Latitude, and Longitude')
@@ -217,7 +224,7 @@ makeSunriseDf <- function(start, end, gps) {
     sun_df$sunrise <- NA
     sun_df$sunset <- NA
     for(i in 1:nrow(sun_df)) {
-        sun <- getSunlightTimes(sun_df$Date[i], sun_df$Latitude[i], sun_df$Longitude[i], keep=c('sunrise', 'sunset'))
+        sun <- getSunlightTimes(sun_df$Date[i], sun_df$Latitude[i], sun_df$Longitude[i], keep=c('sunrise', 'sunset'), tz=tz)
         sun_df$sunrise[i] <- hour(sun$sunrise) + minute(sun$sunrise)/60
         sun_df$sunset[i] <- hour(sun$sunset) + minute(sun$sunset)/60
     }
