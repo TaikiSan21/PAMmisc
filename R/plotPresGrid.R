@@ -86,7 +86,7 @@ plotPresGrid <- function(x, start=NULL, end=NULL,
     if(!plotTz %in% OlsonNames()) {
         stop('Specified timezone is invalid, check "OlsonNames()" for accepted names.')
     }
-    x$UTC <- with_tz(x$UTC, plotTz)
+    x$UTC <- with_tz(x$UTC, tzone=plotTz)
     if(is.null(start)) {
         start <- floor_date(min(x$UTC), unit='day')
     }
@@ -100,7 +100,7 @@ plotPresGrid <- function(x, start=NULL, end=NULL,
     if(is.null(gps)) {
         g <- ggplot()
     } else {
-        gps$UTC <- with_tz(gps$UTC, plotTz)
+        gps$UTC <- with_tz(gps$UTC, tzone=plotTz)
         sun_df <- makeSunriseDf(start, end, gps, plotTz)
         g <- makeSunriseBackground(sun_df, start, end)
     }

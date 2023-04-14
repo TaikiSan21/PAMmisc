@@ -22,6 +22,9 @@
 #' @param fill the fill color for the bars, only used if \code{by} is \code{NULL}, otherwise bars are
 #'   colored by species using the default \link{ggplot2} palette
 #' @param format date format if \code{UTC} column of \code{x} is a character
+#' @param plotTz the timezone to use for plotting the data. Note that inputs must still be in UTC,
+#'   this option allows you to create plots scaled to local time. Valid values come from
+#'   \link{OlsonNames}
 #'
 #' @returns a ggplot2 object
 #'
@@ -51,7 +54,8 @@ plotPresBar <- function(x, start=NULL, end=NULL,
                         bin = 'hour/day',
                         by=NULL, title=TRUE, fill='grey35',
                         format = c('%m/%d/%Y %H:%M:%S', '%m-%d-%Y %H:%M:%S',
-                                   '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M:%S')) {
+                                   '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M:%S'),
+                        plotTz = 'UTC') {
     binChoice <- c('call', 'minute', 'hour', 'day', 'week', 'month')
     binSplit <- strsplit(bin, '/')[[1]]
     binSplit <- gsub('s$', '', binSplit)
@@ -81,6 +85,10 @@ plotPresBar <- function(x, start=NULL, end=NULL,
        is.factor(x$UTC)) {
         x$UTC <- parseToUTC(as.character(x$UTC), format=format, tz='UTC')
     }
+    if(!plotTz %in% OlsonNames()) {
+        stop('Specified timezone is invalid, check "OlsonNames()" for accepted names.')
+    }
+    x$UTC <- with_tz(x$UTC, tzone=plotTz)
     x$timeBin <- floor_date(x$UTC, unit=timeBin)
 
     if(is.null(start)) {

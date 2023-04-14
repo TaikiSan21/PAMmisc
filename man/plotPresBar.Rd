@@ -13,7 +13,8 @@ plotPresBar(
   title = TRUE,
   fill = "grey35",
   format = c("\%m/\%d/\%Y \%H:\%M:\%S", "\%m-\%d-\%Y \%H:\%M:\%S",
-    "\%Y/\%m/\%d \%H:\%M:\%S", "\%Y-\%m-\%d \%H:\%M:\%S")
+    "\%Y/\%m/\%d \%H:\%M:\%S", "\%Y-\%m-\%d \%H:\%M:\%S"),
+  plotTz = "UTC"
 )
 }
 \arguments{
@@ -44,6 +45,10 @@ used for the title of the plot.}
 colored by species using the default \link{ggplot2} palette}
 
 \item{format}{date format if \code{UTC} column of \code{x} is a character}
+
+\item{plotTz}{the timezone to use for plotting the data. Note that inputs must still be in UTC,
+this option allows you to create plots scaled to local time. Valid values come from
+\link{OlsonNames}}
 }
 \value{
 a ggplot2 object

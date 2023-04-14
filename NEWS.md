@@ -2,6 +2,9 @@
 
 * Fixing `readSpecAnno` if no rows in anno table
 
+* `plotPresBar` and `plotPresGrid` added `plotTz` option to control timezone
+of output
+
 # PAMmisc 1.11.2
 
 * Added `by` argument to `plotPresGrid` that will either overlay colors
