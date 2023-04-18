@@ -1,3 +1,7 @@
+# PAMmisc 1.11.4
+
+* Dealing with NA coordinate values for enviro functions
+
 # PAMmisc 1.11.3
 
 * Fixing `readSpecAnno` if no rows in anno table

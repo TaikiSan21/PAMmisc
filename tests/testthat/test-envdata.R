@@ -46,7 +46,7 @@ test_that('Matching .nc data to a dataframe', {
     # var naming
     matchName <- ncToData(gps, nc, var='analysed_sst', progress=FALSE)
     expect_true('analysed_sst_mean' %in% colnames(matchName))
-    expect_warning(ncToData(gps, nc, var=c('analysed_sst', 'extra_variable', progress=FALSE)), 'Some of')
+    expect_warning(ncToData(gps, nc, var=c('analysed_sst', 'extra_variable'), progress=FALSE), 'Some of')
     expect_error(ncToData(gps, nc, var='wrong_variable', progress=FALSE), 'None of')
     # all within buffer
     raw <- ncToData(gps, nc, raw=TRUE, buffer=c(.01, .01, 86400), progress = FALSE)
@@ -61,4 +61,9 @@ test_that('Matching .nc data to a dataframe', {
     # test warn if seems out of data bounds
     gpsOOB <- data.frame(Latitude = 33, Longitude = -116, UTC = as.POSIXct('2005-01-01 00:00:00', tz='UTC'))
     expect_warning(ncToData(gpsOOB, nc, progress=FALSE))
+    # test NA coords
+    gps[3, ] <- NA
+    naMatch <- ncToData(gps, nc, progress=FALSE)
+    expect_true(is.na(naMatch$analysed_sst_mean[3]))
+    expect_true(!is.na(naMatch$analysed_sst_mean[1]))
 })

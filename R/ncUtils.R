@@ -9,11 +9,16 @@ ncTimeToPosix <- function(vals, units) {
         units <- vals$units
         vals <- vals$vals
     }
+    # if(is.na(vals)) {
+    #     return(vals)
+    # }
+    isNa <- is.na(vals)
+
     if(grepl('hours? since', units, ignore.case=TRUE)) {
         or <- gsub('hours? since ', '', units, ignore.case=TRUE)
         or <- ymd_hms_fast(or)
         out <- as.POSIXct(vals * 3600, origin=or, tz='UTC')
-        if(anyNA(out)) {
+        if(anyNA(out[!isNa])) {
             warning('Conversion failed for units ', units)
         }
         return(out)
@@ -25,7 +30,7 @@ ncTimeToPosix <- function(vals, units) {
         or <- gsub('seconds? since ', '', units, ignore.case=TRUE)
         or <- ymd_hms_fast(or)
         out <- as.POSIXct(vals, origin=or, tz='UTC')
-        if(anyNA(out)) {
+        if(anyNA(out[!isNa])) {
             warning('Conversion failed for units ', units)
         }
         return(out)
@@ -60,11 +65,14 @@ ymd_hms_fast <- function(x) {
 #' @importFrom lubridate yday
 #'
 dimToIx <- function(data, dim, buffer=0, verbose=TRUE) {
+    if(is.na(data)) {
+        return(list(ix=NA, start=NA, count=NA, diff=NA))
+    }
     if(!verbose) {
         return(suppressWarnings(dimToIx(data, dim, buffer, verbose=TRUE)))
     }
     if(buffer > 0) {
-        data <- c(min(data) - buffer, data, max(data) + buffer)
+        data <- c(min(data, na.rm=TRUE) - buffer, data, max(data, na.rm=TRUE) + buffer)
     }
     if(dim$name %in% c('time', 'UTC', 'dayOfYear') ||
        inherits(data, 'POSIXct')) {
@@ -185,6 +193,11 @@ dataIs180 <- function(data) {
        is.list(data)) {
         data <- data$Longitude
     }
+    isNa <- is.na(data)
+    if(all(isNa)) {
+        return(TRUE)
+    }
+    data <- data[!isNa]
     if(any(data > 180)) {
         return(FALSE)
     }
@@ -197,13 +210,13 @@ dataIs180 <- function(data) {
 # just holds this dataframe so i can see it / add to it easily instead of storing it as an rdata
 getCoordNameMatch <- function() {
     data.frame(
-        current = c('lon', 'long', 'lat', 'time', 'longitude', 'latitude', 
+        current = c('lon', 'long', 'lat', 'time', 'longitude', 'latitude',
                     'utc', 'date', 'dayofyear', 'altitude', 'depth', 'level',
                     'lev', 'height_above_ground2', 'height_above_ground1',
                     'time1', 'validtime6', 'validtime5', 'validtime9'),
-        standard = c('Longitude', 'Longitude', 'Latitude', 'UTC', 'Longitude', 'Latitude', 
-                     'UTC', 'UTC', 'UTC', 'Depth', 'Depth', 'Depth', 
-                     'Depth', 'Depth', 'Depth', 
+        standard = c('Longitude', 'Longitude', 'Latitude', 'UTC', 'Longitude', 'Latitude',
+                     'UTC', 'UTC', 'UTC', 'Depth', 'Depth', 'Depth',
+                     'Depth', 'Depth', 'Depth',
                      'UTC', 'UTC', 'UTC', 'UTC'),
         stringsAsFactors = FALSE
     )
@@ -228,10 +241,14 @@ checkLimits <- function(data, edi, replace=FALSE, verbose=TRUE) {
            identical(lim[[dim]], c(1, 365))) {
             return(dat)
         }
+        isNa <- is.na(dat[[dim]])
+        if(all(isNa)) {
+            return(dat)
+        }
         lowCheck <- dat[[dim]] >= lim[[dim]][1]
         highCheck <-  dat[[dim]] <= lim[[dim]][2]
         inLim <- lowCheck & highCheck
-        if(all(inLim)) {
+        if(all(inLim[!isNa])) {
             return(dat)
         }
         # handle replacement or not
@@ -292,8 +309,8 @@ checkDateline <- function(data) {
     names(data) <- standardCoordNames(names(data))
     data <- to180(data)
     # check diff signs, then make sure we arent around the 0 transition
-    (sign(max(data$Longitude)) != sign(min(data$Longitude))) &&
-        ((max(data$Longitude) >= 90) || (min(data$Longitude) <= -90))
+    (sign(max(data$Longitude, na.rm=TRUE)) != sign(min(data$Longitude, na.rm=TRUE))) &&
+        ((max(data$Longitude, na.rm=TRUE) >= 90) || (min(data$Longitude, na.rm=TRUE) <= -90))
 }
 
 # if buffer values are less than the individual spacing in a datset bump

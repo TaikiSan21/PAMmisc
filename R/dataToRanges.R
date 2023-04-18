@@ -41,22 +41,22 @@ dataToRanges <- function(data, buffer = c(0, 0, 0)) {
     crossDateline <- checkDateline(data)
     if(crossDateline) {
         longRange <- c(
-            min(data$Longitude[data$Longitude > 0]) - buffer[1],
-            max(data$Longitude[data$Longitude < 0]) + buffer[1]
+            min(data$Longitude[data$Longitude > 0], na.rm=TRUE) - buffer[1],
+            max(data$Longitude[data$Longitude < 0], na.rm=TRUE) + buffer[1]
         )
     } else {
         # hmm... if we subtract past -180 or add past 180 thats a problem
         # but second one only if we are actually a 180 not a 360
-        longRange <- range(data$Longitude) + buffer[1] * c(-1, 1)
+        longRange <- range(data$Longitude, na.rm=TRUE) + buffer[1] * c(-1, 1)
     }
 
     result <- list(
         Longitude = longRange,
-        Latitude = range(data$Latitude) + buffer[2] * c(-1, 1),
-        UTC = range(data$UTC) + buffer[3] * c(-1, 1)
+        Latitude = range(data$Latitude, na.rm=TRUE) + buffer[2] * c(-1, 1),
+        UTC = range(data$UTC, na.rm=TRUE) + buffer[3] * c(-1, 1)
     )
     if('Depth' %in% colnames(data)) {
-        result$Depth <- range(data$Depth)
+        result$Depth <- range(data$Depth, na.rm=TRUE)
     }
     result
 }
