@@ -60,10 +60,10 @@ ncToData <- function(data, nc, var=NULL, buffer = c(0,0,0), FUN = c(mean),
     nc <- romsCheck(nc)
     oldNames <- colnames(data)
     colnames(data) <- standardCoordNames(oldNames)
-    if(all(is.na(data$Longitude)) ||
-       all(is.na(data$Latitude))) {
-        return(data)
-    }
+    # if(all(is.na(data$Longitude)) ||
+    #    all(is.na(data$Latitude))) {
+    #     return(data)
+    # }
     # this finds the name of the longitude coordinate from my list that matches lon/long/whatever to Longitude
     nc180 <- ncIs180(nc)
     data180 <- dataIs180(data)

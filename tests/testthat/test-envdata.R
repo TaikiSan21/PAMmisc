@@ -66,4 +66,7 @@ test_that('Matching .nc data to a dataframe', {
     naMatch <- ncToData(gps, nc, progress=FALSE)
     expect_true(is.na(naMatch$analysed_sst_mean[3]))
     expect_true(!is.na(naMatch$analysed_sst_mean[1]))
+    naOnly <- ncToData(gps[3,], nc, progress=FALSE)
+    # expect_identical(gps[3, ], naOnly[, 1:ncol(gps)])
+    expect_true(is.na(naOnly$analysed_sst_mean))
 })
