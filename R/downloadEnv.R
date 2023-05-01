@@ -13,7 +13,7 @@
 #' @param timeout number of seconds before timeout stops download attempt
 #' @param progress logical flag to show download progress
 #' @param \dots not used
-#' 
+#'
 #' @return if download is successful, invisibly returns the filename. If it fails returns
 #'   \code{FALSE}.
 #'
@@ -102,15 +102,17 @@ downloadEnv <- function(data, edinfo, fileName = NULL, buffer = c(0, 0, 0), time
                                                 timeout(timeout),
                                                 write_disk(fileName, overwrite = TRUE))))
         }
+        if(inherits(envData, 'try-error')) {
+            nTry <- nTry + 1
+            warning('URL ', url, ' failed to download with message "',
+                    envData[1], '", trying again...')
+            next
+        }
         if(envData$status_code != 200) {
             stop(paste0('URL ', envData$url, ' is invalid, pasting this into a browser may give more information.'))
         }
-        if(inherits(envData, 'try-error')) {
-            nTry <- nTry + 1
-            next
-        } else {
-            return(invisible(fileName))
-        }
+        # if status code == 200 we good
+        return(invisible(fileName))
     }
     FALSE
 }
