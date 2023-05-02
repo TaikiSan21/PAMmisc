@@ -65,7 +65,7 @@ ymd_hms_fast <- function(x) {
 #' @importFrom lubridate yday
 #'
 dimToIx <- function(data, dim, buffer=0, verbose=TRUE) {
-    if(is.na(data)) {
+    if(all(is.na(data))) {
         return(list(ix=NA, start=NA, count=NA, diff=NA))
     }
     if(!verbose) {
