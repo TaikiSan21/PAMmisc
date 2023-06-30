@@ -18,7 +18,7 @@ addPgAnno(
 \arguments{
 \item{db}{database file to add annotations to}
 
-\item{anno}{annotations to add, must contain columns \code{UTC}, \code{DUration} (seconds),
+\item{anno}{annotations to add, must contain columns \code{UTC}, \code{Duration} (seconds),
 \code{f1} (min freq Hz), and \code{f2} (max freq Hz). Any other columns matching columns in the database
 will also be added}
 

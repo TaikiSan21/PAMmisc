@@ -75,7 +75,6 @@ fmtURL_hycom <- function(base, dataset, fileType, vars, ranges, stride) {
            dataset,
            '?', paste0('var=', vars, collapse = '&'),
            allRanges,
-           '&vertCoord=',
            '&accept=', fileType)
 }
 
@@ -86,6 +85,13 @@ fmtRange_hycom <- function(ranges, stride=1, html=TRUE) {
             ranges[[c]] <- ranges[[c]] + c(-.001, .001)
         }
     }
+    if('Depth' %in% names(ranges)) {
+        if(all(ranges[['Depth']] == 0)) {
+            ranges[['Depth']] <- 1
+        } else {
+            ranges[['Depth']] <- NULL
+        }
+    }
     # time / lat[lo-hi] / long[left-right]
     paste0('&north=', ranges[['Latitude']][2],
            '&west=', ranges[['Longitude']][1],
@@ -94,7 +100,8 @@ fmtRange_hycom <- function(ranges, stride=1, html=TRUE) {
            '&horizStride=', stride,
            '&time_start=', fmtPsx8601(ranges[['UTC']][1], html=html),
            '&time_end=', fmtPsx8601(ranges[['UTC']][2], html=html),
-           '&timeStride=', stride)
+           '&timeStride=', stride,
+           '&vertCoord=', ranges[['Depth']])
 }
 
 fmtRange_erddap <- function(ranges, stride=1, html=FALSE) {

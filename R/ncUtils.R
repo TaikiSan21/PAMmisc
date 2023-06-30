@@ -16,6 +16,8 @@ ncTimeToPosix <- function(vals, units) {
 
     if(grepl('hours? since', units, ignore.case=TRUE)) {
         or <- gsub('hours? since ', '', units, ignore.case=TRUE)
+        or <- gsub('\\s{0,1}UTC', '', or)
+        or <- gsub('\\.0+$', '', or)
         or <- ymd_hms_fast(or)
         out <- as.POSIXct(vals * 3600, origin=or, tz='UTC')
         if(anyNA(out[!isNa])) {
@@ -28,6 +30,8 @@ ncTimeToPosix <- function(vals, units) {
     # }
     if(grepl('seconds? since', units, ignore.case=TRUE)) {
         or <- gsub('seconds? since ', '', units, ignore.case=TRUE)
+        or <- gsub('\\s{0,1}UTC', '', or)
+        or <- gsub('\\.0+$', '', or)
         or <- ymd_hms_fast(or)
         out <- as.POSIXct(vals, origin=or, tz='UTC')
         if(anyNA(out[!isNa])) {

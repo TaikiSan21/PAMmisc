@@ -4,7 +4,7 @@
 #'   table
 #'
 #' @param db database file to add annotations to
-#' @param anno annotations to add, must contain columns \code{UTC}, \code{DUration} (seconds),
+#' @param anno annotations to add, must contain columns \code{UTC}, \code{Duration} (seconds),
 #'   \code{f1} (min freq Hz), and \code{f2} (max freq Hz). Any other columns matching columns in the database
 #'   will also be added
 #' @param tableName name of the annotation table in the database

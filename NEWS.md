@@ -1,3 +1,9 @@
+# PAMmisc 1.11.5
+
+* Allowing for smaller HYCOM download with modification to `formatURL`
+
+* Adding another NetCDF time format check
+
 # PAMmisc 1.11.4
 
 * Dealing with NA coordinate values for enviro functions

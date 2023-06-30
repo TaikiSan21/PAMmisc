@@ -214,7 +214,8 @@ getVarData <- function(data, nc, var, buffer, depth=NULL, verbose=TRUE) {
     }
     names(result) <- outNames
     checkNa <- c(xIx$start, xIx$count, yIx$start, yIx$count)
-    if(hasT) {
+    if(hasT &&
+       !multiT) {
         checkNa <- c(checkNa, tIx$start, tIx$count)
     }
     if(hasZ) {
@@ -253,6 +254,12 @@ getVarData <- function(data, nc, var, buffer, depth=NULL, verbose=TRUE) {
                            tIx <- dimToIx(data$UTC, nc$dim[[thisDimId[d]]], buffer[3], verbose)
                            tVals <- ncTimeToPosix(nc$dim[[thisDimId[d]]]$vals[tIx$ix],
                                               units = nc$dim[[thisDimId[d]]]$units)
+                           if(is.na(tIx$start) || is.na(tIx$count)) {
+                               for(r in seq_along(result)) {
+                                   result[[r]] <- NA
+                               }
+                               return(result)
+                           }
                        }
                        start <- c(start, tIx$start)
                        count <- c(count, tIx$count)
