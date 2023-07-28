@@ -4,7 +4,7 @@
 \alias{wignerTransform}
 \title{Calculate the Wigner-Ville Transform of a Signal}
 \usage{
-wignerTransform(signal, n = NULL, sr, plot = FALSE)
+wignerTransform(signal, n = NULL, sr, mode = c("spec", "ceps"), plot = FALSE)
 }
 \arguments{
 \item{signal}{input signal waveform}
@@ -13,6 +13,9 @@ wignerTransform(signal, n = NULL, sr, plot = FALSE)
 from the length of the input signal (recommended)}
 
 \item{sr}{the sample rate of the data}
+
+\item{mode}{if \code{'spec'}, use the FFT (standard), if \code{'ceps'} use the
+cepstal transform (experimental)}
 
 \item{plot}{logical flag whether or not to plot the result}
 }

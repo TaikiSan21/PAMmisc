@@ -13,6 +13,8 @@
 #' @param n number of frequency bins of the output, if NULL will be the next power of two
 #'   from the length of the input signal (recommended)
 #' @param sr the sample rate of the data
+#' @param mode if \code{'spec'}, use the FFT (standard), if \code{'ceps'} use the
+#'   cepstal transform (experimental)
 #' @param plot logical flag whether or not to plot the result
 #'
 #' @return a list with three items. \code{tfr}, the real values of the wigner
@@ -32,7 +34,7 @@
 #' @importFrom scales viridis_pal
 #' @export
 #'
-wignerTransform <- function(signal, n=NULL, sr, plot=FALSE) {
+wignerTransform <- function(signal, n=NULL, sr, mode=c('spec', 'ceps'), plot=FALSE) {
     if(inherits(signal, 'Wave')) {
         sr <- signal@samp.rate
         signal <- signal@left / 2^(signal@bit - 1)
@@ -70,8 +72,30 @@ wignerTransform <- function(signal, n=NULL, sr, plot=FALSE) {
                                      analytic[iCol-tau] * conjAnalytic[iCol+tau])/2
         }
     }
-    tfr <- apply(tfr, 2, fft)
-    result <- list(tfr=Re(tfr), t=1:nCol/sr, f=sr/2*1:nRow/nRow)
+    switch(match.arg(mode),
+           'spec' = {
+               FUN <- function(x) {
+                   Re(fft(x))
+                   # Mod(fft(x))
+               }
+               # y <- (1:(wl)) / wl * sr
+           },
+           'ceps' = {
+               FUN <- function(x) {
+                   result <- Mod(fft(x))^2
+                   result <- ifelse(result == 0, 1e-15, result)
+                   result <- log(result)
+                   # browser()
+                   result <- result - mean(result)
+                   result <- fft(result, inverse=TRUE)
+                   # abs(Re(result))
+
+                   abs(Re(result))
+               }
+               # y <- (1:wl) / sr
+           })
+    tfr <- apply(tfr, 2, FUN)
+    result <- list(tfr=tfr, t=1:nCol/sr, f=sr/2*1:nRow/nRow)
     if(plot) {
         image(t(result$tfr), xaxt='n', yaxt='n',
               ylab='Frequency (kHz)', xlab = 'Time (ms)',
