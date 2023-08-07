@@ -3,8 +3,8 @@
 #' @description Finds up to three peaks in a spectrum, as well as the troughs
 #'   between those peaks.
 #'
-#' @details The first peak is the frequency with the highest dB level (first and 
-#'   last frequency points are ignored). Then this uses a very simple algorithm to 
+#' @details The first peak is the frequency with the highest dB level (first and
+#'   last frequency points are ignored). Then this uses a very simple algorithm to
 #'   find second and third peaks
 #'   in a spectrum. Peak candidates are identified with a few simple steps:
 #'   \describe{
@@ -71,6 +71,10 @@ peakTrough <- function(spec, freqBounds=c(10, 30), dbMin=-15, smooth=5, plot=FAL
                        'Converting before calculation, note that result is in kHz.'))
         spec[, 1] <- spec[, 1] / 1e3
     }
+    specNa <- is.na(spec[, 2])
+    if(any(specNa)) {
+        spec[specNa, 2] <- min(spec[, 2], na.rm=TRUE)
+    }
     peak2 <- 0; peak2dB <- dbMin
     trough <- 0; troughdB <- dbMin
     peak3 <- 0; peak3dB <- dbMin
@@ -80,7 +84,7 @@ peakTrough <- function(spec, freqBounds=c(10, 30), dbMin=-15, smooth=5, plot=FAL
     spec[,2] <- spec[,2] - max(spec[,2], na.rm = TRUE)
     extend <- floor(smooth/2)
     spec[,2] <- roll_mean(c(rep(spec[1,2], extend), spec[,2], rep(spec[nrow(spec), 2], extend)), smooth)
-    
+
     # find peak but not first and last
     wherePeak <- which.max(spec[-1*c(1, nrow(spec)), 2]) + 1
     peak <- spec[wherePeak, 1]
@@ -197,10 +201,15 @@ peakTrough <- function(spec, freqBounds=c(10, 30), dbMin=-15, smooth=5, plot=FAL
         # data.frame(peak = peak, peak2 = peak2, peak3 = peak3,
         #            trough = trough, trough2 = trough2,
         #            peakToPeak2 = peakToPeak2, peakToPeak3 = peakToPeak3, peak2ToPeak3 = peak2ToPeak3)
-        structure(list(peak = peak, peak2 = peak2, peak3 = peak3,
-                   trough = trough, trough2 = trough2,
-                   peakToPeak2 = peakToPeak2, peakToPeak3 = peakToPeak3, peak2ToPeak3 = peak2ToPeak3),
-                  row.names=c(NA, -1), class='data.frame')
+        result <- list(peak = peak, peak2 = peak2, peak3 = peak3,
+             trough = trough, trough2 = trough2,
+             peakToPeak2 = peakToPeak2, peakToPeak3 = peakToPeak3, peak2ToPeak3 = peak2ToPeak3)
+        resLen <- sapply(result, length)
+        for(i in which(resLen == 0)) {
+            result[[i]] <- NA
+        }
+
+        structure(result, row.names=c(NA, -1), class='data.frame')
     },
     error = function(e) {
         message('peakTrough failed with error:\n', e$message)

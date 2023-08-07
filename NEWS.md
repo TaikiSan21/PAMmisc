@@ -1,3 +1,7 @@
+# PAMmisc 1.11.6
+
+* Safer fail case in `peakTrough`
+
 # PAMmisc 1.11.5
 
 * Allowing for smaller HYCOM download with modification to `formatURL`
