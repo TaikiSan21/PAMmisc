@@ -21,7 +21,7 @@ addPgEvent(
 
 \item{UIDs}{vector of the UIDs of the individual detections to add to the event}
 
-\item{binary}{binary file containing the detections from \code{UIDs}}
+\item{binary}{binary file(s) containing the detections from \code{UIDs}}
 
 \item{eventType}{the name of the event type to add. If this is not already
 present in the database, it will be added to the "Lookup" table}

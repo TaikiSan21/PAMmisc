@@ -6,7 +6,7 @@
 #'
 #' @param db database file to add an event to
 #' @param UIDs vector of the UIDs of the individual detections to add to the event
-#' @param binary binary file containing the detections from \code{UIDs}
+#' @param binary binary file(s) containing the detections from \code{UIDs}
 #' @param eventType the name of the event type to add. If this is not already
 #'   present in the database, it will be added to the "Lookup" table
 #' @param comment (optional) a comment for the event
@@ -38,7 +38,7 @@
 #'
 #' @export
 #'
-addPgEvent <- function(db, UIDs=NULL, binary, eventType, comment = NA, 
+addPgEvent <- function(db, UIDs=NULL, binary, eventType, comment = NA,
                        tableName = NULL, start=NULL, end=NULL,type=c('click', 'dg')) {
     if(!file.exists(db)) {
         stop('Could not find database file', db, call. = FALSE)
@@ -79,8 +79,8 @@ addPgEvent <- function(db, UIDs=NULL, binary, eventType, comment = NA,
                }
            }
     )
-    
-    
+
+
     # intiialise event and click tables to add
     eventData <- dbReadTable(con, eventTableName)
     eventAppend <- eventData[FALSE, ]
@@ -173,14 +173,14 @@ addPgEvent <- function(db, UIDs=NULL, binary, eventType, comment = NA,
     chanCols <- chanCols[chanCols %in% colnames(eventAppend)]
     eventAppend$Id <- evId
     eventAppend$UID <- evUID
-    
+
     eventAppend$UTC <- start
     eventAppend$PCLocalTime <- eventAppend$UTC
     eventAppend$PCTime <- addTime
-    
+
     eventAppend[[endTimeCol]] <- end
     eventAppend$UTCMilliseconds <- startMillis
-    
+
     eventAppend[[nCol]] <- nrow(allAppend)
     if(!'eventType' %in% colnames(eventData)) {
         addColQ <- paste0('ALTER TABLE ', eventTableName,
@@ -207,8 +207,8 @@ addPgEvent <- function(db, UIDs=NULL, binary, eventType, comment = NA,
     }
     # clickData$Id <- NA
     # eventData$Id <- NA
-    
-    
+
+
     # Do append if there was no data or if data we want to add doesnt already exist
     if(nrow(eventData) == 0 ||
        nrow(setdiff(eventAppend[c('UTC', 'UTCMilliseconds', endTimeCol, 'eventType')],
@@ -218,7 +218,7 @@ addPgEvent <- function(db, UIDs=NULL, binary, eventType, comment = NA,
     } else {
         return(FALSE)
     }
-    
+
     # Add eventType to Lookup table if it isnt there, also create Lookup if not there
     if(!('Lookup' %in% tableList)) {
         tbl <- dbSendQuery(con,
@@ -237,7 +237,7 @@ addPgEvent <- function(db, UIDs=NULL, binary, eventType, comment = NA,
     }
     lookup <- dbReadTable(con, 'Lookup')
     if(nrow(lookup) > 0 &&
-       (eventType %in% gsub('^\\s+|\\s+$', '', 
+       (eventType %in% gsub('^\\s+|\\s+$', '',
                             lookup$Code[gsub('^\\s+|\\s+$', '', lookup$Topic) == lookupTopic]))) {
         return(invisible(TRUE))
     }
