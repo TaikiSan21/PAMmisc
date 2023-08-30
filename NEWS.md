@@ -1,3 +1,7 @@
+# PAMmisc 1.11.7
+
+* `alpha` wasn't working for `plotPresGrid` single color plots
+
 # PAMmisc 1.11.6
 
 * Safer fail case in `peakTrough`
