@@ -74,6 +74,9 @@ setMethod('matchEnvData', 'data.frame',
               if(is.null(nc)) {
                   nc <- browseEdinfo()
               }
+              if(!all(c('Latitude', 'Longitude') %in% standardCoordNames(colnames(data)))) {
+                  stop('Data must have columns "Latitude" and "Longitude"')
+              }
               if(is.character(nc) &&
                  !file.exists(nc)) {
                   nc <- try(erddapToEdinfo(nc, chooseVars = FALSE))
@@ -98,6 +101,10 @@ setMethod('matchEnvData', 'data.frame',
 
               if(!inherits(nc, 'edinfo')) {
                   stop(paste0('"nc" must be a valid nc file or erddap dataset id.'))
+              }
+              if('UTC' %in% names(nc$limits) &&
+                 !'UTC' %in% standardCoordNames(colnames(data))) {
+                  stop('Data must have column "UTC"')
               }
               if(is.null(nc$varSelect) ||
                  !any(nc$varSelect)) {
@@ -196,7 +203,7 @@ setMethod('matchEnvData', 'data.frame',
               # browser()
               if(length(ncData) > 1) {
                   message('Data crossed the dateline, download split into two files: ',
-                             ncData[1], ' and ', ncData[2])
+                          ncData[1], ' and ', ncData[2])
                   oldNames <- colnames(data)
                   colnames(data) <- standardCoordNames(colnames(data))
                   left <- to180(data$Longitude) > 0

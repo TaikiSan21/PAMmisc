@@ -391,6 +391,7 @@ estDownloadSize <- function(x, edi, verbose=FALSE) {
 }
 
 planDownload <- function(x, edi, last=0, thresh=50) {
+    colnames(x) <- standardCoordNames(colnames(x))
     if(nrow(x) == 1) {
         return(last + 1)
     }

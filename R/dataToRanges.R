@@ -31,12 +31,12 @@ dataToRanges <- function(data, buffer = c(0, 0, 0)) {
     oldNames <- colnames(data)
     newNames <- standardCoordNames(oldNames)
     colnames(data) <- newNames
-    if(!all(c('UTC', 'Latitude', 'Longitude') %in% newNames)) {
-        stop('Must have columns UTC, Longitude, and Latitude in your data.')
+    if(!all(c('Latitude', 'Longitude') %in% newNames)) {
+        stop('Must have columns Longitude, and Latitude in your data.')
     }
-    if(!inherits(data$UTC, 'POSIXct')) {
-        stop('Please convert date column to POSIXct first.')
-    }
+    # if(!inherits(data$UTC, 'POSIXct')) {
+    #     stop('Please convert date column to POSIXct first.')
+    # }
     # if weve crossed the dateline longitude range is different
     crossDateline <- checkDateline(data)
     if(crossDateline) {
@@ -52,9 +52,11 @@ dataToRanges <- function(data, buffer = c(0, 0, 0)) {
 
     result <- list(
         Longitude = longRange,
-        Latitude = range(data$Latitude, na.rm=TRUE) + buffer[2] * c(-1, 1),
-        UTC = range(data$UTC, na.rm=TRUE) + buffer[3] * c(-1, 1)
+        Latitude = range(data$Latitude, na.rm=TRUE) + buffer[2] * c(-1, 1)
     )
+    if('UTC' %in% colnames(data)) {
+        result$UTC <- range(data$UTC, na.rm=TRUE) + buffer[3] * c(-1, 1)
+    }
     if('Depth' %in% colnames(data)) {
         result$Depth <- range(data$Depth, na.rm=TRUE)
     }

@@ -1,3 +1,7 @@
+# PAMmisc 1.11.8
+
+* Added required column error messages for `matchEnvData` functinos
+
 # PAMmisc 1.11.7
 
 * `alpha` wasn't working for `plotPresGrid` single color plots
