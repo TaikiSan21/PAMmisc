@@ -28,15 +28,26 @@
 #' @importFrom xml2 xml_contents xml_attrs
 #' @export
 #'
-erddapToEdinfo <- function(dataset, baseurl='https://upwell.pfeg.noaa.gov/erddap/', chooseVars = TRUE) {
+erddapToEdinfo <- function(dataset,
+                           baseurl=c('https://upwell.pfeg.noaa.gov/erddap/',
+                                     'https://coastwatch.pfeg.noaa.gov/erddap/',
+                                     'https://www.ncei.noaa.gov/erddap/',
+                                     'https://erddap.sensors.ioos.us/erddap'),
+                           chooseVars = TRUE) {
     if(is.character(dataset)) {
         if(grepl('^GLB.{4,6}/expt', dataset)) {
             return(hycomToEdinfo(dataset=dataset, chooseVars=chooseVars))
         }
-        dataset <- info(dataset, url = baseurl)
+        for(i in seq_along(baseurl)) {
+            dataset <- info(dataset, url = baseurl[i])
+            if(inherits(dataset, 'info')) {
+                break
+            }
+        }
     }
     if(!inherits(dataset, 'info')) {
-        stop(dataset, ' must be a valid ERDDAP dataset id or result from rerddap::info')
+        stop(dataset, ' must be a valid ERDDAP dataset id or result from rerddap::info',
+             ', check dataset ID or baseurl.')
     }
     data <- dataset$alldata
     names(data) <- standardCoordNames(names(data))

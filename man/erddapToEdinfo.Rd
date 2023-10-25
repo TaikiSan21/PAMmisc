@@ -7,7 +7,9 @@
 \usage{
 erddapToEdinfo(
   dataset,
-  baseurl = "https://upwell.pfeg.noaa.gov/erddap/",
+  baseurl = c("https://upwell.pfeg.noaa.gov/erddap/",
+    "https://coastwatch.pfeg.noaa.gov/erddap/", "https://www.ncei.noaa.gov/erddap/",
+    "https://erddap.sensors.ioos.us/erddap"),
   chooseVars = TRUE
 )
 
