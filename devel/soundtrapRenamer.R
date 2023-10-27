@@ -8,7 +8,7 @@ library(xml2)
 #    then to the new name. This is to avoid problems where
 #    there is overlap between your new & old file names - ex
 #    ex if you have files exactly 7 hours apart, but want to
-#    add 7 hours to the time. 
+#    add 7 hours to the time.
 # 3) If offset=NULL it will look for log files first. If no log
 #    files are found it will prompt you to enter an offset value.
 # Change on 2022-12-2:
@@ -17,6 +17,13 @@ library(xml2)
 # Change on 2022-12-19:
 # 1) Adding check for Triton decimated files ending in .d##.wav
 #-------------------------#
+# This functions gets the hour difference needed to correct a file to
+# UTC time zone. First tries to checkthe file name against the
+# "SamplingStartUTC" field, these should be equal if file is already in
+# UTC. If they are not, then the file is in the wrong time zone
+# and we return the correction.
+# If for some reason that didn't work, try the "OffloaderTimeZone"
+# field, which is occasionally wrong so not preferred.
 getStTz <- function(x) {
     xml <- read_xml(x)
     # new version to compare UTC sample time to file time
@@ -53,6 +60,8 @@ getStTz <- function(x) {
     tzOut
 }
 
+# This function prepares for file renaming to UTC - creates the list of current file names,
+# the correciton to apply, and the file names it will create
 prepTzFix <- function(x, offset=NULL, suffix=c('wav', 'sud', 'log.xml', 'accel.csv', 'temp.csv')) {
     suffix <- paste0('\\.',suffix, '$', collapse='|')
     suffix <- paste0('(', suffix, ')')
@@ -122,10 +131,11 @@ prepTzFix <- function(x, offset=NULL, suffix=c('wav', 'sud', 'log.xml', 'accel.c
     } else {
         cat('Files will be updated with average offset', round(mean(tAdj$offset[!naOff]), 1), 'hours\n')
     }
-    
+
     tAdj
 }
 
+# helper to pull out time or other attributes from soundtrap files
 processStWavNames <- function(x, type=c('st', 'sm3m'), prefix=FALSE, suffix='wav') {
     type <- match.arg(type)
     # checking for possible triton decimation tag
@@ -153,6 +163,10 @@ processStWavNames <- function(x, type=c('st', 'sm3m'), prefix=FALSE, suffix='wav
     NULL
 }
 
+# applies the timezone correction from "prepTzFix" and creates new files with
+# proper UTC timezones. Creates a log file of what was changed, and also has
+# the ability to "undo" the change from "prepTzFix" if you think it was
+# in error.
 fixStTz <- function(dir, prep, reverse=FALSE, logname='STRenameLog') {
     if(isTRUE(reverse)) {
         revPrep <- rename(prep, oldName=newName, oldTime=newTime, newName=oldName, newTime=oldTime)
