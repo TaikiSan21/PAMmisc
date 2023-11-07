@@ -32,27 +32,47 @@ formatBinnedPresence <- function(x, gps,
         } else {
             thisGps <- gps[gps$DriftName == names(result)[i], ]
         }
+        noGps <- is.null(thisGps) || nrow(thisGps) == 0
         if(is.null(dateRange)) {
+            if(noGps) {
+                warning('No GPS matching drift ', names(result)[i],
+                        ' provide "dateRange" manually or check "DriftName"')
+                next
+            }
             thisRange <- range(thisGps$UTC)
+        } else if(is.list(dateRange)) {
+            if(!names(result)[i] %in% names(dateRange)) {
+                warning('No GPS matching drift ', names(result)[i],
+                        ' provide "dateRange" manually or check "DriftName"')
+                next
+            }
+            thisRange <- dateRange[[names(result)[i]]]
         } else {
             thisRange <- dateRange
         }
+        thisRange <- parseToUTC(thisRange, format=format, tz=tz)
         thisRange[1] <- floor_date(thisRange[1], unit=bin)
         thisRange[2] <- ceiling_date(thisRange[2], unit=bin)
         dateSeq <- seq(from=thisRange[1], to=thisRange[2], by=bin)
-        thisResult <- data.frame(UTC = dateSeq, DriftName=names(result)[i])
-        thisResult <- left_join(thisResult, x[x$DriftName == names(result)[i],
-                                              c('UTC', 'species', 'call')],
+        thisResult <- data.frame(UTC = dateSeq) #, DriftName=names(result)[i])
+        thisResult <- left_join(thisResult, x[x$DriftName == names(result)[i], ],
+                                              # c('UTC', 'species', 'call')],
                                 by='UTC')
-        if(is.null(thisGps) || nrow(thisGps) == 0) {
+        if(noGps) {
             warning('Could not find GPS for drift ', names(result)[i])
         } else {
             thisResult <- PAMpal::addGps(thisResult, thisGps, thresh=gpsThresh)
+            if('DeploymentSite' %in% colnames(thisGps)) {
+                thisResult$DeploymentSite <- thisGps$DeploymentSite[1]
+            }
         }
         result[[i]] <- thisResult
     }
     #now utcs, lat/long, species, call at floor_date
-    distinct(bind_rows(result))
+    result <- distinct(bind_rows(result))
+    years <- unique(year(result$UTC))
+    result$year <- factor(year(result$UTC), levels=min(years):max(years))
+    result
 }
 
 # Loads and formats detection data for use in above.
@@ -109,7 +129,7 @@ loadDetectionData <- function(x, source=c('csv', 'triton', 'df', 'raven'), drift
                x$UTC <- parseToUTC(x$UTC, format=format, tz=tz)
            },
            'raven' = {
-                #PAMmisc::formatAnno has fmtRaven
+               #PAMmisc::formatAnno has fmtRaven
                # creates UTC, Duration, f1, f2, Label from
                # BeginTimes, DeltaTimes, LowFrq, HighFreq, Annotation
                x <- PAMmisc:::fmtRaven(x)
@@ -260,12 +280,15 @@ markNumEffort <- function(x, by='DriftName', bin='hour/day', keepCols=c('species
     effort$offGroup <- cumsum(effort$offGroup)
     effort$nGroup <- cumsum(effort$group)
     effort$season <- markSeason(effort$binDate)
-    years <- unique(year(effort$binDate))
-    effort$year <- factor(year(effort$binDate), levels=min(years):max(years))
+
     # effort$year <- year(effort$binDate)
-    x <- distinct(x[c('UTC', 'binDate', by, keepCols)])
+    x <- distinct(select(x, any_of(c('UTC', 'binDate','year',  by, keepCols))))
     x$season <- markSeason(x$binDate)
-    x$year <- factor(year(x$binDate), levels=min(years):max(years))
+    if(!'year' %in% colnames(x)) {
+        years <- unique(year(effort$binDate))
+        x$year <- factor(year(x$binDate), levels=min(years):max(years))
+    }
+    effort$year <- factor(year(effort$binDate), levels=levels(x$year))
     # x$year <- year(x$binDate)
     list(dates=dateSeq, data=x, effort=effort)
 }
@@ -297,8 +320,32 @@ formatEffortPlot <- function(x, loc=.5, buffer=.001) {
         arrange(plotX)
 }
 
-plotYearlyPresence <- function(x, percent=TRUE, maxEff=NULL, legend=TRUE,
-                    leftAxis=TRUE, botAxis=TRUE) {
+plotYearlyPresence <- function(x, percent=TRUE, maxEff=NULL,
+                               legend=c('show', 'blank', 'remove'),
+                               botAxis=TRUE, by=NULL, leftLab=NULL,
+                               title=NULL) {
+    if(!is.null(by) && by %in% colnames(x)) {
+        splitData <- split(x, x[[by]])
+        legendIx <- floor(median(seq_along(splitData)))
+        result <- vector('list', length=length(splitData))
+        for(i in seq_along(result)) {
+            result[[i]] <- plotYearlyPresence(splitData[[i]],
+                                              percent=percent,
+                                              maxEff=maxEff,
+                                              # legend=ifelse(i==legendIx, 'show', 'blank'),
+                                              legend='show',
+                                              botAxis=i==length(result),
+                                              by=NULL,
+                                              leftLab = names(splitData)[i],
+                                              title=NULL)
+        }
+        out <- wrap_plots(result) + plot_layout(ncol=1, guides = 'collect')
+        if(!is.null(title)) {
+            out <- out +
+                plot_annotation(title=title, theme=theme(plot.title=element_text(hjust=.5)))
+        }
+        return(out)
+    }
     if(is.data.frame(x)) {
         x <- markNumEffort(x, keepCols='species')
     }
@@ -343,13 +390,18 @@ plotYearlyPresence <- function(x, percent=TRUE, maxEff=NULL, legend=TRUE,
         #                    # sec.axis=sec_axis(trans = ~.*ymax/24, breaks=seq(from=0, to=ymax, by=24)),
         #                    breaks=c(0,.25, .5, .75, 1), name='Percent of Avail. Hours')
     } else {
-        binPlot <- ggplot(data) +
-            geom_bar(aes(fill=year, x=plotX))
+        # making separate scale for each year's max effort
+        blankData <- effort %>%
+            group_by(year) %>%
+            summarise(plotX=min(plotX), max=max(nEffort))
+        binPlot <- ggplot() +
+            geom_bar(data=data, aes(fill=year, x=plotX)) +
+            geom_blank(data=blankData, aes(x=plotX, y=max))
 
     }
     binPlot <- binPlot + theme_bw()
     binPlot <- binPlot +
-        facet_wrap(~year, ncol=1, drop = FALSE) +
+        facet_wrap(~year, ncol=1, drop = FALSE, scales='free_y') +
         # scale_x_continuous(breaks=labs$ix, labels=labs$label, limits=c(1, max(effort$plotX))) +
         # scale_x_continuous(limits=c(1, max(effort$plotX)), breaks=labs$ix, labels=NULL) +
         scale_fill_manual(values=scales::hue_pal()(length(levels(data$year))), limits=levels(data$year))
@@ -362,30 +414,71 @@ plotYearlyPresence <- function(x, percent=TRUE, maxEff=NULL, legend=TRUE,
         effPlot <- effPlot +
             scale_x_continuous(breaks=labs$ix, labels=labs$label, name=NULL)
         binPlot <- binPlot +
-            scale_x_continuous(limits=c(1, max(effort$plotX)), breaks=labs$ix, labels=NULL)
+            scale_x_continuous(limits=c(1, max(effort$plotX)), breaks=labs$ix, labels=NULL, name=NULL)
     }
-
-    if(isFALSE(legend)) {
-        binPlot <- binPlot + theme(legend.position='none')
-        effPlot <- effPlot + theme(legend.position='none')
-    }
-    if(isFALSE(leftAxis)) {
-        effPlot <- effPlot +
-            scale_y_continuous(name=NULL, labels=NULL, limits=c(0, maxEff), breaks=(1:10)*24)
-        binPlot <- binPlot +
-            scale_y_continuous(name=NULL, labels=NULL, limits=c(0,1), breaks=c(0,.25, .5, .75, 1))
-    } else {
-        effPlot <- effPlot +
-            scale_y_continuous(breaks=(1:10)*24, name='Hours', limits=c(0, maxEff))
+    switch(match.arg(legend),
+           'remove' = {
+               binPlot <- binPlot + theme(legend.position='none')
+               effPlot <- effPlot + theme(legend.position='none')
+           },
+           'blank' = {
+               binPlot <- binPlot +
+               theme(legend.key = element_rect(fill = "white"),
+                     legend.text = element_text(color = "white"),
+                     legend.title = element_text(color = "white")) +
+                   guides(color = guide_legend(override.aes = list(color = NA)),
+                          fill = guide_legend(override.aes = list(fill=NA)))
+               effPlot <- effPlot +
+                   theme(legend.key = element_rect(fill = "white"),
+                         legend.text = element_text(color = "white"),
+                         legend.title = element_text(color = "white")) +
+                   guides(color = guide_legend(override.aes = list(color = NA)))
+           },
+           'show' = {
+               effPlot <- effPlot +
+                   theme(legend.key = element_rect(fill = "white"),
+                         legend.text = element_text(color = "white"),
+                         legend.title = element_text(color = "white")) +
+                   guides(color = guide_legend(override.aes = list(color = NA)))
+           }
+    )
+    # if(isFALSE(legend)) {
+    #     binPlot <- binPlot + theme(legend.position='none')
+    #     effPlot <- effPlot + theme(legend.position='none')
+    # }
+    # if(isFALSE(leftAxis)) {
+    #     effPlot <- effPlot +
+    #         scale_y_continuous(name=NULL, labels=NULL, limits=c(0, maxEff), breaks=(1:10)*24)
+    #     binPlot <- binPlot +
+    #         scale_y_continuous(name=NULL, labels=NULL, limits=c(0,1), breaks=c(0,.25, .5, .75, 1))
+    # } else {
+    effPlot <- effPlot +
+        scale_y_continuous(breaks=(1:10)*24, name='Hours', limits=c(0, maxEff))
+    if(isTRUE(percent)) {
         binPlot <- binPlot +
             scale_y_continuous(expand=expansion(mult=c(0, 0.05)), limits=c(0, 1),
                                # sec.axis=sec_axis(trans = ~.*ymax/24, breaks=seq(from=0, to=ymax, by=24)),
                                breaks=c(0,.25, .5, .75, 1), name='Percent of Avail. Hours')
+    } else {
+        ymax <- max(effort$nEffort)
+        binPlot <- binPlot +
+            scale_y_continuous(expand=expansion(mult=c(0, .05)), #limits=c(0, maxEff),
+                               breaks=seq(from=0, to=ymax, by=24), name='Hours')
     }
+    # }
     binPlot <- binPlot +
         theme(
             strip.background = element_blank(),
             strip.text.x = element_blank()
         )
-    binPlot/effPlot + plot_layout(heights=c(5,1))
+    out <- binPlot/effPlot + plot_layout(heights=c(5,1), ncol=1)
+    if(!is.null(leftLab)) {
+        out <- wrap_elements(grid::textGrob(leftLab, rot=90)) + out +
+            plot_layout(widths=c(1,40))
+    }
+    if(!is.null(title)) {
+        out <- out +
+            plot_annotation(title=title, theme=theme(plot.title=element_text(hjust=.5)))
+    }
+    out
 }
