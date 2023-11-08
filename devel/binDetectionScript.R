@@ -55,5 +55,13 @@ allDet <- bind_rows(lapply(logFiles, function(x) {
     loadDetectionData(x, source='triton')
 }))
 allBinned <- formatBinnedPresence(allDet, gps=gps)
+
 # hopefully this works and looks nice!
-plotYearlyPresence(allBinned)
+plotYearlyPresence(allBinned, title='Combined Bm Hourly Presence')
+
+# Can now use the "by" argument to plot multiple panels as one
+# and it will label them. Toy example here relabeling so we have
+# only 3 sites (more than 3 looks bad for "by")
+allBinned$DeploymentSite[allBinned$DeploymentSite %in%
+                             c('HMB', 'SF')] <- 'SFB'
+plotYearlyPresence(allBinned, by='DeploymentSite', title='Bm Hourly Presence by Site')

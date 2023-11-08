@@ -1,7 +1,6 @@
 # TODO: Use PAMpal:::mapWavFolder to create "effort" column describing
 #       how many minutes of each hour we were actually recording.
 # TODO: Check Raven input on someones actual tables
-# TODO: Fix percent=FALSE for yearly plot
 # 2023-11-02: First version, basic binned hourly presence and data loading
 library(lubridate)
 library(dplyr)
@@ -24,6 +23,7 @@ formatBinnedPresence <- function(x, gps,
     # for future DriftName could be given as a "by" column if need to extend
     gps <- checkGps(gps, format=format, tz=tz)
     x$UTC <- floor_date(x$UTC, unit=bin)
+    x$DriftName <- toupper(x$DriftName)
     result <- vector('list', length=length(unique(x$DriftName)))
     names(result) <- unique(x$DriftName)
     for(i in seq_along(result)) {
@@ -126,6 +126,10 @@ loadDetectionData <- function(x, source=c('csv', 'triton', 'df', 'raven'), drift
                    }
                    x$DriftName <- driftName
                }
+               if(!'UTC' %in% colnames(x)) {
+                   warning('Must have column "UTC"')
+                   return(NULL)
+               }
                x$UTC <- parseToUTC(x$UTC, format=format, tz=tz)
            },
            'raven' = {
@@ -200,8 +204,27 @@ loadTritonLog <- function(x, driftPattern='([A-z]*_[0-9]{1,3})_.*', driftName=NU
     } else if(grepl('xls$', x)) {
         x <- read_xls(x, sheet='Detections')
     }
-    x <- x[1:5]
-    colnames(x) <- c('file', 'eventNumber', 'species', 'call', 'UTC')
+    nameDf <- data.frame(
+        old = c('species.code', 'species code','start time', 'start.time'),
+        new = c('species', 'species', 'utc', 'utc')
+    )
+    colnames(x) <- tolower(colnames(x))
+    for(i in 1:nrow(nameDf)) {
+        hasThis <- colnames(x) == nameDf$old[i]
+        if(!any(hasThis)) {
+            next
+        }
+        colnames(x)[hasThis] <- nameDf$new[i]
+    }
+    # x <- x[c('Input.file', 'Event.Number', 'Species.Code', 'Call', 'UTC')]
+    tritonCols <- c('utc', 'species', 'call')
+    if(!all(tritonCols %in% colnames(x))) {
+        warning('Not all expected columns found in file ', x,
+                ' are you sure this is Triton output?')
+        return(NULL)
+    }
+    x <- x[tritonCols]
+    colnames(x)[1] <- 'UTC'
     x$DriftName <- driftName
     x$UTC <- parseToUTC(x$UTC, tz=tz)
     x
@@ -360,7 +383,8 @@ plotYearlyPresence <- function(x, percent=TRUE, maxEff=NULL,
 
     data <- x$data
     # browser()
-    data <- left_join(data, effort[c('plotX', 'binDate', 'nEffort')])
+    data <- left_join(data, effort[c('plotX', 'binDate', 'nEffort')],
+                      by=join_by(binDate))
     labs <- list(ix = seq(from=min(effort$plotX), to=max(effort$plotX), length.out=5),
                  label = seq(from=min(effort$binDate), to=min(effort$binDate) + period(364, units='days'), length.out=5))
 
@@ -381,7 +405,7 @@ plotYearlyPresence <- function(x, percent=TRUE, maxEff=NULL,
         # THIS IST WORKING WHY. Mean effort is way higher than n()
         data <- data %>%
             group_by(plotX, year) %>%
-            summarise(n=n(), pct=n()/mean(nEffort), eff=mean(nEffort)) %>%
+            summarise(n=n(), pct=n()/mean(nEffort), eff=mean(nEffort), .groups='drop_last') %>%
             ungroup()
         binPlot <- ggplot() +
             geom_rect(data=data, aes(xmin=plotX-.45,xmax=plotX+.45, ymin=0, ymax=pct, fill=year))
