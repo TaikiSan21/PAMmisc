@@ -82,7 +82,8 @@ loadDetectionData <- function(x, source=c('csv', 'triton', 'df', 'raven'), drift
                               driftPattern='([A-z]*_[0-9]{1,3})_.*',
                               format=c('%m/%d/%Y %H:%M:%S', '%m-%d-%Y %H:%M:%S',
                                        '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M:%S'),
-                              speciesCol='species', typeCol=NULL,tz='UTC') {
+                              speciesCol='species', typeCol=NULL,tz='UTC',
+                              sheet=c('Detections', 'AdhocDetections')) {
     switch(match.arg(source),
            'csv' = {
                if(is.null(driftName)) {
@@ -99,7 +100,7 @@ loadDetectionData <- function(x, source=c('csv', 'triton', 'df', 'raven'), drift
                                         speciesCol=speciesCol, typeCol=typeCol, tz=tz))
            },
            'triton' = {
-               x <- loadTritonLog(x, driftPattern=driftPattern, driftName=driftName, tz=tz)
+               x <- loadTritonLog(x, driftPattern=driftPattern, driftName=driftName, tz=tz, sheet=sheet)
            },
            'df' = {
                if(!'species' %in% colnames(x)) {
@@ -190,7 +191,8 @@ parseToUTC <- function(x, format=c('%m/%d/%Y %H:%M:%S', '%m-%d-%Y %H:%M:%S',
     with_tz(origTz, tzone='UTC')
 }
 
-loadTritonLog <- function(x, driftPattern='([A-z]*_[0-9]{1,3})_.*', driftName=NULL, tz='UTC') {
+loadTritonLog <- function(x, driftPattern='([A-z]*_[0-9]{1,3})_.*', driftName=NULL, tz='UTC',
+                          sheet=c('Detections', 'AdhocDetections')) {
     if(is.null(driftName)) {
         driftName <- gsub(driftPattern, '\\1', basename(x))
         if(driftName == basename(x)) {
@@ -199,10 +201,21 @@ loadTritonLog <- function(x, driftPattern='([A-z]*_[0-9]{1,3})_.*', driftName=NU
             return(NULL)
         }
     }
+    if(length(sheet) > 1) {
+        return(bind_rows(lapply(sheet, function(s) {
+            loadTritonLog(x, driftPattern, driftName, tz,
+                          sheet=s)
+        })))
+    }
     if(grepl('csv$', x)) {
         x <- read.csv(x, stringsAsFactors = FALSE)
     } else if(grepl('xls$', x)) {
-        x <- read_xls(x, sheet='Detections')
+        x <- read_xls(x, sheet=sheet)
+    } else if(grepl('xlsx$', x)) {
+        x <- read_xlsx(x, sheet=sheet)
+    }
+    if(is.null(x) || nrow(x) == 0) {
+        return(NULL)
     }
     nameDf <- data.frame(
         old = c('species.code', 'species code','start time', 'start.time'),

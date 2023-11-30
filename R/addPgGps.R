@@ -215,7 +215,8 @@ fmtGps <- function(x, source, format, tz) {
     result
 }
 
-parseToUTC <- function(x, format, tz) {
+parseToUTC <- function(x, format=c('%m/%d/%Y %H:%M:%S', '%m-%d-%Y %H:%M:%S',
+                                    '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M:%S'), tz) {
     tryCatch({
         testTz <- parse_date_time('10-10-2020 12:00:05', orders = '%m/%d/%Y %H:%M:%S', tz=tz)
     },
