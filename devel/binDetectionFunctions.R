@@ -84,6 +84,14 @@ loadDetectionData <- function(x, source=c('csv', 'triton', 'df', 'raven'), drift
                                        '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M:%S'),
                               speciesCol='species', typeCol=NULL,tz='UTC',
                               sheet=c('Detections', 'AdhocDetections')) {
+    if(length(x) > 1) {
+        return(bind_rows(lapply(x, function(file) {
+            loadDetectionData(file, source=source, driftName=driftName,
+                              driftPattern=driftPattern, format=format,
+                              speciesCol=speciesCol, typeCol=typeCol,
+                              tz=tz, sheet=sheet)
+        })))
+    }
     switch(match.arg(source),
            'csv' = {
                if(is.null(driftName)) {
