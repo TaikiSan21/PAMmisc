@@ -2,6 +2,8 @@
 #       how many minutes of each hour we were actually recording.
 # TODO: Check Raven input on someones actual tables
 # 2023-11-02: First version, basic binned hourly presence and data loading
+# 2023-12-04: Adjusting to account for possible "End.time" or "end" columns instead
+#             of only assuming detection at start time
 library(lubridate)
 library(dplyr)
 library(PAMmisc)
@@ -24,6 +26,22 @@ formatBinnedPresence <- function(x, gps,
     gps <- checkGps(gps, format=format, tz=tz)
     x$UTC <- floor_date(x$UTC, unit=bin)
     x$DriftName <- toupper(x$DriftName)
+    if('end' %in% colnames(x) &&
+       any(!is.na(x$end))) {
+        x$end <- floor_date(x$end, unit=bin)
+        x <- bind_rows(lapply(1:nrow(x), function(i) {
+            if(is.na(x$end[i])) {
+                return(x[i, ])
+            }
+            dates <- seq(from=x$UTC[i], to=x$end[i], by=bin)
+            result <- as.list(x[i, ])
+            result$UTC <- dates
+            result
+        }))
+        x$end <- NULL
+        x <- distinct(x)
+    }
+
     result <- vector('list', length=length(unique(x$DriftName)))
     names(result) <- unique(x$DriftName)
     for(i in seq_along(result)) {
@@ -56,7 +74,7 @@ formatBinnedPresence <- function(x, gps,
         dateSeq <- seq(from=thisRange[1], to=thisRange[2], by=bin)
         thisResult <- data.frame(UTC = dateSeq) #, DriftName=names(result)[i])
         thisResult <- left_join(thisResult, x[x$DriftName == names(result)[i], ],
-                                              # c('UTC', 'species', 'call')],
+                                # c('UTC', 'species', 'call')],
                                 by='UTC')
         if(noGps) {
             warning('Could not find GPS for drift ', names(result)[i])
@@ -140,6 +158,12 @@ loadDetectionData <- function(x, source=c('csv', 'triton', 'df', 'raven'), drift
                    return(NULL)
                }
                x$UTC <- parseToUTC(x$UTC, format=format, tz=tz)
+               if('duration' %in% colnames(x)) {
+                   x$end <- x$UTC + x$end
+               }
+               if('end' %in% colnames(x)) {
+                   x$end <- parseToUTC(x$end, format=format, tz=tz)
+               }
            },
            'raven' = {
                #PAMmisc::formatAnno has fmtRaven
@@ -148,6 +172,7 @@ loadDetectionData <- function(x, source=c('csv', 'triton', 'df', 'raven'), drift
                x <- PAMmisc:::fmtRaven(x)
                x <- rename(x, species=Label)
                x$UTC <- parseToUTC(x$UTC, format=format, tz=tz)
+               x$end <- x$UTC + x$Duration
                x$call <- NA
                # MISSING:::: DriftName stuff. Unsure logic of raven file names
                x$DriftName <- driftName
@@ -226,8 +251,8 @@ loadTritonLog <- function(x, driftPattern='([A-z]*_[0-9]{1,3})_.*', driftName=NU
         return(NULL)
     }
     nameDf <- data.frame(
-        old = c('species.code', 'species code','start time', 'start.time'),
-        new = c('species', 'species', 'utc', 'utc')
+        old = c('species.code', 'species code','start time', 'start.time', 'end time', 'end.time'),
+        new = c('species', 'species', 'utc', 'utc', 'end', 'end')
     )
     colnames(x) <- tolower(colnames(x))
     for(i in 1:nrow(nameDf)) {
@@ -238,7 +263,7 @@ loadTritonLog <- function(x, driftPattern='([A-z]*_[0-9]{1,3})_.*', driftName=NU
         colnames(x)[hasThis] <- nameDf$new[i]
     }
     # x <- x[c('Input.file', 'Event.Number', 'Species.Code', 'Call', 'UTC')]
-    tritonCols <- c('utc', 'species', 'call')
+    tritonCols <- c('utc', 'species', 'call', 'end')
     if(!all(tritonCols %in% colnames(x))) {
         warning('Not all expected columns found in file ', x,
                 ' are you sure this is Triton output?')
@@ -468,9 +493,9 @@ plotYearlyPresence <- function(x, percent=TRUE, maxEff=NULL,
            },
            'blank' = {
                binPlot <- binPlot +
-               theme(legend.key = element_rect(fill = "white"),
-                     legend.text = element_text(color = "white"),
-                     legend.title = element_text(color = "white")) +
+                   theme(legend.key = element_rect(fill = "white"),
+                         legend.text = element_text(color = "white"),
+                         legend.title = element_text(color = "white")) +
                    guides(color = guide_legend(override.aes = list(color = NA)),
                           fill = guide_legend(override.aes = list(fill=NA)))
                effPlot <- effPlot +
