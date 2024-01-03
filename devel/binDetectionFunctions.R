@@ -4,6 +4,8 @@
 # 2023-11-02: First version, basic binned hourly presence and data loading
 # 2023-12-04: Adjusting to account for possible "End.time" or "end" columns instead
 #             of only assuming detection at start time
+# 2024-01-03: Adding better warning messages to catch time errors
+
 library(lubridate)
 library(dplyr)
 library(PAMmisc)
@@ -178,6 +180,23 @@ loadDetectionData <- function(x, source=c('csv', 'triton', 'df', 'raven'), drift
                x$DriftName <- driftName
            }
     )
+    if(is.null(x) ||
+       nrow(x) == 0) {
+        return(x)
+    }
+    naStarts <- is.na(x$UTC)
+    if(any(naStarts)) {
+        warning(sum(naStarts), ' times were not able to be processed in drift(s): ',
+                paste0(unique(x$DriftName[naStarts]), collapse=', '))
+    }
+    naBounds <- is.na(x$end) | naStarts
+    if(!all(naBounds)) {
+        endBefore <- x$end[!naBounds] < x$UTC[!naBounds]
+        if(any(endBefore)) {
+            warning(sum(endBefore), ' end times were before start times in drift(s): ',
+                    paste0(unique(x$DriftName[endBefore]), collapse=', '))
+        }
+    }
     x
 }
 
@@ -214,7 +233,7 @@ parseToUTC <- function(x, format=c('%m/%d/%Y %H:%M:%S', '%m-%d-%Y %H:%M:%S',
         }
     })
     if(!inherits(x, 'POSIXct')) {
-        origTz <- parse_date_time(x, orders=format, tz=tz, exact=TRUE, truncated=3)
+        origTz <- parse_date_time(x, orders=format, tz=tz, exact=TRUE, truncated=3, quiet=TRUE)
         if(!inherits(origTz, 'POSIXct')) {
             stop('Unable to convert to POSIXct time.', call.=FALSE)
         }
