@@ -55,6 +55,11 @@
 #'
 ncToData <- function(data, nc, var=NULL, buffer = c(0,0,0), FUN = c(mean),
                      raw = FALSE, keepMatch=TRUE, progress=TRUE, depth=0, verbose=TRUE, ...) {
+    if(!is.character(nc) ||
+       !file.exists(nc)) {
+        warning('"nc" ', nc, ' is not a valid file.')
+        return(data)
+    }
     nc <- nc_open(nc)
     on.exit(nc_close(nc))
     nc <- romsCheck(nc)
@@ -111,7 +116,8 @@ ncToData <- function(data, nc, var=NULL, buffer = c(0,0,0), FUN = c(mean),
     if(!all(reqDims %in% names(data))) {
         stop('data must have columns ', paste0(reqDims, collapse=', '))
     }
-
+    # nc$dim$Longitude$vals <- round(nc$dim$Longitude$vals, 5)
+    # nc$dim$Latitude$vals <- round(nc$dim$Latitude$vals, 5)
     if(progress) {
         cat('Matching data...\n')
         pb <- txtProgressBar(min=0, max=nrow(data), style=3)

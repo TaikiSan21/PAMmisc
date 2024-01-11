@@ -110,6 +110,8 @@ calcEKParams <- function(x) {
 # INPUT
 # data - a dataframe with UTC, Latitude, and Longitude
 # folder - folder to store downloads for this project. .nc and log files will live here
+# offset - number of hours to ADD to change time in "data" to UTC, NOT THE STANDARD UTC OFFSET.
+#          e.g. if in PST, this will be either +7 or +8 (depending on DST status)
 # log - name of log file, this can be left as NULL and will use the folder name
 # buffer - amount to extend coordinates in "data", in order of Lon, Lat, UTC (seconds)
 # retry - if FALSE, will only download days that have not been attempted. If TRUE will
@@ -123,40 +125,44 @@ calcEKParams <- function(x) {
 # in "data". If a download fails, you can run this again pointing to the same folder
 # and it will resume. To retry failed downloads, run with retry=TRUE.
 
-downloadDailyHycom <- function(data, folder, log=NULL, buffer=c(0.16, 0.16, 0),
-                               retry=FALSE, timeout=360, hyList=PAMmisc::hycomList, progress=TRUE) {
-    if(!all(c('UTC', 'Latitude', 'Longitude') %in% names(data))) {
-        stop('"data" must have "UTC", "Longitude", and "Latitude"')
+downloadDailyHycom <- function(data=NULL, folder,
+                               offset=0,
+                               log=NULL, buffer=c(0.16, 0.16, 0),
+                               mode=c('segment', 'full'),
+                               retry=TRUE, timeout=600, hyList=PAMmisc::hycomList,
+                               progress=TRUE) {
+    if(!dir.exists(folder)) {
+        dir.create(folder)
     }
+    data <- ekToStandardFormat(data, offset=offset)
+    logDf <- dataToLog(data, mode=mode, buffer=buffer)
+
     if(is.null(log)) {
         log <- paste0(basename(folder), '_', 'HYCOMLog.csv')
         log <- file.path(folder, log)
     }
-    if(!dir.exists(folder)) {
-        dir.create(folder)
-    }
 
-
-    dataRange <- dataToRanges(data, buffer)
-    days <- seq(from=floor_date(dataRange$UTC[1], unit='1day'),
-                to = floor_date(dataRange$UTC[2], unit='1day'),
-                by=24 * 3600)
-    logDf <- data.frame(days=days,
-                        attempted = FALSE,
-                        succeeded = FALSE,
-                        file = '',
-                        fail_message='')
     if(file.exists(log)) {
-        oldLog <- read.csv(log)
-        oldLog$days <- as.POSIXct(oldLog$days, format='%Y-%m-%d', tz='UTC')
-        logDf <- rbind(oldLog, logDf[!logDf$days %in% oldLog$days, ])
-        logDf <- arrange(logDf, days)
+        oldLog <- read.csv(log, stringsAsFactors = FALSE)
+        oldLog$day <- as.POSIXct(oldLog$day, format='%Y-%m-%d', tz='UTC')
+        logDf <- bind_rows(oldLog, logDf[!logDf$day %in% oldLog$day, ])
+        logDf <- arrange(logDf, day)
     }
+
     if(retry) {
         toTry <- !logDf$succeeded
     } else {
         toTry <- !logDf$attempted
     }
+
+    if(!any(toTry)) {
+        cat('No days to try to download.')
+        if(isFALSE(retry)) {
+            cat(' Did you mean to run with "retry=TRUE" ?')
+        }
+        return(logDf)
+    }
+
     tried <- rep(FALSE, nrow(logDf))
 
     on.exit({
@@ -165,34 +171,38 @@ downloadDailyHycom <- function(data, folder, log=NULL, buffer=c(0.16, 0.16, 0),
         nPlanned <- sum(toTry)
         write.csv(logDf, file = log, row.names = FALSE)
         cat('\nSucceeded on ', nSucceeded,
-            'out of ', nTried, ' attempts ',
+            ' out of ', nTried, ' attempts ',
             '(out of ', nPlanned, ' planned attempts)', sep='')
     })
-    if(!any(toTry)) {
-        cat('No days to try to download.')
-        if(isFALSE(retry)) {
-            cat(' Did you mean to run with "retry=TRUE" ?')
-        }
-        return(logDf)
-    }
-    # hyList <- PAMmisc::hycomList
+
     if(progress) {
         pb <- txtProgressBar(min=0, max=sum(toTry), style=3)
         ix <- 0
     }
+
     for(i in which(toTry)) {
         logDf$attempted[i] <- TRUE
         tried[i] <- TRUE
-        dlDf <- data.frame(Latitude = dataRange$Latitude,
-                           Longitude = dataRange$Longitude,
-                           UTC = c(logDf$days[i], logDf$days[i] + 24 * 3600))
+        dlDf <- data.frame(Latitude = c(logDf$minLat[i], logDf$maxLat[i]),
+                           Longitude = c(logDf$minLong[i], logDf$maxLong[i]),
+                           UTC = c(logDf$day[i], logDf$day[i] + 24 * 3600))
         whichHy <- PAMmisc:::whichHycom(dlDf, hyList)[1]
         thisHy <- hyList$list[[whichHy]]
+        thisExpt <- gsub('.*(expt_[0-9\\.X]*).*', '\\1', thisHy$dataset)
         thisHy <- varSelect(thisHy, select = c(T, T, T, T, T))
-        filename <- paste0('HYCOM_',
-                           format(logDf$days[i], format='%Y-%m-%d'),
+        # if segment we store cruiseNum, so add to name here
+        if('cruiseNum' %in% colnames(logDf)) {
+            prefix <- paste0(logDf$cruiseNum[i], '_')
+        } else {
+            prefix <- ''
+        }
+        filename <- paste0(prefix,
+                           'HYCOM_',
+                           thisExpt,
                            '_',
-                           format(logDf$days[i]+24*3600, format='%Y-%m-%d'),
+                           format(logDf$day[i], format='%Y-%m-%d'),
+                           '_',
+                           format(logDf$day[i]+24*3600, format='%Y-%m-%d'),
                            '.nc')
         filename <- file.path(folder, filename)
         thisFile <- tryCatch({
@@ -220,4 +230,147 @@ downloadDailyHycom <- function(data, folder, log=NULL, buffer=c(0.16, 0.16, 0),
         logDf$fail_message[i] <- ''
     }
     logDf
+}
+
+ekToStandardFormat <- function(data, offset=0) {
+    if(is.null(data) || nrow(data) == 0) {
+        return(data)
+    }
+    if('mlon' %in% colnames(data)) {
+        data <- rename(data, 'Longitude' = 'mlon')
+    }
+    if('mlat' %in% colnames(data)) {
+        data <- rename(data, 'Latitude' = 'mlat')
+    }
+    if(!'UTC' %in% colnames(data) &&
+       all(c('year', 'month', 'day', 'mtime') %in% colnames(data))) {
+        data$UTC <- paste0(data$year, '_',
+                           data$month, '_',
+                           data$day, '_')
+        data$UTC <- as.POSIXct(data$UTC, format='%Y_%m_%d', tz='UTC')
+        data$UTC <- data$UTC + data$mtime * 3600
+    }
+    if(!all(c('UTC', 'Latitude', 'Longitude') %in% names(data))) {
+        stop('"data" must have "UTC", "Longitude", and "Latitude"')
+    }
+    data$UTC <- data$UTC + offset * 3600
+    data
+}
+
+dataToLog <- function(data, mode=c('segment','full'), buffer) {
+    if(is.null(data) || nrow(data) == 0) {
+        return(data)
+    }
+    switch(match.arg(mode),
+           'full' = {
+               dataRange <- dataToRanges(data, buffer)
+               days <- seq(from=floor_date(dataRange$UTC[1], unit='1day'),
+                           to = floor_date(dataRange$UTC[2], unit='1day'),
+                           by=24 * 3600)
+               logDf <- data.frame(day=days,
+                                   minLat = min(dataRange$Latitude),
+                                   maxLat = max(dataRange$Latitude),
+                                   minLong = min(dataRange$Longitude),
+                                   maxLong = max(dataRange$Longitude),
+                                   attempted = FALSE,
+                                   succeeded = FALSE,
+                                   file = '',
+                                   fail_message='')
+           },
+           'segment' = {
+               logDf <- data %>%
+                   mutate(day = floor_date(.data$UTC, unit='1day')) %>%
+                   group_by(.data$day)
+               if('cruiseNum' %in% colnames(data)) {
+                   logDf <- group_by(logDf, .data$cruiseNum, .add=TRUE)
+               }
+               logDf <- logDf %>%
+                   summarise(minLat=min(.data$Latitude),
+                             maxLat=max(.data$Latitude),
+                             minLong=min(.data$Longitude),
+                             maxLong=max(.data$Longitude)) %>%
+                   ungroup() %>%
+                   mutate(attempted = FALSE,
+                          succeeded = FALSE,
+                          file = '',
+                          fail_message = '')
+
+           }
+    )
+    logDf
+}
+
+# add params from nc folder
+
+addEnvParams <- function(data, folder, offset=0) {
+    ncFiles <- list.files(folder, full.names=TRUE, recursive=TRUE, pattern='nc$')
+    logFiles <- list.files(folder, full.names=TRUE, recursive=TRUE, pattern='HYCOMLog.csv$')
+    logs <- bind_rows(lapply(logFiles, function(x) {
+        oneLog <- read.csv(x, stringsAsFactors = FALSE)
+        oneLog$day <- as.POSIXct(oneLog$day, format='%Y-%m-%d', tz='UTC')
+        oneLog
+    }))
+    logNcExists <- file.exists(logs$file)
+    noNcMatch <- character(0)
+    multiMatch <- character(0)
+    for(i in which(!logNcExists)) {
+        tryFind <- grep(logs$file[i], ncFiles, value=TRUE)
+        if(length(tryFind) == 0) {
+            noNcMatch <- c(noNcMatch, logs$file[i])
+            logs$file[i] <- NA
+            next
+        }
+        if(length(tryFind) > 1) {
+            multiMatch <- c(multiMatch, logs$file[i])
+        }
+        logs$file[i] <- tryFind[1]
+    }
+    oldCols <- colnames(data)
+    nCols <- ncol(data)
+    data <- ekToStandardFormat(data, offset=offset)
+    # some temp columns to match times and return original order
+    data$MATCHDAY <- floor_date(data$UTC, unit='1day')
+    data$ORDERIX <- 1:nrow(data)
+    on.exit({
+        colnames(data[1:nCols]) <- oldCols
+        data$MATCHDAY <- NULL
+        data <- arrange(data, .data$ORDERIX)
+        data$ORDERIX <- NULL
+        return(data)
+    })
+    noDayMatch <- numeric()
+    noCoordMatch <- numeric()
+    data <- bind_rows(lapply(split(data, data$MATCHDAY), function(x) {
+        # one day at a time for easier matching
+        thisLog <- logs[logs$day == x$MATCHDAY[1], ]
+        if(nrow(thisLog) == 0) {
+            noDayMatch <<- c(noDayMatch, x$ORDERIX)
+            return(x)
+        }
+        x$MATCHEDIX <- rep(0, nrow(x))
+        for(i in 1:nrow(thisLog)) {
+            thisLogMatch <- x$Longitude >= thisLog$minLong[i] &
+                x$Longitude <= thisLog$maxLong[i] &
+                x$Latitude >= thisLog$minLat[i] &
+                x$Latitude <= thisLog$maxLat[i]
+            x$MATCHEDIX[thisLogMatch] <- i
+        }
+        noCoordMatch <<- x$ORDERIX[x$MATCHEDIX == 0]
+        x <- bind_rows(lapply(split(x, x$MATCHEDIX), function(y) {
+            if(y$MATCHEDIX[1] == 0) {
+                return(y)
+            }
+            rawEnv <- ncToData(y, nc=thisLog$file[y$MATCHEDIX[1]], buffer=c(.16, .16, 0), raw=TRUE, depth=c(0, 200), progress=FALSE)
+            cbind(y, calcEKParams(rawEnv))
+        }))
+        x$MATCHEDIX <- NULL
+        x
+    }))
+    if(length(noDayMatch) > 0) {
+        warning(length(noDayMatch), ' rows in data matched no days in download logs.')
+    }
+    if(length(noCoordMatch) > 0) {
+        warning(length(noCoordMatch), ' rows in data matched a day but did not match coordinate range in download logs.')
+    }
+    data
 }

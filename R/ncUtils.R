@@ -87,7 +87,7 @@ dimToIx <- function(data, dim, buffer=0, verbose=TRUE) {
         }
     }
     # prob want to keep actual distance?
-    ix <- sapply(data, function(x) which.min(abs(dim$vals - x)))
+    ix <- sapply(data, function(x) which.min(round(abs(dim$vals - x), 5)))
     # start <- which.min(abs(dim$vals - (min(data) - buffer)))
     diff <- abs(data - dim$vals[ix])
     # get start and count values for te ncvar_get call

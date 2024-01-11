@@ -1,3 +1,7 @@
+# PAMmisc 1.11.9
+
+* Minor adjustments to various NC functions for HYCOM project
+
 # PAMmisc 1.11.8
 
 * Added required column error messages for `matchEnvData` functinos

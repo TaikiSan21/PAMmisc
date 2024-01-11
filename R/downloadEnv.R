@@ -95,12 +95,12 @@ downloadEnv <- function(data, edinfo, fileName = NULL, buffer = c(0, 0, 0), time
                                                 # verbose(),
                                                 progress(),
                                                 timeout(timeout),
-                                                write_disk(fileName, overwrite = TRUE))))
+                                                write_disk(fileName, overwrite = TRUE))), silent=TRUE)
         } else {
             envData <- try(suppressMessages(GET(url,
                                                 # verbose(),
                                                 timeout(timeout),
-                                                write_disk(fileName, overwrite = TRUE))))
+                                                write_disk(fileName, overwrite = TRUE))), silent=TRUE)
         }
         if(inherits(envData, 'try-error')) {
             nTry <- nTry + 1
@@ -109,7 +109,8 @@ downloadEnv <- function(data, edinfo, fileName = NULL, buffer = c(0, 0, 0), time
             next
         }
         if(envData$status_code != 200) {
-            stop(paste0('URL ', envData$url, ' is invalid, pasting this into a browser may give more information.'))
+            warning(paste0('URL ', envData$url, ' is invalid, pasting this into a browser may give more information.'))
+            return(FALSE)
         }
         # if status code == 200 we good
         return(invisible(fileName))
