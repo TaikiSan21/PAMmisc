@@ -110,8 +110,7 @@ calcEKParams <- function(x) {
 # INPUT
 # data - a dataframe with UTC, Latitude, and Longitude
 # folder - folder to store downloads for this project. .nc and log files will live here
-# offset - number of hours to ADD to change time in "data" to UTC, NOT THE STANDARD UTC OFFSET.
-#          e.g. if in PST, this will be either +7 or +8 (depending on DST status)
+# tz - timezone of your dataset, must match something in OlsonNames()
 # log - name of log file, this can be left as NULL and will use the folder name
 # buffer - amount to extend coordinates in "data", in order of Lon, Lat, UTC (seconds)
 # retry - if FALSE, will only download days that have not been attempted. If TRUE will
@@ -125,16 +124,28 @@ calcEKParams <- function(x) {
 # in "data". If a download fails, you can run this again pointing to the same folder
 # and it will resume. To retry failed downloads, run with retry=TRUE.
 
-downloadDailyHycom <- function(data=NULL, folder,
-                               offset=0,
-                               log=NULL, buffer=c(0.16, 0.16, 0),
-                               mode=c('segment', 'full'),
-                               retry=TRUE, timeout=600, hyList=PAMmisc::hycomList,
-                               progress=TRUE) {
+loadLog <- function(folder) {
+    logName <- paste0(basename(folder), '_', 'HYCOMLog.csv')
+    logName <- file.path(folder, logName)
+    if(!file.exists(logName)) {
+        return(NULL)
+    }
+    log <- read.csv(logName, stringsAsFactors = FALSE)
+    log$day <- as.POSIXct(log$day, format='%Y-%m-%d', tz='UTC')
+    log
+}
+
+downloadHYCOM <- function(data=NULL, folder,
+                          tz='UTC',
+                          log=NULL, buffer=c(0.16, 0.16, 0),
+                          mode=c('segment', 'full'),
+                          retry=TRUE, timeout=600, hyList=PAMmisc::hycomList,
+                          progress=TRUE) {
     if(!dir.exists(folder)) {
         dir.create(folder)
     }
-    data <- ekToStandardFormat(data, offset=offset)
+
+    data <- ekToStandardFormat(data, tz=tz)
     logDf <- dataToLog(data, mode=mode, buffer=buffer)
 
     if(is.null(log)) {
@@ -232,28 +243,79 @@ downloadDailyHycom <- function(data=NULL, folder,
     logDf
 }
 
-ekToStandardFormat <- function(data, offset=0) {
+parseNcName <- function(x, what=c('start', 'end', 'expt')) {
+    what <- match.arg(what)
+    x <- basename(x)
+    x <- gsub('\\.nc$', '', x)
+    x <- strsplit(x, '_')[[1]]
+    # prefix_?HYCOM_EXPT_START_END.nc
+    len <- length(x)
+    if(len < 4) {
+        stop('NetCDF file name is in unexpected format, ',
+             'expecting PREFIXHYCOM_EXPT_START_END.nc')
+    }
+    switch(what,
+           'start' = {
+               result <- x[[len-1]]
+               result <- as.POSIXct(result, format='%Y-%m-%d', tz='UTC')
+           },
+           'end' = {
+               result <- x[[len]]
+               result <- as.POSIXct(result, format='%Y-%m-%d', tz='UTC')
+           },
+           'expt' = {
+               result <- x[[len-2]]
+           }
+    )
+    result
+}
+
+ekToStandardFormat <- function(data, tz='UTC', noTime=FALSE) {
     if(is.null(data) || nrow(data) == 0) {
         return(data)
     }
+    if(is.character(data)) {
+        if(!file.exists(data)) {
+            stop('File ', data, ' does not exist.')
+        }
+        data <- read.csv(data, stringsAsFactors = FALSE)
+    }
+    # Look for Longitude columns
     if('mlon' %in% colnames(data)) {
         data <- rename(data, 'Longitude' = 'mlon')
+    } else if('lon' %in% colnames(data)) {
+        data <- rename(data, 'Longitude' = 'lon')
+    } else if('lon180' %in% colnames(data)) {
+        data <- rename(data, 'Longitude' = 'lon180')
+    } else if('lon360' %in% colnames(data)) {
+        data <- rename(data, 'Longitude' = 'lon360')
     }
+    # Look for Latitude columns
     if('mlat' %in% colnames(data)) {
         data <- rename(data, 'Latitude' = 'mlat')
+    } else if('lat' %in% colnames(data)) {
+        data <- rename(data, 'Latitude' = 'lat')
+    }
+    if(isTRUE(noTime)) {
+        if(!all(c('Longitude', 'Latitude') %in% colnames(data))) {
+            stop('Could not find Latitude/Longitude columns, please rename')
+        }
+        return(data)
     }
     if(!'UTC' %in% colnames(data) &&
        all(c('year', 'month', 'day', 'mtime') %in% colnames(data))) {
         data$UTC <- paste0(data$year, '_',
                            data$month, '_',
                            data$day, '_')
-        data$UTC <- as.POSIXct(data$UTC, format='%Y_%m_%d', tz='UTC')
+        data$UTC <- as.POSIXct(data$UTC, format='%Y_%m_%d', tz=tz)
         data$UTC <- data$UTC + data$mtime * 3600
     }
     if(!all(c('UTC', 'Latitude', 'Longitude') %in% names(data))) {
         stop('"data" must have "UTC", "Longitude", and "Latitude"')
     }
-    data$UTC <- data$UTC + offset * 3600
+
+    data$UTC <- parseToUTC(data$UTC, tz=tz)
+    # data$UTC <- data$UTC + offset * 3600
     data
 }
 
@@ -301,8 +363,41 @@ dataToLog <- function(data, mode=c('segment','full'), buffer) {
 }
 
 # add params from nc folder
+checkLogFiles <- function(logData, folder, ncFiles=NULL) {
+    if(is.null(ncFiles)) {
+        ncFiles <- list.files(folder, full.names=TRUE, recursive=TRUE, pattern='nc$')
+    }
+    logNcExists <- file.exists(logData$file)
+    noNcMatch <- character(0)
+    multiMatch <- character(0)
+    for(i in which(!logNcExists)) {
+        # if it doesnt think it succeeded dont check
+        if(!logData$success[i]) {
+            next
+        }
+        tryFind <- grep(logData$file[i], ncFiles, value=TRUE)
+        if(length(tryFind) == 0) {
+            noNcMatch <- c(noNcMatch, logData$file[i])
+            logData$file[i] <- NA
+            next
+        }
+        if(length(tryFind) > 1) {
+            multiMatch <- c(multiMatch, logData$file[i])
+        }
+        logData$file[i] <- tryFind[1]
+    }
+    if(length(noNcMatch) > 0) {
+        warning(length(noNcMatch), ' NetCDF files in the log file were not found ',
+                'in the folder (', paste0(basename(noNcMatch), collapse=', '), ')')
+    }
+    if(length(multiMatch) > 0) {
+        warning(length(multiMatch), ' NetCDF files in the log file matched multiple ',
+                'files in the folder (', paste0(basename(multiMatch), collapse=', '), ')')
+    }
+    logData
+}
 
-addEnvParams <- function(data, folder, offset=0) {
+addEnvParams <- function(data, folder, tz='UTC') {
     ncFiles <- list.files(folder, full.names=TRUE, recursive=TRUE, pattern='nc$')
     logFiles <- list.files(folder, full.names=TRUE, recursive=TRUE, pattern='HYCOMLog.csv$')
     logs <- bind_rows(lapply(logFiles, function(x) {
@@ -310,24 +405,32 @@ addEnvParams <- function(data, folder, offset=0) {
         oneLog$day <- as.POSIXct(oneLog$day, format='%Y-%m-%d', tz='UTC')
         oneLog
     }))
-    logNcExists <- file.exists(logs$file)
-    noNcMatch <- character(0)
-    multiMatch <- character(0)
-    for(i in which(!logNcExists)) {
-        tryFind <- grep(logs$file[i], ncFiles, value=TRUE)
-        if(length(tryFind) == 0) {
-            noNcMatch <- c(noNcMatch, logs$file[i])
-            logs$file[i] <- NA
-            next
+
+    # logNcExists <- file.exists(logs$file)
+    # noNcMatch <- character(0)
+    # multiMatch <- character(0)
+    # for(i in which(!logNcExists)) {
+    #     tryFind <- grep(logs$file[i], ncFiles, value=TRUE)
+    #     if(length(tryFind) == 0) {
+    #         noNcMatch <- c(noNcMatch, logs$file[i])
+    #         logs$file[i] <- NA
+    #         next
+    #     }
+    #     if(length(tryFind) > 1) {
+    #         multiMatch <- c(multiMatch, logs$file[i])
+    #     }
+    #     logs$file[i] <- tryFind[1]
+    # }
+    logs <- checkLogFiles(logs, folder, ncFiles=ncFiles)
+    if(is.character(data)) {
+        if(!file.exists(data)) {
+            stop('File ', data, ' does not exist.')
         }
-        if(length(tryFind) > 1) {
-            multiMatch <- c(multiMatch, logs$file[i])
-        }
-        logs$file[i] <- tryFind[1]
+        data <- read.csv(data, stringsAsFactors = FALSE)
     }
     oldCols <- colnames(data)
     nCols <- ncol(data)
-    data <- ekToStandardFormat(data, offset=offset)
+    data <- ekToStandardFormat(data, tz=tz)
     # some temp columns to match times and return original order
     data$MATCHDAY <- floor_date(data$UTC, unit='1day')
     data$ORDERIX <- 1:nrow(data)
@@ -373,4 +476,70 @@ addEnvParams <- function(data, folder, offset=0) {
         warning(length(noCoordMatch), ' rows in data matched a day but did not match coordinate range in download logs.')
     }
     data
+}
+
+makeDailyCSV <- function(grid, folder, name, progress=TRUE, retry=FALSE) {
+    logData <- loadLog(folder)
+    if(is.null(logData)) {
+        stop('No download log file found in ', folder)
+    }
+    # keep track of these bc we rename to standard
+    if('UTC' %in% colnames(grid)) {
+        grid$UTC <- NULL
+    }
+    oldCols <- colnames(grid)
+    nCols <- ncol(grid)
+    grid <- ekToStandardFormat(grid, noTime=TRUE)
+    logData <- checkLogFiles(logData, folder)
+    logData <- logData[logData$succeeded & !is.na(logData$file), ]
+    if(progress) {
+        pb <- txtProgressBar(min=0, max=nrow(logData), style=3)
+    }
+    for(i in 1:nrow(logData)) {
+        thisNc <- logData$file[i]
+        thisCsv <- paste0(name, '_', format(logData$day[i], format='%Y-%m-%d'), '.csv')
+        thisCsv <- file.path(folder, thisCsv)
+        if(retry || !file.exists(thisCsv)) {
+            thisGrid <- grid
+            thisGrid$UTC <- logData$day[i] # MAY CHANGE? MEAN ACROSS?
+            thisRaw <- ncToData(thisGrid, nc=thisNc, buffer=c(.16, .16, 0), raw=TRUE,
+                                depth=c(0, 200), progress=FALSE)
+            thisGrid$UTC <- NULL
+            thisGrid <- cbind(grid, calcEKParams(thisRaw))
+            colnames(thisGrid)[1:nCols] <- oldCols
+            write.csv(thisGrid, file = thisCsv)
+        }
+        if(progress) {
+            setTxtProgressBar(pb, value=i)
+        }
+    }
+    TRUE
+    # rawEnv <- ncToData(y, nc=thisLog$file[y$MATCHEDIX[1]], buffer=c(.16, .16, 0), raw=TRUE, depth=c(0, 200), progress=FALSE)
+    # cbind(y, calcEKParams(rawEnv))
+
+}
+
+parseToUTC <- function(x, format=c('%m/%d/%Y %H:%M:%S', '%m-%d-%Y %H:%M:%S',
+                                   '%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M:%S'), tz) {
+    tryCatch({
+        testTz <- parse_date_time('10-10-2020 12:00:05', orders = '%m/%d/%Y %H:%M:%S', tz=tz)
+    },
+    error = function(e) {
+        msg <- e$message
+        if(grepl('CCTZ: Unrecognized output timezone', msg)) {
+            stop('Timezone not recognized, see function OlsonNames() for accepted options', call.=FALSE)
+        }
+    })
+    if(is.Date(x)) {
+        x <- as.POSIXct(x, tz=tz)
+    }
+    if(!inherits(x, 'POSIXct')) {
+        origTz <- parse_date_time(x, orders=format, tz=tz, exact=TRUE, truncated=3)
+        if(!inherits(origTz, 'POSIXct')) {
+            stop('Unable to convert to POSIXct time.', call.=FALSE)
+        }
+    } else {
+        origTz <- x
+    }
+    with_tz(origTz, tzone='UTC')
 }
