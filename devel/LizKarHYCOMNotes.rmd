@@ -1,0 +1,478 @@
+## Karin/Elizabeth
+
+they have track seg CSV - times are deicmal hours and in LOCAL not UTC
+
+MLD is depth where temp is half degree less than surface
+SD is 1 pixel box around
+point estimate is just closest
+
+Line 162-164 in segment check my HYCOM expts against their list
+
+For now baja example add 7 (or 8? unclear if dst or now)
+
+They only grab a single time (00:00) each day
+
+Starting to make dataset ready after xmas / early january
+
+Hycom has missing analysis dates? Need to figure out what the error message is
+for these so that download doesnt eat shit
+
+http://ncss.hycom.org/thredds/ncss/GLBu0.08/expt_19.1?
+var=surf_el&var=salinity&var=water_temp&var=water_u&
+var=water_v&
+north=35.0000&west=229.5&east=254&south=22.5000&
+disableProjSubset=on&horizStride=1&
+time_start=1996-11-22T00%3A00%3A00Z&time_end=1996-11-29T00%3A00%3A00Z&
+timeStride=1&vertCoord=&addLatLon=true&accept=netcdf
+
+
+## Checking out their data
+
+```{r}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(PAMmisc)
+source('../../PAMmisc/devel/HYCOMFunctions.R')
+segs <- read_csv('BajaStudyArea_Modeling_Segs_forTaiki.csv')
+dayFile <- read_csv('BAJA_0.08deg_2018-12-01.csv')
+
+segs <- ekToStandardFormat(segs, offset=7)
+oneSeg <- filter(segs, cruiseNum ==unique(segs$cruiseNum[1]))
+# oneSeg <- rename(oneSeg, Latitude=mlat, Longitude=mlon)
+smallSeg <- head(oneSeg, 10)
+```
+
+```{r}
+library(PAMmisc)
+hy190 <- hycomToEdinfo('GLBu0.08/expt_19.0', chooseVars=FALSE)
+hy190 <- varSelect(hy190, c(T, T, T, T,T))
+segEnv <- matchEnvData(oneSeg, nc=hy190, var=c('surf_el', 'salinity', 'water_temp', 'water_u', 'water_v'), timeout=360, raw=TRUE, depth=c(0, 250), buffer=c(.08, .08, 0))
+```
+
+## Testing ILD calc functions
+
+```{r}
+range(smallSeg$UTC)
+range(smallSeg$Longitude)
+smallSeg$depth <- 0
+smallSeg$depth[1] <- 200
+ildFile <- 'HY190_ILDTest.nc'
+downloadEnv(smallSeg, edinfo=hy190, fileName=ildFile, timeout = 360, buffer=c(.08, .08, 0))
+```
+
+
+
+```{r}
+calcIld <- function(t, depth) {
+    if(is.na(t[1])) {
+        return(NA)
+    }
+    t0 <- t[1]
+    tml <- t0 - 0.5
+    kmax <- length(t[!is.na(t)])
+    dmax <- max(depth[!is.na(t)])
+    temp1 <- spline(depth[1:kmax], t[1:kmax], n=dmax, xmin=0, xmax=dmax,
+                    method='natural')[[2]][1:dmax]
+    k <- (which(temp1 < tml))[1]
+    max(0, k-1 + (tml-temp1[k-1]) / (temp1[k]-temp1[k-1]))
+}
+
+ildMean <- function(x) {
+    dVals <- mget('varData', envir=parent.frame(n=3),ifnotfound = NA)$varData$matchDepth
+    if(all(is.na(dVals))) {
+        return(NA)
+    }
+    dim(x) <- c(rep(1, 3-length(dim(x))), dim(x))
+    ild <- apply(x, c(1, 2), function(t) {
+        calcIld(t, dVals)
+    })
+    if(is.na(ild[2, 2])) {
+        return(mean(ild, na.rm=TRUE))
+    }
+    ild[2, 2]
+}
+
+ildSd <- function(x) {
+    dVals <- mget('varData', envir=parent.frame(n=3),ifnotfound = NA)$varData$matchDepth
+    if(all(is.na(dVals))) {
+        return(NA)
+    }
+    dim(x) <- c(rep(1, 3-length(dim(x))), dim(x))
+    ild <- apply(x, c(1, 2), function(t) {
+        calcIld(t, dVals)
+    })
+    sd(ild, na.rm=TRUE)
+}
+
+smallSeg <- ncToData(smallSeg, nc=ildFile, var=c('water_temp'), depth=c(0,200), 
+                     FUN=list('ildMean'=ildMean, 'ildSd'=ildSd), buffer=c(.08, .08, 0))
+ggplot(smallSeg, aes(x=ild.mean, y=water_temp_ildMean)) +
+    geom_point() +
+    geom_abline(slope=1, intercept=0)
+ggplot(smallSeg, aes(x=ild.SD, y=water_temp_ildSd)) +
+    geom_point() +
+    geom_abline(slope=1, intercept=0)
+smallSeg$ild.mean - smallSeg$water_temp_ildMean
+```
+
+```{r}
+# testing out GLBy 0.04 grid
+yseg <- tail(segs, 10)
+yseg$UTC <- yseg$UTC + 24*3600 * 30
+yseg <- rename(yseg, Latitude=mlat, Longitude=mlon)
+yseg$depth <- 0
+yseg$depth[1] <- 200
+ildyFile <- 'HY93y_ILDTest.nc'
+hy93y <- hycomToEdinfo('GLBy0.08/expt_93.0', chooseVars=FALSE)
+hy93y <- varSelect(hy93y, c(T,T,T,T,T))
+# downloadEnv(yseg, edinfo=hy93y, fileName=ildyFile, timeout = 360, buffer=c(.16, .16, 0))
+
+```
+
+```{r}
+rawSeg <- ncToData(yseg, nc=ildyFile, depth=c(0,200), 
+                   FUN=list('ildMean'=ildMean, 'ildSd'=ildSd), buffer=c(.16, .16, 0), raw=TRUE)
+rawSeg[[1]]$water_temp[,,1]
+```
+### make 3x3 grid function
+
+```{r}
+make33Grid <- function(x) {
+    dim(x) <- c(dim(x), rep(1, 3-length(dim(x))))
+    dims <- dim(x)
+    if(dims[1] == 3 &&
+       dims[2] == 3) {
+        return(x)
+    }
+    # 16 buffer returns 5 means .08 grid
+    if(dims[1] == 5) {
+        x <- x[2:4, , , drop=FALSE]
+        dims <- dim(x)
+    }
+    if(dims[2] == 5) {
+        x <- x[, 2:4, , drop=FALSE]
+        dims <- dim(x)
+    }
+    # if a .04 grid, we do averaging of .08 +- .04 *.5
+    if(dims[1] == 9) {
+        new <- array(NA, dim=c(3, dims[2:3]))
+        new[1, , ] <- (.5 * x[2, ,] + .5 * x[4, ,] + x[3, , ]) / 2
+        new[2, , ] <- (.5 * x[4, ,] + .5 * x[6, ,] + x[5, , ]) / 2
+        new[3, , ] <- (.5 * x[6, ,] + .5 * x[8, ,] + x[7, , ]) / 2
+        x <- new
+        dims <- dim(x)
+    }
+    # print(dims)
+    if(dims[2] == 9) {
+        new <- array(NA, dim=c(dims[1], 3, dims[3]))
+        # browser()
+        new[, 1, ] <- (.5 * x[, 2, ] + .5 * x[, 4, ] + x[, 3, ]) / 2
+        new[, 2, ] <- (.5 * x[, 4, ] + .5 * x[, 6, ] + x[, 5, ]) / 2
+        new[, 3, ] <- (.5 * x[, 6, ] + .5 * x[, 8, ] + x[, 7, ]) / 2
+        x <- new
+    }
+    x
+}
+```
+### apply calcs
+
+```{r}
+centerMean <- function(x) {
+    if(length(dim(x)) == 3) {
+        x <- x[, , 1]
+    }
+    out <- x[2, 2]
+    if(is.na(out)) {
+        return(mean(x, na.rm=TRUE))
+    }
+    out
+}
+calcIld <- function(t, depth) {
+    if(is.na(t[1])) {
+        return(NA)
+    }
+    t0 <- t[1]
+    tml <- t0 - 0.5
+    kmax <- length(t[!is.na(t)])
+    dmax <- max(depth[!is.na(t)])
+    temp1 <- spline(depth[1:kmax], t[1:kmax], n=dmax, xmin=0, xmax=dmax,
+                    method='natural')[[2]][1:dmax]
+    k <- (which(temp1 < tml))[1]
+    max(0, k-1 + (tml-temp1[k-1]) / (temp1[k]-temp1[k-1]))
+}
+# to apply to each raw
+calcEKParams <- function(x) {
+    x$water_temp <- make33Grid(x$water_temp)
+    x$water_u <- make33Grid(x$water_u[, , 1])
+    x$water_v <- make33Grid(x$water_v[, , 1])
+    x$salinity <- make33Grid(x$salinity[, , 1])
+    x$surf_el <- make33Grid(x$surf_el)
+    x$ild <- apply(x$water_temp, c(1, 2), function(t) {
+        calcIld(t, x$matchDepth)
+    })
+    result <- list(
+        sst_mean = centerMean(x$water_temp[, , 1]),
+        sst_sd = sd(x$water_temp[, , 1], na.rm=TRUE),
+        sss_mean = centerMean(x$salinity),
+        sss_sd = sd(x$salinity, na.rm=TRUE),
+        u_mean = centerMean(x$water_u),
+        u_sd = sd(x$water_u, na.rm=TRUE),
+        v_mean = centerMean(x$water_v),
+        v_sd = sd(x$water_v, na.rm=TRUE),
+        ild_mean = centerMean(x$ild),
+        ild_sd = sd(x$ild, na.rm=TRUE),
+        ssh_mean = centerMean(x$surf_el),
+        ssh_sd = sd(x$surf_el, na.rm=TRUE)
+    )
+    result
+}
+```
+
+```{r}
+# testing out calc comparison
+yseg <- tail(segs, 10)
+# yseg$UTC <- yseg$UTC + 24*3600 * 30
+yseg <- rename(yseg, Latitude=mlat, Longitude=mlon)
+yseg$depth <- 0
+yseg$depth[1] <- 200
+yseg$UTC <- ceiling_date(yseg$UTC, unit='1day')
+ildvFile <- 'HY93v_Test.nc'
+# hy93v <- hycomToEdinfo('GLBv0.08/expt_93.0', chooseVars=FALSE)
+# hy93v <- varSelect(hy93v, c(T,T,T,T,T))
+downloadEnv(yseg, edinfo=hy93v, fileName=ildvFile, timeout = 360, buffer=c(.16, .16, 0))
+rawSeg <- ncToData(yseg, nc=ildvFile, buffer=c(.16, .16, 0), raw=TRUE, depth=c(0, 200))
+```
+
+
+```{r}
+# calcEKParams(rawSeg[[1]])
+# yseg_params <- cbind(yseg, bind_rows(lapply(rawSeg, calcEKParams)))
+library(patchwork)
+plotEnvComp <- function(x) {
+    x$plotId <- 1:nrow(x)
+    basicPlot <- ggplot(x, aes(x=plotId)) +
+        geom_line(aes(y=sst.mean - sst_mean, col='sst.m')) +
+        geom_line(aes(y=sst.SD - sst_sd, col='sst.s')) +
+        geom_line(aes(y=sss.mean - sss_mean, col='sss.m')) +
+        geom_line(aes(y=sss.SD - sss_sd, col='sss.s')) +
+        geom_line(aes(y=u.mean - u_mean, col='u.m')) +
+        geom_line(aes(y=u.SD - u_sd, col='u.s')) +
+        geom_line(aes(y=v.mean - v_mean, col='v.m')) +
+        geom_line(aes(y=v.SD - v_sd, col='v.s')) +
+        # geom_line(aes(y=ild.mean - ild_mean, col='ildm')) +
+        # geom_line(aes(y=ild.SD - ild_sd, col='ilds')) +
+        geom_line(aes(y=ssh.mean - ssh_mean, col='ssh.m')) +
+        geom_line(aes(y=ssh.SD - ssh_sd, col='ssh.s')) +
+        ggtitle('Basic EnvData Comparison') +
+        ylab('Difference (Absolute)')
+    ildPlot <- ggplot(x, aes(x=plotId)) +
+        geom_line(aes(y=ild.mean - ild_mean, col='ild.m')) +
+        geom_line(aes(y=ild.SD - ild_sd, col='ild.s')) +
+        ggtitle('ILD Comparison') +
+        ylab('Difference (Absolute)')
+    # sstmAvg <- median(abs(x$sst.mean), na.rm=TRUE)
+    # sstsAvg <- median(abs(x$sst.SD), na.rm=TRUE)
+    # sssmAvg <- median(abs(x$sss.mean), na.rm=TRUE)
+    # ssssAvg <- median(abs(x$sss.SD), na.rm=TRUE)
+    # umAvg <- median(abs(x$u.mean), na.rm=TRUE)
+    # usAvg <- median(abs(x$u.SD), na.rm=TRUE)
+    # vmAvg <- median(abs(x$v.mean), na.rm=TRUE)
+    # vsAvg <- median(abs(x$v.SD), na.rm=TRUE)
+    # sshmAvg <- median(abs(x$ssh.mean), na.rm=TRUE)
+    # sshsAvg <- median(abs(x$ssh.SD), na.rm=TRUE)
+    # ildmAvg <- median(abs(x$ild.mean), na.rm=TRUE)
+    # ildsAvg <- median(abs(x$ild.SD), na.rm=TRUE)
+    sstmAvg <- diff(range(x$sst.mean, na.rm=TRUE))
+    sstsAvg <- diff(range(x$sst.SD, na.rm=TRUE))
+    sssmAvg <- diff(range(x$sss.mean, na.rm=TRUE))
+    ssssAvg <- diff(range(x$sss.SD, na.rm=TRUE))
+    umAvg <- diff(range(x$u.mean, na.rm=TRUE))
+    usAvg <- diff(range(x$u.SD, na.rm=TRUE))
+    vmAvg <- diff(range(x$v.mean, na.rm=TRUE))
+    vsAvg <- diff(range(x$v.SD, na.rm=TRUE))
+    sshmAvg <- diff(range(x$ssh.mean, na.rm=TRUE))
+    sshsAvg <- diff(range(x$ssh.SD, na.rm=TRUE))
+    ildmAvg <- diff(range(x$ild.mean, na.rm=TRUE))
+    ildsAvg <- diff(range(x$ild.SD, na.rm=TRUE))
+    basicPlotPct <- ggplot(x, aes(x=plotId)) +
+        geom_line(aes(y=(sst.mean - sst_mean)/sstmAvg, col='sst.m')) +
+        geom_line(aes(y=(sst.SD - sst_sd)/sstsAvg, col='sst.s')) +
+        geom_line(aes(y=(sss.mean - sss_mean)/sssmAvg, col='sss.m')) +
+        geom_line(aes(y=(sss.SD - sss_sd)/ssssAvg, col='sss.s')) +
+        geom_line(aes(y=(u.mean - u_mean)/umAvg, col='u.m')) +
+        geom_line(aes(y=(u.SD - u_sd)/usAvg, col='u.s')) +
+        geom_line(aes(y=(v.mean - v_mean)/vmAvg, col='v.m')) +
+        geom_line(aes(y=(v.SD - v_sd)/vsAvg, col='v.s')) +
+        # geom_line(aes(y=ild.mean - ild_mean, col='ildm')) +
+        # geom_line(aes(y=ild.SD - ild_sd, col='ilds')) +
+        geom_line(aes(y=(ssh.mean - ssh_mean)/sshmAvg, col='ssh.m')) +
+        geom_line(aes(y=(ssh.SD - ssh_sd)/sshsAvg, col='ssh.s')) +
+        ggtitle('Basic EnvData Comparison') +
+        ylab('Difference (Percent)')
+    ildPlotPct <- ggplot(x, aes(x=plotId)) +
+        geom_line(aes(y=(ild.mean - ild_mean)/ildmAvg, col='ild.m')) +
+        geom_line(aes(y=(ild.SD - ild_sd)/ildsAvg, col='ild.s')) +
+        ggtitle('ILD Comparison') +
+        ylab('Difference (Percent)')
+    (basicPlot + ildPlot) / 
+        (basicPlotPct + ildPlotPct)
+}
+# plotEnvComp(yseg_params)
+```
+
+## Check how many hycoms
+
+```{r}
+hyList <- PAMmisc::hycomList
+segs$whichHy <- sapply(segs$UTC, function(t) {
+    PAMmisc:::whichHycom(t, hyList)
+})
+table(segs$whichHy)
+```
+Do matching test time taken
+
+```{r}
+useHy <- 3
+seg_one <- segs[segs$whichHy == useHy, ]
+seg_one <- rename(seg_one, Latitude = mlat, Longitude = mlon)
+seg_one$UTC <- paste0(seg_one$year, '_',
+                   seg_one$month, '_',
+                   seg_one$day, '_')
+seg_one$UTC <- as.POSIXct(seg_one$UTC, format='%Y_%m_%d', tz='UTC') + 24 * 3600
+# seg_one <- head(seg_one)
+thisHy <- hyList$list[[3]]
+thisHy <- varSelect(thisHy, c(T, T, T, T,T))
+
+start <- Sys.time()
+raw_one <- matchEnvData(seg_one, nc=thisHy, buffer=c(.16, .16, 0), raw=TRUE, depth=c(0, 200), timeout=360)
+end <- Sys.time()
+print(difftime(end, start, units='mins'))
+params_one <- bind_rows(lapply(raw_one, calcEKParams))
+plotEnvComp(cbind(seg_one, params_one))
+```
+
+with GLBu vs GLBv
+```{r}
+thisHy <- hycomToEdinfo('GLBu0.08/expt_19.1', chooseVars=FALSE)
+thisHy <- varSelect(thisHy, c(T, T, T, T,T))
+
+start <- Sys.time()
+raw_one_u <- matchEnvData(seg_one, nc=thisHy, buffer=c(.16, .16, 0), raw=TRUE, depth=c(0, 200))
+params_one_u <- bind_rows(lapply(raw_one_u, calcEKParams))
+end <- Sys.time()
+print(difftime(end, start, units='mins'))
+plotEnvComp(cbind(seg_one, params_one_u))
+```
+Adding 2018 GLBv vs GLBy comparison
+
+```{r}
+last_seg <- tail(segs, 13)
+last_seg <- rename(last_seg, Latitude = mlat, Longitude = mlon)
+last_seg$UTC <- ceiling_date(last_seg$UTC, unit='1day') + 24 * 3600
+hyV <- hyList$list$`GLBv0.08/expt_93.0`
+hyY <- hyList$list$`GLBy0.08/expt_93.0`
+hyV <- varSelect(hyV, c(T, T, T, T, T))
+hyY <- varSelect(hyY, c(T, T, T, T, T))
+yTest <- matchEnvData(last_seg, nc=hyY, buffer=c(.16, .16, 0), raw=TRUE, depth=c(0, 200), timeout=360)
+vTest <- matchEnvData(last_seg, nc=hyV, buffer=c(.16, .16, 0), raw=TRUE, depth=c(0, 200), timeout=360)
+yParam <- calcEKParams(yTest)
+vParam <- calcEKParams(vTest)
+
+plotEnvComp(cbind(last_seg, yParam))
+plotEnvComp(cbind(last_seg, vParam))
+names(vParam) <- c('sst.mean', 'sst.SD', 'sss.mean', 'sss.SD', 'u.mean', 'u.SD', 'v.mean', 'v.SD', 'ild.mean', 'ild.SD',
+  'ssh.mean', 'ssh.SD')
+plotEnvComp(cbind(last_seg['Idnum'],vParam, yParam))
+```
+# test y v better
+
+```{r}
+one_cruise <- segs[segs$cruiseNum == 1640, ]
+one_cruise$UTC <- one_cruise$UTC + 10 * 365 * 24 * 3600
+one_cruise <- rename(one_cruise, Latitude = mlat, Longitude = mlon)
+hyV <- hyList$list$`GLBv0.08/expt_93.0`
+hyY <- hyList$list$`GLBy0.08/expt_93.0`
+hyV <- varSelect(hyV, c(T, T, T, T, T))
+hyY <- varSelect(hyY, c(T, T, T, T, T))
+yTest <- matchEnvData(one_cruise, nc=hyY, buffer=c(.16, .16, 0), raw=TRUE, depth=c(0, 200), timeout=360)
+vTest <- matchEnvData(one_cruise, nc=hyV, buffer=c(.16, .16, 0), raw=TRUE, depth=c(0, 200), timeout=360)
+yParam <- calcEKParams(yTest)
+vParam <- calcEKParams(vTest)
+
+
+names(vParam) <- c('sst.mean', 'sst.SD', 'sss.mean', 'sss.SD', 'u.mean', 'u.SD', 'v.mean', 'v.SD', 'ild.mean', 'ild.SD',
+  'ssh.mean', 'ssh.SD')
+plotEnvComp(cbind(one_cruise['Idnum'],vParam, yParam))
+```
+
+### Test failure scenarios
+
+Ok currently just fails if nc doesnt download.
+
+```{r}
+# thisHy <- hycomToEdinfo('GLBu0.08/expt_19.1', chooseVars=FALSE)
+# thisHy <- varSelect(thisHy, c(T, T, T, T,T))
+
+start <- Sys.time()
+rm(raw_fail)
+raw_fail <- matchEnvData(seg_one, nc=thisHy, buffer=c(.16, .16, 0), raw=TRUE, depth=c(0, 200), timeout=2)
+# params_one_u <- bind_rows(lapply(raw_one_u, calcEKParams))
+end <- Sys.time()
+```
+
+## Should we just download files for segs?
+
+Lets try! (nay voice)
+
+```{r}
+cruise <- 1509
+test_cruise <- segs[segs$cruiseNum == cruise, ]
+range(test_cruise$UTC)
+length(unique(floor_date(test_cruise$UTC, unit='1day')))
+cruise_folder <- paste0(cruise, '_segs')
+downloadHYCOM(test_cruise, folder=cruise_folder, offset=0, mode='segment', retry=TRUE, timeout=600)
+```
+```{r}
+testo <- addEnvParams(test_cruise, folder=cruise_folder)
+plotEnvComp(testo)
+```
+
+Test a fake grid
+
+```{r}
+makeLatLongGrid <- function(longRange, latRange, longDiff, latDiff, depth=0, time=nowUTC()) {
+    lats <- seq(from=latRange[1], to=latRange[2], by=latDiff)
+    lons <- seq(from=longRange[1], to=longRange[2], by=longDiff)
+    data.frame(Latitude = rep(lats, length(lons)),
+               Longitude = rep(lons, each=length(lats)),
+               UTC = time)
+}
+llg <- makeLatLongGrid(c(-121, -110), c(23, 35), .08, .08, time=min(one_cruise$UTC))
+llg$UTC[1] <- min(llg$UTC) + 3 * 24 * 3600
+downloadHYCOM(llg, folder='full_test', offset=0, mode='full')
+
+```
+
+```{r}
+test_grid <- addEnvParams(llg, folder='full_test')
+```
+
+Test on baja full
+
+```{r}
+bajaFull <- read_csv('BAJA_0.08deg_2018-12-01.csv')
+bajaFull <- rename(bajaFull, Latitude=lat, Longitude=lon180)
+bajaFull$UTC <- as.POSIXct('2018-12-01', format='%Y-%m-%d', tz='UTC') + 1 * 24 * 3600 # date refers to local?
+noY <- hyList
+noY$list <- noY$list[-29]
+downloadHYCOM(bajaFull, folder='baja_full', offset=0, mode='full', hyList = noY)
+
+```
+
+```{r}
+test_baja <- addEnvParams(bajaFull, folder='baja_full', offset=0)
+plotEnvComp(test_baja)
+```
+
+
