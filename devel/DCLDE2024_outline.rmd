@@ -1,0 +1,49 @@
+# DCLDE Abstract
+
+CV4E Model results - lessons learned and advanced techniques
+Everyone knows that CNNs/Deep Learning are trendy and can
+be extremely accurate, but there are benefits other than
+just raw power. 
+
+Classify wigners of BW clicks using neural networks
+
+* BW click trains manually marked and labeled by analysts
+* 70/15/15 train test split holding out entire drifts
+* Transfer Learning Resnet18
+* > 90% accuracy right off the bat
+* 
+
+Advanced bits
+* Adding ICI measure - had to 10x for it to recognize
+* Selection net - allowing model to not predict
+* GradCAM / Saliency maps to try and see what the model is learning
+These show potential issues for BB - seems to suggest that it is learning
+that BB are low frequency, and thats it. Highlighting areas for potential concern
+
+Leassons learned
+* Differnet filters on differnet datasets caused problems - models
+are very sensitive to these kinds of structural differences
+* Using the right metrics is important - class balanced accuracy
+vs overall, 
+* Really looking at your results - which things are right, which
+things are wrong - is really important. This caught the filter
+difference problem for me. Also highlights potential issue of
+Zc (70% class) appearing to be associated with noise.
+* Better data is better. Low SNR calls found to have higher error
+rates, really low calls can be safely removed.
+* Accuracy % scores may not tell the whole picture - ICIx10 adding
+makes the predictive confidence higher, means less manual review. 
+
+
+Organization
+0. Goal of pres - Quick present results, then more details
+on topics not normally covered. Lessons learned for future
+projects, advanced things possible because of the way CNNs work
+1. Intro to beakers, wigners for classification
+2. Present model and results. Det & event level
+3. Compare to BANTER - we good
+4. Results are strong, how did we get here - lessons learned
+along the way that led to strong results
+5. Other
+
+TITLE: Shannon says it reminded her of to infinity and beyond. Fossa Lightyear.
