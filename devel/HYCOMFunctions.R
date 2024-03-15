@@ -3,6 +3,7 @@
 library(lubridate)
 library(dplyr)
 library(PAMmisc)
+library(patchwork)
 
 # INPUT x is an array output pulled from a HYCOM grid, pulled with buffer=c(.16, .16)
 # this results in a length of 5 for .08 spacing or 9 for .04 spacing
@@ -76,12 +77,11 @@ calcIld <- function(t, depth) {
     max(0, k-1 + (tml-temp1[k-1]) / (temp1[k]-temp1[k-1]))
 }
 
-
 # converts to 3x3 grid and calculates mean/SD for all env params
-calcEKParams <- function(x) {
+calcEKParams <- function(x, ekNames=TRUE) {
     if(is.list(x) &&
        is.null(names(x))) {
-        return(bind_rows(lapply(x, calcEKParams)))
+        return(bind_rows(lapply(x, calcEKParams, ekNames=ekNames)))
     }
     x$water_temp <- make33Grid(x$water_temp)
     x$water_u <- make33Grid(x$water_u[, , 1])
@@ -105,6 +105,22 @@ calcEKParams <- function(x) {
         ssh_mean = centerMean(x$surf_el),
         ssh_sd = sd(x$surf_el, na.rm=TRUE)
     )
+    if(ekNames) {
+        names(result) <- c(
+            'sst.mean',
+            'sst.SD',
+            'sss.mean',
+            'sss.SD',
+            'u.mean',
+            'u.SD',
+            'v.mean',
+            'v.SD',
+            'ild.mean',
+            'ild.SD',
+            'ssh.mean',
+            'ssh.SD'
+        )
+    }
     result
 }
 # INPUT
@@ -140,32 +156,33 @@ downloadHYCOM <- function(data=NULL, folder,
                           log=NULL, buffer=c(0.16, 0.16, 0),
                           mode=c('segment', 'full'),
                           retry=TRUE, timeout=600, hyList=PAMmisc::hycomList,
+                          hour=NULL, hourTz='America/Los_Angeles',
                           progress=TRUE) {
     if(!dir.exists(folder)) {
         dir.create(folder)
     }
-
+    mode <- match.arg(mode)
     data <- ekToStandardFormat(data, tz=tz)
     logDf <- dataToLog(data, mode=mode, buffer=buffer)
-
+    
     if(is.null(log)) {
         log <- paste0(basename(folder), '_', 'HYCOMLog.csv')
         log <- file.path(folder, log)
     }
-
+    
     if(file.exists(log)) {
         oldLog <- read.csv(log, stringsAsFactors = FALSE)
         oldLog$day <- as.POSIXct(oldLog$day, format='%Y-%m-%d', tz='UTC')
         logDf <- bind_rows(oldLog, logDf[!logDf$day %in% oldLog$day, ])
         logDf <- arrange(logDf, day)
     }
-
+    
     if(retry) {
         toTry <- !logDf$succeeded
     } else {
         toTry <- !logDf$attempted
     }
-
+    
     if(!any(toTry)) {
         cat('No days to try to download.')
         if(isFALSE(retry)) {
@@ -173,9 +190,9 @@ downloadHYCOM <- function(data=NULL, folder,
         }
         return(logDf)
     }
-
+    
     tried <- rep(FALSE, nrow(logDf))
-
+    
     on.exit({
         nTried <- sum(tried)
         nSucceeded <- sum(logDf$succeeded[tried])
@@ -185,18 +202,23 @@ downloadHYCOM <- function(data=NULL, folder,
             ' out of ', nTried, ' attempts ',
             '(out of ', nPlanned, ' planned attempts)', sep='')
     })
-
+    
     if(progress) {
         pb <- txtProgressBar(min=0, max=sum(toTry), style=3)
         ix <- 0
     }
-
+    
     for(i in which(toTry)) {
         logDf$attempted[i] <- TRUE
         tried[i] <- TRUE
         dlDf <- data.frame(Latitude = c(logDf$minLat[i], logDf$maxLat[i]),
                            Longitude = c(logDf$minLong[i], logDf$maxLong[i]),
                            UTC = c(logDf$day[i], logDf$day[i] + 24 * 3600))
+        if(!is.null(hour) &&
+           mode == 'full') {
+            dlDf$UTC <- dlDf$UTC[1] + hour * 3600
+            dlDf$UTC <- with_tz(force_tz(dlDf$UTC, tzone=hourTz), tzone='UTC')
+        }
         whichHy <- PAMmisc:::whichHycom(dlDf, hyList)[1]
         thisHy <- hyList$list[[whichHy]]
         thisExpt <- gsub('.*(expt_[0-9\\.X]*).*', '\\1', thisHy$dataset)
@@ -228,7 +250,7 @@ downloadHYCOM <- function(data=NULL, folder,
             logDf$fail_message[i] <<- w$message
             FALSE
         })
-
+        
         if(progress) {
             ix <- ix + 1
             setTxtProgressBar(pb, value=ix)
@@ -313,7 +335,7 @@ ekToStandardFormat <- function(data, tz='UTC', noTime=FALSE) {
     if(!all(c('UTC', 'Latitude', 'Longitude') %in% names(data))) {
         stop('"data" must have "UTC", "Longitude", and "Latitude"')
     }
-
+    
     data$UTC <- parseToUTC(data$UTC, tz=tz)
     # data$UTC <- data$UTC + offset * 3600
     data
@@ -356,7 +378,7 @@ dataToLog <- function(data, mode=c('segment','full'), buffer) {
                           succeeded = FALSE,
                           file = '',
                           fail_message = '')
-
+               
            }
     )
     logDf
@@ -397,7 +419,7 @@ checkLogFiles <- function(logData, folder, ncFiles=NULL) {
     logData
 }
 
-addEnvParams <- function(data, folder, tz='UTC') {
+addEnvParams <- function(data, folder, tz='UTC', ekNames=TRUE) {
     ncFiles <- list.files(folder, full.names=TRUE, recursive=TRUE, pattern='nc$')
     logFiles <- list.files(folder, full.names=TRUE, recursive=TRUE, pattern='HYCOMLog.csv$')
     logs <- bind_rows(lapply(logFiles, function(x) {
@@ -405,22 +427,7 @@ addEnvParams <- function(data, folder, tz='UTC') {
         oneLog$day <- as.POSIXct(oneLog$day, format='%Y-%m-%d', tz='UTC')
         oneLog
     }))
-
-    # logNcExists <- file.exists(logs$file)
-    # noNcMatch <- character(0)
-    # multiMatch <- character(0)
-    # for(i in which(!logNcExists)) {
-    #     tryFind <- grep(logs$file[i], ncFiles, value=TRUE)
-    #     if(length(tryFind) == 0) {
-    #         noNcMatch <- c(noNcMatch, logs$file[i])
-    #         logs$file[i] <- NA
-    #         next
-    #     }
-    #     if(length(tryFind) > 1) {
-    #         multiMatch <- c(multiMatch, logs$file[i])
-    #     }
-    #     logs$file[i] <- tryFind[1]
-    # }
+    
     logs <- checkLogFiles(logs, folder, ncFiles=ncFiles)
     if(is.character(data)) {
         if(!file.exists(data)) {
@@ -464,7 +471,7 @@ addEnvParams <- function(data, folder, tz='UTC') {
                 return(y)
             }
             rawEnv <- ncToData(y, nc=thisLog$file[y$MATCHEDIX[1]], buffer=c(.16, .16, 0), raw=TRUE, depth=c(0, 200), progress=FALSE)
-            cbind(y, calcEKParams(rawEnv))
+            cbind(y, calcEKParams(rawEnv, ekNames=ekNames))
         }))
         x$MATCHEDIX <- NULL
         x
@@ -478,7 +485,8 @@ addEnvParams <- function(data, folder, tz='UTC') {
     data
 }
 
-makeDailyCSV <- function(grid, folder, name, progress=TRUE, retry=FALSE) {
+makeDailyCSV <- function(grid, folder, name, hour=NULL, hourTz='America/Los_Angeles',
+                         progress=TRUE, retry=FALSE, ekNames=TRUE) {
     logData <- loadLog(folder)
     if(is.null(logData)) {
         stop('No download log file found in ', folder)
@@ -497,15 +505,20 @@ makeDailyCSV <- function(grid, folder, name, progress=TRUE, retry=FALSE) {
     }
     for(i in 1:nrow(logData)) {
         thisNc <- logData$file[i]
-        thisCsv <- paste0(name, '_', format(logData$day[i], format='%Y-%m-%d'), '.csv')
+        thisGrid <- grid
+        thisGrid$UTC <- logData$day[i] # MAY CHANGE? MEAN ACROSS?
+        if(!is.null(hour)) {
+            thisGrid$UTC <- thisGrid$UTC + hour * 3600
+            thisGrid$UTC <- with_tz(force_tz(thisGrid$UTC, tzone=hourTz), tzone='UTC')
+        }
+        thisCsv <- paste0(name, '_', format(thisGrid$UTC[1], format='%Y-%m-%d_%H-%M-%S'), '.csv')
         thisCsv <- file.path(folder, thisCsv)
         if(retry || !file.exists(thisCsv)) {
-            thisGrid <- grid
-            thisGrid$UTC <- logData$day[i] # MAY CHANGE? MEAN ACROSS?
+            
             thisRaw <- ncToData(thisGrid, nc=thisNc, buffer=c(.16, .16, 0), raw=TRUE,
                                 depth=c(0, 200), progress=FALSE)
             thisGrid$UTC <- NULL
-            thisGrid <- cbind(grid, calcEKParams(thisRaw))
+            thisGrid <- cbind(grid, calcEKParams(thisRaw, ekNames=ekNames))
             colnames(thisGrid)[1:nCols] <- oldCols
             write.csv(thisGrid, file = thisCsv)
         }
@@ -514,9 +527,6 @@ makeDailyCSV <- function(grid, folder, name, progress=TRUE, retry=FALSE) {
         }
     }
     TRUE
-    # rawEnv <- ncToData(y, nc=thisLog$file[y$MATCHEDIX[1]], buffer=c(.16, .16, 0), raw=TRUE, depth=c(0, 200), progress=FALSE)
-    # cbind(y, calcEKParams(rawEnv))
-
 }
 
 parseToUTC <- function(x, format=c('%m/%d/%Y %H:%M:%S', '%m-%d-%Y %H:%M:%S',
@@ -542,4 +552,72 @@ parseToUTC <- function(x, format=c('%m/%d/%Y %H:%M:%S', '%m-%d-%Y %H:%M:%S',
         origTz <- x
     }
     with_tz(origTz, tzone='UTC')
+}
+
+plotEnvComp <- function(x) {
+    x$plotId <- 1:nrow(x)
+    basicPlot <- ggplot(x, aes(x=plotId)) +
+        geom_line(aes(y=sst.mean - sst_mean, col='sst.m')) +
+        geom_line(aes(y=sst.SD - sst_sd, col='sst.s')) +
+        geom_line(aes(y=sss.mean - sss_mean, col='sss.m')) +
+        geom_line(aes(y=sss.SD - sss_sd, col='sss.s')) +
+        geom_line(aes(y=u.mean - u_mean, col='u.m')) +
+        geom_line(aes(y=u.SD - u_sd, col='u.s')) +
+        geom_line(aes(y=v.mean - v_mean, col='v.m')) +
+        geom_line(aes(y=v.SD - v_sd, col='v.s')) +
+        geom_line(aes(y=ssh.mean - ssh_mean, col='ssh.m')) +
+        geom_line(aes(y=ssh.SD - ssh_sd, col='ssh.s')) +
+        ggtitle('Basic EnvData Comparison') +
+        ylab('Difference (Absolute)')
+    ildPlot <- ggplot(x, aes(x=plotId)) +
+        geom_line(aes(y=ild.mean - ild_mean, col='ild.m')) +
+        geom_line(aes(y=ild.SD - ild_sd, col='ild.s')) +
+        ggtitle('ILD Comparison') +
+        ylab('Difference (Absolute)')
+    # sstmAvg <- median(abs(x$sst.mean), na.rm=TRUE)
+    # sstsAvg <- median(abs(x$sst.SD), na.rm=TRUE)
+    # sssmAvg <- median(abs(x$sss.mean), na.rm=TRUE)
+    # ssssAvg <- median(abs(x$sss.SD), na.rm=TRUE)
+    # umAvg <- median(abs(x$u.mean), na.rm=TRUE)
+    # usAvg <- median(abs(x$u.SD), na.rm=TRUE)
+    # vmAvg <- median(abs(x$v.mean), na.rm=TRUE)
+    # vsAvg <- median(abs(x$v.SD), na.rm=TRUE)
+    # sshmAvg <- median(abs(x$ssh.mean), na.rm=TRUE)
+    # sshsAvg <- median(abs(x$ssh.SD), na.rm=TRUE)
+    # ildmAvg <- median(abs(x$ild.mean), na.rm=TRUE)
+    # ildsAvg <- median(abs(x$ild.SD), na.rm=TRUE)
+    sstmAvg <- diff(range(x$sst.mean, na.rm=TRUE))
+    sstsAvg <- diff(range(x$sst.SD, na.rm=TRUE))
+    sssmAvg <- diff(range(x$sss.mean, na.rm=TRUE))
+    ssssAvg <- diff(range(x$sss.SD, na.rm=TRUE))
+    umAvg <- diff(range(x$u.mean, na.rm=TRUE))
+    usAvg <- diff(range(x$u.SD, na.rm=TRUE))
+    vmAvg <- diff(range(x$v.mean, na.rm=TRUE))
+    vsAvg <- diff(range(x$v.SD, na.rm=TRUE))
+    sshmAvg <- diff(range(x$ssh.mean, na.rm=TRUE))
+    sshsAvg <- diff(range(x$ssh.SD, na.rm=TRUE))
+    ildmAvg <- diff(range(x$ild.mean, na.rm=TRUE))
+    ildsAvg <- diff(range(x$ild.SD, na.rm=TRUE))
+    basicPlotPct <- ggplot(x, aes(x=plotId)) +
+        geom_line(aes(y=(sst.mean - sst_mean)/sstmAvg, col='sst.m')) +
+        geom_line(aes(y=(sst.SD - sst_sd)/sstsAvg, col='sst.s')) +
+        geom_line(aes(y=(sss.mean - sss_mean)/sssmAvg, col='sss.m')) +
+        geom_line(aes(y=(sss.SD - sss_sd)/ssssAvg, col='sss.s')) +
+        geom_line(aes(y=(u.mean - u_mean)/umAvg, col='u.m')) +
+        geom_line(aes(y=(u.SD - u_sd)/usAvg, col='u.s')) +
+        geom_line(aes(y=(v.mean - v_mean)/vmAvg, col='v.m')) +
+        geom_line(aes(y=(v.SD - v_sd)/vsAvg, col='v.s')) +
+        # geom_line(aes(y=ild.mean - ild_mean, col='ildm')) +
+        # geom_line(aes(y=ild.SD - ild_sd, col='ilds')) +
+        geom_line(aes(y=(ssh.mean - ssh_mean)/sshmAvg, col='ssh.m')) +
+        geom_line(aes(y=(ssh.SD - ssh_sd)/sshsAvg, col='ssh.s')) +
+        ggtitle('Basic EnvData Comparison') +
+        ylab('Difference (Percent)')
+    ildPlotPct <- ggplot(x, aes(x=plotId)) +
+        geom_line(aes(y=(ild.mean - ild_mean)/ildmAvg, col='ild.m')) +
+        geom_line(aes(y=(ild.SD - ild_sd)/ildsAvg, col='ild.s')) +
+        ggtitle('ILD Comparison') +
+        ylab('Difference (Percent)')
+    (basicPlot + ildPlot) / 
+        (basicPlotPct + ildPlotPct)
 }
