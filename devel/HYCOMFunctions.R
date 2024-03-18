@@ -394,7 +394,8 @@ checkLogFiles <- function(logData, folder, ncFiles=NULL) {
     multiMatch <- character(0)
     for(i in which(!logNcExists)) {
         # if it doesnt think it succeeded dont check
-        if(!logData$success[i]) {
+        if(is.na(logData$succeeded[i]) || 
+           !logData$succeeded[i]) {
             next
         }
         tryFind <- grep(logData$file[i], ncFiles, value=TRUE)
@@ -421,10 +422,18 @@ checkLogFiles <- function(logData, folder, ncFiles=NULL) {
 
 addEnvParams <- function(data, folder, tz='UTC', ekNames=TRUE) {
     ncFiles <- list.files(folder, full.names=TRUE, recursive=TRUE, pattern='nc$')
-    logFiles <- list.files(folder, full.names=TRUE, recursive=TRUE, pattern='HYCOMLog.csv$')
+    logFiles <- list.files(folder, full.names=TRUE, recursive=TRUE, pattern='HYCOMLog.*csv$')
     logs <- bind_rows(lapply(logFiles, function(x) {
         oneLog <- read.csv(x, stringsAsFactors = FALSE)
-        oneLog$day <- as.POSIXct(oneLog$day, format='%Y-%m-%d', tz='UTC')
+        # oneLog$day <- as.POSIXct(oneLog$day, format='%Y-%m-%d', tz='UTC')
+        oneLog$day <- parse_date_time(oneLog$day, orders=c('%Y-%m-%d', '%m/%d/%Y'), tz='UTC')
+        naDay <- is.na(oneLog$day)
+        if(sum(naDay) > 0) {
+            warning(sum(naDay), ' row(s) in log file ', basename(x),
+            ' were either NA or had "day" formats that could not be converted',
+                    call. = FALSE)
+            oneLog <- oneLog[!naDay, ]
+        }
         oneLog
     }))
     

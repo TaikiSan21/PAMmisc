@@ -4,6 +4,7 @@
 #
 # 2024-01-11 : First version
 # 2024-01-23 : Adding support for matching to specific hour/tzone for grid
+# 2024-03-18 : Fixing some bugs from Excel shenanigans
 
 # Change this path to wherever this file lives
 source('devel/HYCOMFunctions.R')
@@ -51,6 +52,7 @@ makeDailyCSV(grid, folder=gridFolder, name='GridTestHour', hour=12, hourTz='Amer
 #### Example 2 - Download Smaller Files for Segment Data ####
 
 segFile <- '../Data/EKEnv/BajaStudyArea_Modeling_Segs_forTaiki.csv'
+segFile <- '~/../Downloads/NWTT_segs_1991_2018_forHYCOM_TEST2.csv'
 segData <- read.csv(segFile, stringsAsFactors = FALSE)
 # Folder to store the downloaded segment NetCDF files
 segFolder <- 'ProjectName_Segment'
