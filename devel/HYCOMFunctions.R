@@ -458,6 +458,7 @@ addEnvParams <- function(data, folder, tz='UTC', ekNames=TRUE) {
         return(data)
     })
     noDayMatch <- numeric()
+    noDlMatch <- numeric()
     noCoordMatch <- numeric()
     data <- bind_rows(lapply(split(data, data$MATCHDAY), function(x) {
         # one day at a time for easier matching
@@ -466,15 +467,22 @@ addEnvParams <- function(data, folder, tz='UTC', ekNames=TRUE) {
             noDayMatch <<- c(noDayMatch, x$ORDERIX)
             return(x)
         }
+        if(!any(thisLog$succeeded)) {
+            noDlMatch <<- c(noDlMatch, x$ORDERIX)
+            return(x)
+        }
         x$MATCHEDIX <- rep(0, nrow(x))
         for(i in 1:nrow(thisLog)) {
+            if(!thisLog$succeeded[i]) {
+                next
+            }
             thisLogMatch <- x$Longitude >= thisLog$minLong[i] &
                 x$Longitude <= thisLog$maxLong[i] &
                 x$Latitude >= thisLog$minLat[i] &
                 x$Latitude <= thisLog$maxLat[i]
             x$MATCHEDIX[thisLogMatch] <- i
         }
-        noCoordMatch <<- x$ORDERIX[x$MATCHEDIX == 0]
+        noCoordMatch <<- c(noCoordMatch, x$ORDERIX[x$MATCHEDIX == 0])
         x <- bind_rows(lapply(split(x, x$MATCHEDIX), function(y) {
             if(y$MATCHEDIX[1] == 0) {
                 return(y)
@@ -485,6 +493,9 @@ addEnvParams <- function(data, folder, tz='UTC', ekNames=TRUE) {
         x$MATCHEDIX <- NULL
         x
     }))
+    if(length(noDlMatch) > 0) {
+        warning(length(noDlMatch), ' rows in data matched days with failed downloads.')
+    }
     if(length(noDayMatch) > 0) {
         warning(length(noDayMatch), ' rows in data matched no days in download logs.')
     }
