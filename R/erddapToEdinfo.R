@@ -39,8 +39,9 @@ erddapToEdinfo <- function(dataset,
             return(hycomToEdinfo(dataset=dataset, chooseVars=chooseVars))
         }
         for(i in seq_along(baseurl)) {
-            dataset <- info(dataset, url = baseurl[i])
-            if(inherits(dataset, 'info')) {
+            tryDataset <- try(info(dataset, url = baseurl[i]), silent=TRUE)
+            if(inherits(tryDataset, 'info')) {
+                dataset <- tryDataset
                 break
             }
         }

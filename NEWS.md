@@ -1,3 +1,8 @@
+# PAMmisc 1.11.10
+
+* Bug fix where `erddapToEdInfo` was crashing instead of working through
+the server list
+
 # PAMmisc 1.11.9
 
 * Minor adjustments to various NC functions for HYCOM project
