@@ -111,7 +111,7 @@ raytrace <- function(x0, z0, theta0, tt, zz, cc, plot=TRUE, progress=FALSE) {
 
         t <- 0   # cumulative travel time
         d <- 0   # cumulative travel distance
-        # ttt <- t
+        ttt <- t
         if(progress) {
             pb <- txtProgressBar(min = 0, max=tt, style=3)
         }
@@ -195,7 +195,7 @@ raytrace <- function(x0, z0, theta0, tt, zz, cc, plot=TRUE, progress=FALSE) {
             }
 
             t <- t + dt
-            # ttt[q+1] <- t
+            ttt[q+1] <- t
             x[q+1] <- x[q] + dx[q]
             d <- d + dd
             q <- q+1
@@ -217,7 +217,7 @@ raytrace <- function(x0, z0, theta0, tt, zz, cc, plot=TRUE, progress=FALSE) {
         ddf[[m]] <- d
         ttf[[m]] <- t
         thetaf[[m]] <- theta * 180 / pi
-        # tttf[[m]] <- ttt
+        tttf[[m]] <- ttt
     }
     if(length(plot) == 1) {
         plot <- rep(plot, 2)
@@ -258,5 +258,5 @@ raytrace <- function(x0, z0, theta0, tt, zz, cc, plot=TRUE, progress=FALSE) {
             )
         }
     }
-    list(x=xxf, z=zzf, t=ttf, d=ddf)
+    list(x=xxf, z=zzf, t=ttf, d=ddf, tt=tttf)
 }
