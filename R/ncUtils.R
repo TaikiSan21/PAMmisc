@@ -288,16 +288,23 @@ checkLimits <- function(data, edi, replace=FALSE, verbose=TRUE) {
     to180(data, inverse = !data180)
 }
 
+#' @importFrom tools R_user_dir
+#' 
+getTempCacheDir <- function(create=TRUE) {
+  tempDir <- R_user_dir("PAMscapes", which = "cache")
+  if(create &&
+     !dir.exists(tempDir)) {
+    dir.create(tempDir, recursive=TRUE)
+  }
+  tempDir
+}
+
 # does creating of temp directories/files if you need, adds a suffix to a file
 # if you need
-#' @importFrom hoardr hoard
 #'
 fileNameManager <- function(fileName=NULL, suffix=NULL) {
     if(is.null(fileName)) {
-        tempDir <- hoard()$cache_path_set('PAMmisc')
-        if(!dir.exists(tempDir)) {
-            dir.create(tempDir, recursive = TRUE)
-        }
+        tempDir <- getTempCacheDir(create=TRUE)
         fileName <- paste0(tempDir, '/TEMPFILE.nc')
     }
     if(!is.null(suffix)) {

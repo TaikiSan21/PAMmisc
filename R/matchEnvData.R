@@ -64,7 +64,6 @@ setGeneric('matchEnvData',
 
 #' @rdname matchEnvData
 #' @importFrom dplyr bind_rows bind_cols
-#' @importFrom hoardr hoard
 #' @export
 #'
 setMethod('matchEnvData', 'data.frame',
@@ -166,7 +165,7 @@ setMethod('matchEnvData', 'data.frame',
                       planFiles[[p]] <- downloadEnv(data=data[plan == p, ],fileName = thisFile, edinfo = nc, buffer = buffer, ...)
                       #####################################
                       on.exit({
-                          tmpFiles <- list.files(hoard()$cache_path_set('PAMmisc'), full.names=TRUE)
+                          tmpFiles <- list.files(getTempCacheDir(), full.names=TRUE)
                           unlink(tmpFiles, force=TRUE)
                       })
                       # on.exit(DELETEYOUR PAMMISC TEMP DIR HERE) cache_delete_all from rerddap checkit

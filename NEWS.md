@@ -1,3 +1,8 @@
+# PAMmisc 1.11.11
+
+* Make a wish! Dropping `hoardr` dependency because defaults go against CRAN
+wishes on MacOS
+
 # PAMmisc 1.11.10
 
 * Bug fix where `erddapToEdInfo` was crashing instead of working through
