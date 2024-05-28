@@ -1,3 +1,7 @@
+# PAMmisc 1.12.0
+
+* adding `findEchoTimes` function and tests for DCLDE workshop
+
 # PAMmisc 1.11.11
 
 * Make a wish! Dropping `hoardr` dependency because defaults go against CRAN

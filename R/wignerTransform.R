@@ -27,7 +27,7 @@
 #'                              frequency = 3e3, sampleRate = 10e3)
 #' wt <- wignerTransform(clickWave@left, n = 1000, sr = 10e3, plot=TRUE)
 #'
-#' @importFrom stats fft
+#' @importFrom fftw FFT IFFT
 #' @importFrom graphics axis image
 #' @importFrom scales viridis_pal
 #' @export
@@ -70,7 +70,8 @@ wignerTransform <- function(signal, n=NULL, sr, plot=FALSE) {
                                      analytic[iCol-tau] * conjAnalytic[iCol+tau])/2
         }
     }
-    tfr <- apply(tfr, 2, fft)
+    # tfr <- apply(tfr, 2, fft)
+    tft <- apply(tfr, 2, FFT)
     result <- list(tfr=Re(tfr), t=1:nCol/sr, f=sr/2*1:nRow/nRow)
     if(plot) {
         image(t(result$tfr), xaxt='n', yaxt='n',
@@ -93,7 +94,8 @@ toAnalytic <- function(signal) {
     newLen <- nextExp2(len)
     newSignal <- c(signal, rep(0, newLen-len))
     hMult <- get1221(newLen)
-    fft(fft(newSignal) * hMult / len, inverse = TRUE) # possibly scale by len???? only done in real version in PG
+    # fft(fft(newSignal) * hMult / len, inverse = TRUE) # possibly scale by len???? only done in real version in PG
+    IFFT(FFT(newSignal) * hMult / len)
 }
 
 nextExp2 <- function(x) {
