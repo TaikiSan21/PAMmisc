@@ -40,10 +40,29 @@ Organization
 on topics not normally covered. Lessons learned for future
 projects, advanced things possible because of the way CNNs work
 1. Intro to beakers, wigners for classification
-2. Present model and results. Det & event level
-3. Compare to BANTER - we good
+2. Present model and results. ResNet transfer learning from ImageNet
+, incorporated ICI by attaching to features. Det & event level results.
 4. Results are strong, how did we get here - lessons learned
 along the way that led to strong results
-5. Other
+6. Lesson 1 - models cheat. Filter example highlights this
+7. Lesson 1b - proper data splits are important. Would not have caught
+this if blended everything together randomly, your data split should
+reflect your intended use case as a real test. 
+8. Saliency maps next - DL models can be a black box, but there are
+tools to help with that. GradCAM/saliency maps highlight potential
+future problems. Might show that BB is being classified as much by
+lack of higher frequency information, so potentially any low
+frequency noise could get called BB.
+9. SelNet - control that frameworks like PyTorch give over entire
+modeling process let us do potentially cool things. A problem with wigners
+is that they can get noisy, manual analysts arent using every wigner image.
+But the model includes them all, we want to avoid some of that. Implemented 
+verison of model in SelNet paper, basically we simultaneously train a selection
+model that takes the features and just decides whether or not it wants to try
+and make a decision at all. Shockingly it worked (show grid of low sel pictures).
+10. IF TIME talk future selnet possibility with matched template anne project
+11. Acknowledge Jay, Jennifer, Emily for hard work labeling. CalTech, CV4E, Resnick
+for funding where I learned all this.
+
 
 TITLE: Shannon says it reminded her of to infinity and beyond. Fossa Lightyear.
