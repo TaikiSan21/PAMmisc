@@ -71,7 +71,7 @@ wignerTransform <- function(signal, n=NULL, sr, plot=FALSE) {
         }
     }
     # tfr <- apply(tfr, 2, fft)
-    tft <- apply(tfr, 2, FFT)
+    tfr <- apply(tfr, 2, FFT)
     result <- list(tfr=Re(tfr), t=1:nCol/sr, f=sr/2*1:nRow/nRow)
     if(plot) {
         image(t(result$tfr), xaxt='n', yaxt='n',
@@ -95,7 +95,7 @@ toAnalytic <- function(signal) {
     newSignal <- c(signal, rep(0, newLen-len))
     hMult <- get1221(newLen)
     # fft(fft(newSignal) * hMult / len, inverse = TRUE) # possibly scale by len???? only done in real version in PG
-    IFFT(FFT(newSignal) * hMult / len)
+    IFFT(FFT(newSignal) * hMult)# / len)
 }
 
 nextExp2 <- function(x) {

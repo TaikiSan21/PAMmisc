@@ -1,3 +1,7 @@
+# PAMmics 1.12.1
+
+* Fixing `wignerTransform` bug introduced in 1.12.0
+
 # PAMmisc 1.12.0
 
 * adding `findEchoTimes` function and tests for DCLDE workshop
