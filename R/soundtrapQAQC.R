@@ -127,8 +127,8 @@ doQAQCPlot <- function(x, outDir=NULL, xlim=NULL, label=NULL, voltSelect=c('inte
         png(filename=file.path(outDir, paste0(label, '_GAPS.png')), width=6, height=4, res=300, units='in')
     }
     # Time gap plot
-    gap <- xmlInfo$startUTC[2:nrow(xmlInfo)] - xmlInfo$endUTC[1:(nrow(xmlInfo)-1)]
-    plot(x=xmlInfo$startUTC[1:(nrow(xmlInfo)-1)], y=gap/3600,
+    fileGap <- xmlInfo$startUTC[2:nrow(xmlInfo)] - xmlInfo$endUTC[1:(nrow(xmlInfo)-1)]
+    plot(x=xmlInfo$startUTC[1:(nrow(xmlInfo)-1)], y=fileGap/3600,
          ylab='Hours', xaxt='n', xlab='', col='darkblue')
     axis.POSIXct(1, x=xlim, format='%b-%d')
     title('Time gap between files')
@@ -175,13 +175,19 @@ doQAQCPlot <- function(x, outDir=NULL, xlim=NULL, label=NULL, voltSelect=c('inte
     title('SampTimePeriod - (DateStop - DateStart)')
     # 7 samp Gap plot
     par(mar=c(5.1, 4.1, 3.1, 2.1))
+    if(all(is.na(xmlInfo$gap))) {
+        xmlInfo$gap <- 0
+        sampGapTitle <- 'Cumulative Sampling Gap (ALL WERE "NA")'
+    } else {
+        sampGapTitle <- 'Cumulative Sampling Gap'
+    }
     plot(x=xmlInfo$startUTC, y=xmlInfo$gap*1e-6,
          ylab='Seconds', type='l', col='darkblue', xlim=xlim, xaxt='n', xlab='')
     axis.POSIXct(1, x=xlim, format='%b-%d')
-    title('Cumulative Sampling Gap')
+    title(sampGapTitle)
     # 8 file gap plot
 
-    plot(x=xmlInfo$startUTC[1:(nrow(xmlInfo)-1)], y=gap,
+    plot(x=xmlInfo$startUTC[1:(nrow(xmlInfo)-1)], y=fileGap,
          ylab='Seconds', type='l', col='darkblue', xlim=xlim, xaxt='n', xlab='')
     axis.POSIXct(1, x=xlim, format='%b-%d')
     title('Gaps between files')

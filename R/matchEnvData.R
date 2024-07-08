@@ -165,8 +165,10 @@ setMethod('matchEnvData', 'data.frame',
                       planFiles[[p]] <- downloadEnv(data=data[plan == p, ],fileName = thisFile, edinfo = nc, buffer = buffer, ...)
                       #####################################
                       on.exit({
-                          tmpFiles <- list.files(getTempCacheDir(), full.names=TRUE)
-                          unlink(tmpFiles, force=TRUE)
+                          # tmpFiles <- list.files(getTempCacheDir(), full.names=TRUE)
+                          # unlink(tmpFiles, force=TRUE)
+                          tempDir <- getTempCacheDir()
+                          unlink(tempDir, recursive=TRUE, force=TRUE)
                       })
                       # on.exit(DELETEYOUR PAMMISC TEMP DIR HERE) cache_delete_all from rerddap checkit
                       ######################################
