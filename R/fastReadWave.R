@@ -32,5 +32,26 @@ fastReadWave <- function(where, from=0, to=NA_real_, header=FALSE) {
     if(header) {
         names(result) <- c('sample.rate', 'channels', 'bits', 'samples')
     }
+    if(is.null(dim(result))) {
+        dim(result) <- c(1, length(result))
+    }
     result
 }
+
+#' @export
+#'
+`[.audioSample` <- function(x, ..., drop = FALSE) {
+    y <- NextMethod("[")
+    attr(y, "rate") <- attr(x, "rate", TRUE)
+    attr(y, "bits") <- attr(x, "bits", TRUE)
+    # want original asamp output to always be a matrix
+    # once we extract a single channel drop this assumption
+    # for consistence access results, same as after wav@left for Wave
+    if(!is.null(dim(y))) {
+        class(y) <- class(x)
+    }
+    y
+}
+#' @export
+#'
+`$.audioSample` <- function(x, name) attr(x, name)
