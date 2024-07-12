@@ -28,12 +28,10 @@ This code is based on R code written by Jay Barlow.
 }
 \examples{
 
-origDir <- file.path(tempdir(), 'origSR')
+# one 20kHz wav file is included in package test data
+origDir <- system.file('extdata', package='PAMmisc')
 decDir <- file.path(tempdir(), 'decSR')
-writeClickWave('origWav.wav', outDir=origDir, signalLength = 1, clickLength = 100,
-               clicksPerSecond = 200, frequency = 20000, sampleRate = 100000)
-decWavs <- decimateWavFiles(origDir, decDir, 50000)
-file.remove(paste0(origDir, 'origWav.wav'))
+decWavs <- decimateWavFiles(origDir, decDir, 10000)
 file.remove(decWavs)
 
 }
