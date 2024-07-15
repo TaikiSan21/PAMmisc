@@ -12,7 +12,10 @@
 #' @param nfft length of FFT window to use for individual frames
 #' @param noverlap number of samples each frame should overlap
 #' @param sr sample rate of data, only necessary if \code{x} is a vector
-#' @param demean logical flag to subtract the mean from the input signal
+#' @param demean method of demeaning the signal, one of \code{'long'},
+#'   \code{'short'}, or \code{'none'}. Long subtracts the mean of the
+#'   entire signal \code{x}, short subtracts the mean of each individual
+#'   frame, none does no mean subtraction.
 #' @param channel channel number to analyse, ignored if \code{x} is a vector
 #'
 #' @author Taiki Sakai \email{taiki.sakai@@noaa.gov}
@@ -24,7 +27,7 @@
 #' @examples
 #' # wav example is synthetic echolocation clicks at 4kHz
 #' wavFile <- system.file('extdata/testWav.wav', package='PAMmisc')
-#' psd <- pwelch(wavFile, nfft=1e3, noverlap=500, demean=TRUE)
+#' psd <- pwelch(wavFile, nfft=1e3, noverlap=500, demean='long')
 #' plot(x=psd$freq, y=10*log10(psd$spec), type='l')
 #'
 #' @export
@@ -33,7 +36,7 @@
 #' @importFrom fftw planFFT FFT
 #' @importFrom signal hamming
 #'
-pwelch <- function(x, nfft, noverlap=0, sr=NULL, demean=FALSE, channel=1) {
+pwelch <- function(x, nfft, noverlap=0, sr=NULL, demean=c('long', 'short', 'none'), channel=1) {
     if(is.character(x) && file.exists(x)) {
         x <- readWave(x, toWaveMC=TRUE)
         # x <- fastReadWave(x, header=FALSE)
@@ -56,21 +59,30 @@ pwelch <- function(x, nfft, noverlap=0, sr=NULL, demean=FALSE, channel=1) {
         sr <- x$rate
         x <- x[channel, ]
     }
-    if(demean) {
+    demean <- match.arg(demean)
+    if(demean == 'long') {
         x <- x - mean(x)
     }
     if(is.null(sr)) {
         stop('Must provide "sr" if "x" is a vector')
     }
     window <- hamming(nfft)
-    x <- chunk(x, nfft)
+    if(noverlap < 1) {
+        noverlap <- noverlap * nfft
+    }
+    hop <- (nfft - noverlap)
+    x <- chunk(x, nfft, hop)
     nFrames <- length(x)
     if(length(x[[nFrames]]) < nfft) {
-        x[[nFrames]] <- c(x[[nFrames]], nfft - length(x[[nFrames]]))
+        x[[nFrames]] <- c(x[[nFrames]], rep(0, nfft - length(x[[nFrames]])))
     }
 
     ffPlan <- planFFT(nfft)
+    doShort <- demean == 'short'
     x <- lapply(x, function(w) {
+        if(doShort) {
+            w <- w - mean(w)
+        }
         w <- w * window
         spec <- FFT(w, plan=ffPlan)
         Re(spec * Conj(spec))
@@ -90,7 +102,9 @@ pwelch <- function(x, nfft, noverlap=0, sr=NULL, demean=FALSE, channel=1) {
 }
 
 # from stack overflow - break a vector "x" into a list of vectors of size "n"
-chunk <- function(x, n) {
-    mapply(function(a, b) (x[a:b]), seq.int(from=1, to=length(x), by=n),
-           pmin(seq.int(from=1, to=length(x), by=n)+(n-1), length(x)), SIMPLIFY=FALSE)
+chunk <- function(x, length, hop=length) {
+    mapply(function(a, b) (x[a:b]),
+           seq.int(from=1, to=length(x), by=hop),
+           pmin(seq.int(from=1, to=length(x), by=hop)+(length-1), length(x)),
+           SIMPLIFY=FALSE)
 }

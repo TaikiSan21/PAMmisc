@@ -4,7 +4,14 @@
 \alias{pwelch}
 \title{Estimate Power Spectral Density Using Welch's Method}
 \usage{
-pwelch(x, nfft, noverlap = 0, sr = NULL, demean = FALSE, channel = 1)
+pwelch(
+  x,
+  nfft,
+  noverlap = 0,
+  sr = NULL,
+  demean = c("long", "short", "none"),
+  channel = 1
+)
 }
 \arguments{
 \item{x}{input signal, either a numeric vector, \linkS4class{Wave},
@@ -17,7 +24,10 @@ a path to a wav file and it will be read in}
 
 \item{sr}{sample rate of data, only necessary if \code{x} is a vector}
 
-\item{demean}{logical flag to subtract the mean from the input signal}
+\item{demean}{method of demeaning the signal, one of \code{'long'},
+\code{'short'}, or \code{'none'}. Long subtracts the mean of the
+entire signal \code{x}, short subtracts the mean of each individual
+frame, none does no mean subtraction.}
 
 \item{channel}{channel number to analyse, ignored if \code{x} is a vector}
 }
@@ -36,7 +46,7 @@ Estimates the power spectral density (PSD) of an
 \examples{
 # wav example is synthetic echolocation clicks at 4kHz
 wavFile <- system.file('extdata/testWav.wav', package='PAMmisc')
-psd <- pwelch(wavFile, nfft=1e3, noverlap=500, demean=TRUE)
+psd <- pwelch(wavFile, nfft=1e3, noverlap=500, demean='long')
 plot(x=psd$freq, y=10*log10(psd$spec), type='l')
 
 }
