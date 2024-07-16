@@ -4,7 +4,7 @@
 \alias{fastReadWave}
 \title{Load Wave File}
 \usage{
-fastReadWave(where, from = 0, to = NA_real_, header = FALSE)
+fastReadWave(where, from = 0, to = NA_real_, header = FALSE, toWaveMC = FALSE)
 }
 \arguments{
 \item{where}{file to load data from}
@@ -14,11 +14,15 @@ fastReadWave(where, from = 0, to = NA_real_, header = FALSE)
 \item{to}{end point to read data to (seconds), \code{NA} to read til end}
 
 \item{header}{logical flag to read only header information}
+
+\item{toWaveMC}{logical flag to return a \linkS4class{WaveMC} object}
 }
 \value{
 returns an object of the class \code{audioSample} as loaded from
   the WAVE file, or if \code{header=TRUE} a named list with the sample.rate,
-  num channels, bit rate, and sample length
+  num channels, bit rate, and sample length. \code{audioSample} objects
+  store the wav data as a matrix wth one row for every channel and
+  attributes "rate" and "bits"
 }
 \description{
 loads data from a WAVE file

@@ -6,10 +6,13 @@
 #' @param from starting point to load data from (seconds)
 #' @param to end point to read data to (seconds), \code{NA} to read til end
 #' @param header logical flag to read only header information
+#' @param toWaveMC logical flag to return a \linkS4class{WaveMC} object
 #'
 #' @return returns an object of the class \code{audioSample} as loaded from
 #'   the WAVE file, or if \code{header=TRUE} a named list with the sample.rate,
-#'   num channels, bit rate, and sample length
+#'   num channels, bit rate, and sample length. \code{audioSample} objects
+#'   store the wav data as a matrix wth one row for every channel and
+#'   attributes "rate" and "bits"
 #'
 #' @author Taiki Sakai \email{taiki.sakai@@noaa.gov}
 #'
@@ -23,9 +26,10 @@
 #'   of the C programming goes to him. Adapted by Taiki Sakai to add additional
 #'   features and fix some bugs. See additional license comments in file.c
 #'
+#' @importFrom tuneR WaveMC
 #' @export
 #'
-fastReadWave <- function(where, from=0, to=NA_real_, header=FALSE) {
+fastReadWave <- function(where, from=0, to=NA_real_, header=FALSE, toWaveMC=FALSE) {
     from <- as.numeric(from)
     to <- as.numeric(to)
     result <- .Call(load_wave_file, where, from, to, as.integer(header), PACKAGE="PAMmisc")
@@ -34,6 +38,17 @@ fastReadWave <- function(where, from=0, to=NA_real_, header=FALSE) {
     }
     if(is.null(dim(result))) {
         dim(result) <- c(1, length(result))
+    }
+    if(toWaveMC) {
+        bit <- result$bits
+        sr <- result$rate
+        result <- t(unclass(result))
+        dim <- dim(result)
+        result <- as.integer(result * 2^(bit-1))
+        dim(result) <- dim
+        return(
+            WaveMC(data=result, samp.rate=sr, bit=bit)
+        )
     }
     result
 }
