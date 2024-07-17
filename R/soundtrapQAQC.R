@@ -40,7 +40,8 @@
 #'
 #' @export
 #'
-soundtrapQAQC <- function(dir, outDir=NULL, xlim=NULL, label=NULL, voltSelect = c('internal', 'external'), plot=TRUE) {
+soundtrapQAQC <- function(dir, outDir=NULL, xlim=NULL, label=NULL,
+                          voltSelect = c('internal', 'external'), plot=TRUE) {
     if(!is.null(outDir) &&
        !dir.exists(outDir)) {
         dir.create(outDir)
@@ -58,7 +59,7 @@ soundtrapQAQC <- function(dir, outDir=NULL, xlim=NULL, label=NULL, voltSelect = 
         stop('"dir" must be length 1 or 3.')
     }
     xmlInfo <- bind_rows(lapply(xmlFiles, function(x) {
-        result <- doOneQAQC(x, voltSelect)
+        result <- processStXML(x, voltSelect)
         if(is.null(result)) {
             return(NULL)
         }
@@ -206,7 +207,7 @@ modelToVoltSelect <- function(x) {
     'internal'
 }
 
-doOneQAQC <- function(xml, voltSelect=c('internal', 'external')) {
+processStXML <- function(xml, voltSelect=c('internal', 'external')) {
     if(is.character(xml)) {
         tryXml <- try(read_xml(xml))
         if(inherits(tryXml, 'try-error')) {
