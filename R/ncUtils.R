@@ -12,6 +12,9 @@ ncTimeToPosix <- function(vals, units) {
     # if(is.na(vals)) {
     #     return(vals)
     # }
+    if(inherits(vals, 'POSIXct')) {
+        return(vals)
+    }
     isNa <- is.na(vals)
 
     if(grepl('hours? since', units, ignore.case=TRUE)) {
@@ -144,11 +147,10 @@ dimToIx <- function(data, dim, buffer=0, verbose=TRUE) {
 # make everything Latitude Longitude UTC, see getCoordNameMatch() for conversions
 standardCoordNames <- function(names) {
     nameDf <- getCoordNameMatch()
-    for(i in seq_along(names)) {
-        if(!(tolower(names[i]) %in% nameDf$current)) {
-            next
-        }
-        names[i] <- nameDf[nameDf$current == tolower(names[i]), 'standard']
+    lowNames <- tolower(names)
+    inDf <- lowNames %in% nameDf$current
+    for(i in which(inDf)) {
+        names[i] <- nameDf[nameDf$current == lowNames[i], 'standard']
     }
     names
 }
@@ -289,7 +291,7 @@ checkLimits <- function(data, edi, replace=FALSE, verbose=TRUE) {
 }
 
 #' @importFrom tools R_user_dir
-#' 
+#'
 getTempCacheDir <- function(create=TRUE) {
   tempDir <- R_user_dir("PAMscapes", which = "cache")
   if(create &&

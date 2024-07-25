@@ -1,4 +1,9 @@
-# PAMmics 1.12.1
+# PAMmisc 1.12.2
+
+* `matchEnvData` and `ncToData` were really slow in some cases, up
+to 30x faster now in some cases
+
+# PAMmisc 1.12.1
 
 * Fixing `wignerTransform` bug introduced in 1.12.0
 

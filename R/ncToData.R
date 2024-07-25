@@ -116,6 +116,9 @@ ncToData <- function(data, nc, var=NULL, buffer = c(0,0,0), FUN = c(mean),
     if(!all(reqDims %in% names(data))) {
         stop('data must have columns ', paste0(reqDims, collapse=', '))
     }
+    if('UTC' %in% names(nc$dim)) {
+        nc$dim$UTC$vals <- ncTimeToPosix(nc$dim$UTC)
+    }
     # nc$dim$Longitude$vals <- round(nc$dim$Longitude$vals, 5)
     # nc$dim$Latitude$vals <- round(nc$dim$Latitude$vals, 5)
     if(progress) {
@@ -125,8 +128,10 @@ ncToData <- function(data, nc, var=NULL, buffer = c(0,0,0), FUN = c(mean),
     for(v in varNames) {
         names(nc$var[[v]]$dim) <- names(nc$dim)[nc$var[[v]]$dimids + 1]
     }
+    possDims <- c('UTC', 'Latitude', 'Longitude', 'Depth')
+    hasDims <- names(data)[names(data) %in% possDims]
     for(i in 1:nrow(data)) {
-        varData <- getVarData(data[i,], nc=nc, var=varNames, buffer = buffer,
+        varData <- getVarData(data[hasDims][i,], nc=nc, var=varNames, buffer = buffer,
                               depth=depth, verbose=verbose)
         for(v in varNames) {
             allVar[[v]][[i]] <- varData[[v]]

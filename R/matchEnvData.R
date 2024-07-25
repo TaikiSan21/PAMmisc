@@ -177,13 +177,23 @@ setMethod('matchEnvData', 'data.frame',
                           setTxtProgressBar(pb, value = pbix)
                       }
                   }
-                  result <- vector('list', length = nrow(data))
+                  # result <- vector('list', length = nrow(data))
+                  # for(i in seq_along(result)) {
+                  #     if(plan[i] == '-1') {
+                  #         result[[i]] <- data[i, ]
+                  #         next
+                  #     }
+                  #     result[[i]] <- ncToData(data=data[i, ], nc=planFiles[[plan[i]]], var=var, buffer=buffer, FUN=FUN, progress=FALSE, depth=depth, ...)
+                  # }
+                  data <- split(data, plan)
+                  result <- vector('list', length=length(data))
                   for(i in seq_along(result)) {
-                      if(plan[i] == '-1') {
-                          result[[i]] <- data[i, ]
+                      if(names(data)[i] == '-1') {
+                          result[[i]] <- data[[i]]
                           next
                       }
-                      result[[i]] <- ncToData(data=data[i, ], nc=planFiles[[plan[i]]], var=var, buffer=buffer, FUN=FUN, progress=FALSE, depth=depth, ...)
+                      result[[i]] <- ncToData(data=data[[i]], nc=planFiles[[names(data)[i]]], var=var, buffer=buffer,
+                                                        FUN=FUN, progress=FALSE, depth=depth, ...)
                   }
                   if(progress) {
                       cat('\n')
