@@ -3,6 +3,10 @@
 * `matchEnvData` and `ncToData` were really slow in some cases, up
 to 30x faster now in some cases
 
+* Merging in `fastReadWave` C-based wav file reading function. Must faster
+than current alternatives, based on the not-always-working `audio::load.wave`
+but with improvements
+
 # PAMmisc 1.12.1
 
 * Fixing `wignerTransform` bug introduced in 1.12.0
