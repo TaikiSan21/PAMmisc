@@ -58,15 +58,7 @@ soundtrapQAQC <- function(dir, outDir=NULL, xlim=NULL, label=NULL,
     } else {
         stop('"dir" must be length 1 or 3.')
     }
-    xmlInfo <- bind_rows(lapply(xmlFiles, function(x) {
-        result <- processStXML(x, voltSelect)
-        if(is.null(result)) {
-            return(NULL)
-        }
-        result$xmlName <- basename(x)
-        result
-    }))
-    # xmlInfo$xmlName <- basename(xmlFiles)
+    xmlInfo <- processSoundtrapLogs(xmlFiles, voltSelect)
     sudInfo <- data.frame(sudName=basename(sudFiles),
                           sudSize = sapply(sudFiles, file.size))
     wavInfo <- data.frame(wavName=basename(wavFiles),
@@ -207,11 +199,22 @@ modelToVoltSelect <- function(x) {
     'internal'
 }
 
-processStXML <- function(xml, voltSelect=c('internal', 'external')) {
-    if(is.character(xml)) {
-        tryXml <- try(read_xml(xml))
+#' @export
+#' @rdname soundtrapQAQC
+#'
+processSoundtrapLogs <- function(dir, voltSelect=c('internal', 'external')) {
+    if(is.character(dir)) {
+        if(length(dir) == 1 && dir.exists(dir)) {
+            dir <- list.files(dir, pattern='xml$', full.names=TRUE)
+        }
+        if(length(dir) > 1) {
+            return(
+                bind_rows(lapply(dir, processSoundtrapLogs, voltSelect=voltSelect))
+            )
+        }
+        tryXml <- try(read_xml(dir))
         if(inherits(tryXml, 'try-error')) {
-            warning('Unable to read file ', xml)
+            warning('Unable to read file ', dir)
             return(NULL)
         }
         xml <- tryXml
@@ -229,8 +232,8 @@ processStXML <- function(xml, voltSelect=c('internal', 'external')) {
         voltSelect <- modelToVoltSelect(result$model)
     }
     voltNode <- switch(match.arg(voltSelect),
-        'internal' = '//INT_BATT',
-        'external' = '//EX_BATT'
+                       'internal' = '//INT_BATT',
+                       'external' = '//EX_BATT'
     )
     startNode <- xml_find_all(xml, '//@SamplingStartTimeUTC')
     if(length(startNode) > 0) {
@@ -275,9 +278,17 @@ processStXML <- function(xml, voltSelect=c('internal', 'external')) {
     } else {
         result$sampleCount <- NA
     }
+    result$fileName <- basename(dir)
+    result$fileTime <- stFileToPosix(dir)
     result
 }
 
 stToPosix <- function(x) {
     parse_date_time(x, orders=c('%Y-%m-%dT%H:%M:%S', '%m/%d/%Y %I:%M:%S %p'), tz='UTC', exact=TRUE)
+}
+
+stFileToPosix <- function(x) {
+    x <- basename(x)
+    format <- '%y%m%d%H%M%S'
+    as.POSIXct(gsub('(.*\\.)([0-9]{12})\\..*$', '\\2', x), format=format, tz='UTC')
 }

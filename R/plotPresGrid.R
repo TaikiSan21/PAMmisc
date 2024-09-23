@@ -139,8 +139,7 @@ plotPresGrid <- function(x, start=NULL, end=NULL,
             if(missing(alpha)) {
                 alpha <- 1
             }
-            x <- select(x, all_of(c('plot_min', 'plot_max', 'day'))) %>%
-                distinct()
+            x <- distinct(select(x, all_of(c('plot_min', 'plot_max', 'day'))))
             g <- g +
                 geom_rect(data=x, aes(xmin=.data$plot_min,
                                       xmax=.data$plot_max,
@@ -148,8 +147,7 @@ plotPresGrid <- function(x, start=NULL, end=NULL,
                                       ymax=.data$day + period(1, 'day')),
                           alpha=alpha, fill=fill, col=color)
         } else {
-            x <- select(x, all_of(c('plot_min', 'plot_max', 'day', by))) %>%
-                distinct()
+            x <- distinct(select(x, all_of(c('plot_min', 'plot_max', 'day', by))))
 
             g <- g +
                 geom_rect(data=x, aes(xmin=.data$plot_min,
@@ -162,8 +160,13 @@ plotPresGrid <- function(x, start=NULL, end=NULL,
     }
     if(type == 'density') {
         if(is.null(by)) {
-            x <- group_by(x, .data$day, .data$plot_min, .data$plot_max) %>%
-                summarise(count=n(), .groups='keep')
+            # x <- group_by(x, .data$day, .data$plot_min, .data$plot_max) %>%
+            #     summarise(count=n(), .groups='keep')
+            x <- summarise(
+                group_by(x, .data$day, .data$plot_min, .data$plot_max),
+                count=n(),
+                .groups='keep'
+            )
             g <- g +
                 geom_rect(data=x, aes(xmin=.data$plot_min,
                                       xmax=.data$plot_max,
@@ -173,8 +176,13 @@ plotPresGrid <- function(x, start=NULL, end=NULL,
                 scale_fill_gradientn(colors=cmap)
             tlab <- paste0('Calls/', tlab)
         } else {
-            x <- group_by(x, .data$day, .data$plot_min, .data$plot_max, .data[[by]]) %>%
-                summarise(count=n(), .groups='keep')
+            # x <- group_by(x, .data$day, .data$plot_min, .data$plot_max, .data[[by]]) %>%
+            #     summarise(count=n(), .groups='keep')
+            x <- summarise(
+                group_by(x, .data$day, .data$plot_min, .data$plot_max, .data[[by]]),
+                count=n(),
+                .groups='keep'
+            )
             g <- g +
                 geom_rect(data=x, aes(xmin=.data$plot_min,
                                       xmax=.data$plot_max,

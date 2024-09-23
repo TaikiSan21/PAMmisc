@@ -59,7 +59,6 @@
 #' peakTrough(seewave::spec(clickWave, plot=FALSE), plot=TRUE)
 #'
 #' @importFrom dplyr filter mutate
-#' @importFrom magrittr %>%
 #' @importFrom RcppRoll roll_mean
 #' @import ggplot2
 #' @export

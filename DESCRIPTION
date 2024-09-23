@@ -18,7 +18,6 @@ Imports:
     tuneR,
     seewave,
     dplyr,
-    magrittr,
     RcppRoll,
     PamBinaries,
     RSQLite,

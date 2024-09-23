@@ -2,6 +2,7 @@
 % Please edit documentation in R/soundtrapQAQC.R
 \name{soundtrapQAQC}
 \alias{soundtrapQAQC}
+\alias{processSoundtrapLogs}
 \title{Perform QA/QC on Soundtrap Files}
 \usage{
 soundtrapQAQC(
@@ -12,6 +13,8 @@ soundtrapQAQC(
   voltSelect = c("internal", "external"),
   plot = TRUE
 )
+
+processSoundtrapLogs(dir, voltSelect = c("internal", "external"))
 }
 \arguments{
 \item{dir}{directory containing Soundtrap XML logs, wav files, and SUD files.

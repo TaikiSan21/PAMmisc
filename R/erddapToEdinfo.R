@@ -131,10 +131,21 @@ hycomToEdinfo <- function(dataset='GLBy0.08/expt_93.0',
     xmlUrl <- paste0(baseurl, 'grid/', dataset, '/dataset.xml')
     xml <- read_xml(xmlUrl)
     axis <- xml_find_all(xml, 'axis')
-    axText <- xml_find_all(axis, 'values') %>%  xml_contents() %>% xml_text() %>% strsplit(' ')
+    # axText <- xml_find_all(axis, 'values') %>%  xml_contents() %>% xml_text() %>% strsplit(' ')
+    axText <- strsplit(
+        xml_text(
+            xml_contents(
+                xml_find_all(axis, 'values')
+            )
+        ),
+        ' '
+    )
     coordNames <- xml_attr(axis, 'name')
     if(length(axText) != length(axis)) {
-        time <- xml_find_all(axis, 'values[@start]') %>% xml_attrs()
+        # time <- xml_find_all(axis, 'values[@start]') %>% xml_attrs()
+        time <- xml_attrs(
+            xml_find_all(axis, 'values[@start]')
+        )
         time <- time[[1]]
         if(!all(c('start', 'increment', 'npts') %in% names(time))) {
             warning('Cant parse XML for dataset ', dataset)
@@ -169,7 +180,11 @@ hycomToEdinfo <- function(dataset='GLBy0.08/expt_93.0',
                 diff(range(axText[[i]])) / (length(axText[[i]]) - 1)
             }
     }
-    varNames <- xml_find_all(xml, 'gridSet/grid') %>% xml_attr('name')
+    # varNames <- xml_find_all(xml, 'gridSet/grid') %>% xml_attr('name')
+    varNames <- xml_attr(
+        xml_find_all(xml, 'gridSet/grid'),
+        'name'
+    )
     result <- list(base = baseurl,
                    dataset = dataset,
                    fileType = 'netcdf4',
