@@ -35,6 +35,7 @@ fastReadWave <- function(where, from=0, to=NA_real_, header=FALSE, toWaveMC=FALS
     result <- .Call(load_wave_file, where, from, to, as.integer(header), PACKAGE="PAMmisc")
     if(header) {
         names(result) <- c('sample.rate', 'channels', 'bits', 'samples')
+        return(result)
     }
     if(is.null(dim(result))) {
         dim(result) <- c(1, length(result))
