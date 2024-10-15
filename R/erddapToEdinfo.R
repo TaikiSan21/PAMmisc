@@ -35,6 +35,24 @@ erddapToEdinfo <- function(dataset,
                                      'https://erddap.sensors.ioos.us/erddap'),
                            chooseVars = TRUE) {
     if(is.character(dataset)) {
+        if(tolower(dataset) == 'hycom') {
+            result <- PAMmisc::hycomList
+            if(isTRUE(chooseVars)) {
+                result <- varSelect(result)
+            } else if(is.character(chooseVars)) {
+                result <- varSelect(result, chooseVars)
+            }
+            return(result)
+        }
+        if(dataset %in% names(PAMmisc::hycomList$list)) {
+            result <- PAMmisc::hycomList$list[[dataset]]
+            if(isTRUE(chooseVars)) {
+                result <- varSelect(result)
+            } else if(is.character(chooseVars)) {
+                result <- varSelect(result, chooseVars)
+            }
+            return(result)
+        }
         if(grepl('^GLB.{4,6}/expt', dataset)) {
             return(hycomToEdinfo(dataset=dataset, chooseVars=chooseVars))
         }

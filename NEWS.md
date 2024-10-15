@@ -1,3 +1,8 @@
+# PAMmisc 1.12.3
+
+* Adding `nc='HYCOM'` option to make it easier to specify that you want
+to (try) to get to HYCOM data from `matchEnvData`
+
 # PAMmisc 1.12.2
 
 * `matchEnvData` and `ncToData` were really slow in some cases, up
