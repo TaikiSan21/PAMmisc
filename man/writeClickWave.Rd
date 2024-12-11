@@ -49,7 +49,7 @@ usign signalLength, clickLength, clicksPerSecond, frequency, and sampleRate}
 }
 \value{
 \code{writeClickWave} invisibly returns the file name, \code{createClickWave}
-  returns a \linkS4class{Wave} class object
+  returns a \link[tuneR]{Wave} class object
 }
 \description{
 Write a wave file for a synthesized delphinid click

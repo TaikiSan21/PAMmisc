@@ -6,8 +6,8 @@
 #'   not be identical. Breaks the input signal into (usually)
 #'   overlapping frames and averages the resulting PSD estimates
 #'
-#' @param x input signal, either a numeric vector, \linkS4class{Wave},
-#'   \linkS4class{WaveMC}, or \code{audioSample} object. Can also be
+#' @param x input signal, either a numeric vector, \link[tuneR]{Wave},
+#'   \link[tuneR]{WaveMC}, or \code{audioSample} object. Can also be
 #'   a path to a wav file and it will be read in
 #' @param nfft length of FFT window to use for individual frames
 #' @param noverlap number of samples each frame should overlap

@@ -49,7 +49,7 @@ usign signalLength, modFrequency, frequency, and sampleRate}
 }
 \value{
 \code{writeAMWave} invisibly returns the file name, \code{createAMWave}
-  returns a \linkS4class{Wave} class object
+  returns a \link[tuneR]{Wave} class object
 }
 \description{
 Write a wave file for a synthesized amplitude modulated call

@@ -19,7 +19,7 @@
 #' @author Taiki Sakai \email{taiki.sakai@@noaa.gov}
 #'
 #' @return \code{writeClickWave} invisibly returns the file name, \code{createClickWave}
-#'   returns a \linkS4class{Wave} class object
+#'   returns a \link[tuneR]{Wave} class object
 #'
 #' @examples
 #'

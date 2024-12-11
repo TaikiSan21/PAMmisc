@@ -22,7 +22,7 @@
 #' @author Taiki Sakai \email{taiki.sakai@@noaa.gov}
 #'
 #' @return \code{writeAMWave} invisibly returns the file name, \code{createAMWave}
-#'   returns a \linkS4class{Wave} class object
+#'   returns a \link[tuneR]{Wave} class object
 #'
 #' @examples
 #'

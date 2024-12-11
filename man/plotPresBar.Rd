@@ -42,7 +42,7 @@ color the bars by}
 used for the title of the plot.}
 
 \item{fill}{the fill color for the bars, only used if \code{by} is \code{NULL}, otherwise bars are
-colored by species using the default \link{ggplot2} palette}
+colored by species using the default \code{ggplot2} palette}
 
 \item{format}{date format if \code{UTC} column of \code{x} is a character}
 
