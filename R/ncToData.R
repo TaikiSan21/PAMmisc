@@ -58,7 +58,11 @@ ncToData <- function(data, nc, var=NULL, buffer = c(0,0,0), FUN = c(mean),
     if(!is.character(nc) ||
        !file.exists(nc)) {
         warning('"nc" ', nc, ' is not a valid file.')
-        return(data)
+        if(isTRUE(raw)) {
+            return(vector('list', length=nrow(data)))
+        } else {
+            return(data)
+        }
     }
     nc <- nc_open(nc)
     on.exit(nc_close(nc))
@@ -264,7 +268,7 @@ getVarData <- function(data, nc, var, buffer, depth=NULL, verbose=TRUE) {
                        if(multiT) {
                            tIx <- dimToIx(data$UTC, nc$dim[[thisDimId[d]]], buffer[3], verbose)
                            tVals <- ncTimeToPosix(nc$dim[[thisDimId[d]]]$vals[tIx$ix],
-                                              units = nc$dim[[thisDimId[d]]]$units)
+                                                  units = nc$dim[[thisDimId[d]]]$units)
                            if(is.na(tIx$start) || is.na(tIx$count)) {
                                for(r in seq_along(result)) {
                                    result[[r]] <- NA
