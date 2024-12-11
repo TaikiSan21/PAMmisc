@@ -254,6 +254,20 @@ processSoundtrapLogs <- function(dir, voltSelect=c('internal', 'external')) {
     } else {
         result$batt <- NA
     }
+    # voltSelect internal or external, change to //INT_BATT
+    intBattNode <- xml_find_all(xml, '//INT_BATT')
+    if(length(intBattNode) > 0) {
+        result$intBatt <- as.numeric(gsub(' ', '', as.character(xml_contents(intBattNode)))) * .001
+    } else {
+        result$intBatt <- NA
+    }
+    # voltSelect internal or external, change to //INT_BATT
+    extBattNode <- xml_find_all(xml, '//EX_BATT')
+    if(length(extBattNode) > 0) {
+        result$extBatt <- as.numeric(gsub(' ', '', as.character(xml_contents(extBattNode)))) * .001
+    } else {
+        result$extBatt <- NA
+    }
     tempNode <- xml_find_all(xml, '//TEMPERATURE')
     if(length(tempNode) > 0) {
         result$temp <- as.numeric(gsub(' ', '', as.character(xml_contents(tempNode)))) * .01

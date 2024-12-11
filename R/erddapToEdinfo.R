@@ -90,6 +90,9 @@ erddapToEdinfo <- function(dataset,
         hdr <- dim[1, 'value']
         hdr <- gsub(' ', '', hdr)
         hdr <- strsplit(hdr, ',')[[1]]
+        if(length(hdr) == 0) {
+            hdr <- ''
+        }
         hasAvg <- sapply(hdr, function(x) grepl('averageSpacing', x))
         if(any(hasAvg) &&
            dim[dim$attribute_name == 'ioos_category', 'value'] != 'Time') {
@@ -97,11 +100,16 @@ erddapToEdinfo <- function(dataset,
         } else {
             hdr <- hdr[sapply(hdr, function(x) grepl('nValues', x))]
             nVals <- as.numeric(gsub('nValues=', '', hdr))
+            if(length(nVals) == 0) {
+                nVals <- 0
+            }
             if(nVals == 1) {
                 spacing <- NA
             } else if(dim[dim$attribute_name == 'ioos_category', 'value'] == 'Time') {
                 val <- ncTimeToPosix(val, dim[dim$attribute_name == 'units', 'value'])
-                spacing <- as.double(diff(val), units='secs')/(nVals-1)
+                spacing <- ifelse(nVals == 0, NA, as.double(diff(val), units='secs')/(nVals-1))
+            } else if(nVals == 0) {
+                spacing <- NA # unsure about this
             } else {
                 spacing <- diff(val)/(nVals-1)
             }

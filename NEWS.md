@@ -12,6 +12,8 @@ to 30x faster now in some cases
 than current alternatives, based on the not-always-working `audio::load.wave`
 but with improvements
 
+* Added `pwelch` apparently
+
 # PAMmisc 1.12.1
 
 * Fixing `wignerTransform` bug introduced in 1.12.0
