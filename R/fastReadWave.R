@@ -6,7 +6,7 @@
 #' @param from starting point to load data from (seconds)
 #' @param to end point to read data to (seconds), \code{NA} to read til end
 #' @param header logical flag to read only header information
-#' @param toWaveMC logical flag to return a \linkS4class{WaveMC} object
+#' @param toWaveMC logical flag to return a \link[tuneR]{WaveMC} object
 #'
 #' @return returns an object of the class \code{audioSample} as loaded from
 #'   the WAVE file, or if \code{header=TRUE} a named list with the sample.rate,

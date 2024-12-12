@@ -15,7 +15,7 @@ fastReadWave(where, from = 0, to = NA_real_, header = FALSE, toWaveMC = FALSE)
 
 \item{header}{logical flag to read only header information}
 
-\item{toWaveMC}{logical flag to return a \linkS4class{WaveMC} object}
+\item{toWaveMC}{logical flag to return a \link[tuneR]{WaveMC} object}
 }
 \value{
 returns an object of the class \code{audioSample} as loaded from

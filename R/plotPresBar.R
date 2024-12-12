@@ -20,7 +20,7 @@
 #' @param title if \code{TRUE}, a title will automatically created. If any other value, that will be
 #'   used for the title of the plot.
 #' @param fill the fill color for the bars, only used if \code{by} is \code{NULL}, otherwise bars are
-#'   colored by species using the default \link{ggplot2} palette
+#'   colored by species using the default \code{ggplot2} palette
 #' @param format date format if \code{UTC} column of \code{x} is a character
 #' @param plotTz the timezone to use for plotting the data. Note that inputs must still be in UTC,
 #'   this option allows you to create plots scaled to local time. Valid values come from

@@ -2,6 +2,9 @@
 
 * `fastReadWave` with `header=TRUE` was not properly closing file connections
 
+* `matchEnvData` and `ncToData` were not returning failed files properly
+when `raw=TRUE`
+
 # PAMmisc 1.12.3
 
 * Adding `nc='HYCOM'` option to make it easier to specify that you want
