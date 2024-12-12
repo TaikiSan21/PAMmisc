@@ -1,3 +1,7 @@
+# PAMmisc 1.12.4
+
+* `fastReadWave` with `header=TRUE` was not properly closing file connections
+
 # PAMmisc 1.12.3
 
 * Adding `nc='HYCOM'` option to make it easier to specify that you want

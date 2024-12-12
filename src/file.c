@@ -156,6 +156,7 @@ SEXP load_wave_file(SEXP src, SEXP from, SEXP to, SEXP header)
                     SET_VECTOR_ELT(res, 3, Rf_ScalarInteger(samples / fmt.chs));
                     UNPROTECT(1);
                     // after this we assign names in R
+                    fclose(f);
                     return res;
                 }
                 samples = to_samp - from_samp;
