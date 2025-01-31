@@ -11,6 +11,8 @@ library(patchwork)
 # for the .04 grid
 # OUTPUT a 3x3xD array, coerces a 2d array to MxNx1
 
+# 1-14-2025 fixed rounding error causing segment matching to not work
+
 make33Grid <- function(x) {
     dim(x) <- c(dim(x), rep(1, 3-length(dim(x))))
     dims <- dim(x)
@@ -473,6 +475,12 @@ addEnvParams <- function(data, folder, tz='UTC', ekNames=TRUE) {
             return(x)
         }
         x$MATCHEDIX <- rep(0, nrow(x))
+        x$Longitude <- round(x$Longitude, 4)
+        x$Latitude <- round(x$Latitude, 4)
+        thisLog$minLong <- round(thisLog$minLong, 4)
+        thisLog$maxLong <- round(thisLog$maxLong, 4)
+        thisLog$minLat <- round(thisLog$minLat, 4)
+        thisLog$maxLat <- round(thisLog$maxLat, 4)
         for(i in 1:nrow(thisLog)) {
             if(!thisLog$succeeded[i]) {
                 next
