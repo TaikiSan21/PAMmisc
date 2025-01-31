@@ -157,32 +157,33 @@ downloadHYCOM <- function(data=NULL, folder,
                           mode=c('segment', 'full'),
                           retry=TRUE, timeout=600, hyList=PAMmisc::hycomList,
                           hour=NULL, hourTz='America/Los_Angeles',
+                          frequency=1,
                           progress=TRUE) {
     if(!dir.exists(folder)) {
         dir.create(folder)
     }
     mode <- match.arg(mode)
     data <- ekToStandardFormat(data, tz=tz)
-    logDf <- dataToLog(data, mode=mode, buffer=buffer)
-    
+    logDf <- dataToLog(data, mode=mode, buffer=buffer, frequency=frequency)
+
     if(is.null(log)) {
         log <- paste0(basename(folder), '_', 'HYCOMLog.csv')
         log <- file.path(folder, log)
     }
-    
+
     if(file.exists(log)) {
         oldLog <- read.csv(log, stringsAsFactors = FALSE)
         oldLog$day <- as.POSIXct(oldLog$day, format='%Y-%m-%d', tz='UTC')
         logDf <- bind_rows(oldLog, logDf[!logDf$day %in% oldLog$day, ])
         logDf <- arrange(logDf, day)
     }
-    
+
     if(retry) {
         toTry <- !logDf$succeeded
     } else {
         toTry <- !logDf$attempted
     }
-    
+
     if(!any(toTry)) {
         cat('No days to try to download.')
         if(isFALSE(retry)) {
@@ -190,9 +191,9 @@ downloadHYCOM <- function(data=NULL, folder,
         }
         return(logDf)
     }
-    
+
     tried <- rep(FALSE, nrow(logDf))
-    
+
     on.exit({
         nTried <- sum(tried)
         nSucceeded <- sum(logDf$succeeded[tried])
@@ -202,12 +203,12 @@ downloadHYCOM <- function(data=NULL, folder,
             ' out of ', nTried, ' attempts ',
             '(out of ', nPlanned, ' planned attempts)', sep='')
     })
-    
+
     if(progress) {
         pb <- txtProgressBar(min=0, max=sum(toTry), style=3)
         ix <- 0
     }
-    
+
     for(i in which(toTry)) {
         logDf$attempted[i] <- TRUE
         tried[i] <- TRUE
@@ -250,7 +251,7 @@ downloadHYCOM <- function(data=NULL, folder,
             logDf$fail_message[i] <<- w$message
             FALSE
         })
-        
+
         if(progress) {
             ix <- ix + 1
             setTxtProgressBar(pb, value=ix)
@@ -335,13 +336,13 @@ ekToStandardFormat <- function(data, tz='UTC', noTime=FALSE) {
     if(!all(c('UTC', 'Latitude', 'Longitude') %in% names(data))) {
         stop('"data" must have "UTC", "Longitude", and "Latitude"')
     }
-    
+
     data$UTC <- parseToUTC(data$UTC, tz=tz)
     # data$UTC <- data$UTC + offset * 3600
     data
 }
 
-dataToLog <- function(data, mode=c('segment','full'), buffer) {
+dataToLog <- function(data, mode=c('segment','full'), buffer, frequency=1) {
     if(is.null(data) || nrow(data) == 0) {
         return(data)
     }
@@ -350,7 +351,7 @@ dataToLog <- function(data, mode=c('segment','full'), buffer) {
                dataRange <- dataToRanges(data, buffer)
                days <- seq(from=floor_date(dataRange$UTC[1], unit='1day'),
                            to = floor_date(dataRange$UTC[2], unit='1day'),
-                           by=24 * 3600)
+                           by=24 * 3600 * frequency)
                logDf <- data.frame(day=days,
                                    minLat = min(dataRange$Latitude),
                                    maxLat = max(dataRange$Latitude),
@@ -378,7 +379,7 @@ dataToLog <- function(data, mode=c('segment','full'), buffer) {
                           succeeded = FALSE,
                           file = '',
                           fail_message = '')
-               
+
            }
     )
     logDf
@@ -394,7 +395,7 @@ checkLogFiles <- function(logData, folder, ncFiles=NULL) {
     multiMatch <- character(0)
     for(i in which(!logNcExists)) {
         # if it doesnt think it succeeded dont check
-        if(is.na(logData$succeeded[i]) || 
+        if(is.na(logData$succeeded[i]) ||
            !logData$succeeded[i]) {
             next
         }
@@ -436,7 +437,7 @@ addEnvParams <- function(data, folder, tz='UTC', ekNames=TRUE) {
         }
         oneLog
     }))
-    
+
     logs <- checkLogFiles(logs, folder, ncFiles=ncFiles)
     if(is.character(data)) {
         if(!file.exists(data)) {
@@ -534,7 +535,7 @@ makeDailyCSV <- function(grid, folder, name, hour=NULL, hourTz='America/Los_Ange
         thisCsv <- paste0(name, '_', format(thisGrid$UTC[1], format='%Y-%m-%d_%H-%M-%S'), '.csv')
         thisCsv <- file.path(folder, thisCsv)
         if(retry || !file.exists(thisCsv)) {
-            
+
             thisRaw <- ncToData(thisGrid, nc=thisNc, buffer=c(.16, .16, 0), raw=TRUE,
                                 depth=c(0, 200), progress=FALSE)
             thisGrid$UTC <- NULL
@@ -638,6 +639,6 @@ plotEnvComp <- function(x) {
         geom_line(aes(y=(ild.SD - ild_sd)/ildsAvg, col='ild.s')) +
         ggtitle('ILD Comparison') +
         ylab('Difference (Percent)')
-    (basicPlot + ildPlot) / 
+    (basicPlot + ildPlot) /
         (basicPlotPct + ildPlotPct)
 }
