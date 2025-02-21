@@ -9,12 +9,11 @@ ncTimeToPosix <- function(vals, units) {
         units <- vals$units
         vals <- vals$vals
     }
-    # if(is.na(vals)) {
-    #     return(vals)
-    # }
+
     if(inherits(vals, 'POSIXct')) {
         return(vals)
     }
+    
     isNa <- is.na(vals)
 
     if(grepl('hours? since', units, ignore.case=TRUE)) {
@@ -28,9 +27,19 @@ ncTimeToPosix <- function(vals, units) {
         }
         return(out)
     }
-    # if(units == 'hours since 2000-01-01 00:00:00') {
-    #     return(as.POSIXct(vals * 3600, origin = '2000-01-01 00:00:00', tz='UTC'))
-    # }
+    
+    if(grepl('minutes? since', units, ignore.case=TRUE)) {
+        or <- gsub('minutes? since ', '', units, ignore.case=TRUE)
+        or <- gsub('\\s{0,1}UTC', '', or)
+        or <- gsub('\\.0+$', '', or)
+        or <- ymd_hms_fast(or)
+        out <- as.POSIXct(vals * 60, origin=or, tz='UTC')
+        if(anyNA(out[!isNa])) {
+            warning('Conversion failed for units ', units)
+        }
+        return(out)
+    }
+    
     if(grepl('seconds? since', units, ignore.case=TRUE)) {
         or <- gsub('seconds? since ', '', units, ignore.case=TRUE)
         or <- gsub('\\s{0,1}UTC', '', or)
@@ -42,21 +51,14 @@ ncTimeToPosix <- function(vals, units) {
         }
         return(out)
     }
-    # if(units == 'seconds since 1970-01-01T00:00:00Z') {
-    #     return( as.POSIXct(vals, origin = '1970-01-01 00:00:00', tz='UTC'))
-    # }
-    # if(units == 'seconds since 1981-01-01 00:00:00') {
-    #     return( as.POSIXct(vals, origin = '1981-01-01 00:00:00', tz='UTC'))
-    # }
+
     if(units == 'count') {
         return(vals)
     }
     if(units == 'posix') {
         return(vals)
     }
-    # if(units == 'hours since 1950-01-01') {
-    #     return(as.POSIXct(vals * 3600, origin = '1950-01-01', tz='UTC'))
-    # }
+
     stop('Dont know how to deal with time with units ', units)
 }
 

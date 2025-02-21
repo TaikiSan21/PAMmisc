@@ -223,7 +223,7 @@ processSoundtrapLogs <- function(dir, voltSelect=c('internal', 'external')) {
         return(NULL)
     }
     result <- list()
-
+    
     # try for auto-select based on HARDWARE_ID
     hardwareNode <- xml_find_all(xml, '//HARDWARE_ID')
     result$model <- as.character(gsub(' ', '', xml_contents(hardwareNode)))

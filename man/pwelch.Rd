@@ -9,6 +9,7 @@ pwelch(
   nfft,
   noverlap = 0,
   sr = NULL,
+  window = NULL,
   demean = c("long", "short", "none"),
   channel = 1
 )
@@ -23,6 +24,10 @@ a path to a wav file and it will be read in}
 \item{noverlap}{number of samples each frame should overlap}
 
 \item{sr}{sample rate of data, only necessary if \code{x} is a vector}
+
+\item{window}{window to apply, must be a vector of length \code{nfft}.
+If \code{NULL} (default), then a \link[signal]{hamming} window will
+ be used}
 
 \item{demean}{method of demeaning the signal, one of \code{'long'},
 \code{'short'}, or \code{'none'}. Long subtracts the mean of the

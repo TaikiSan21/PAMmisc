@@ -12,6 +12,9 @@
 #' @param nfft length of FFT window to use for individual frames
 #' @param noverlap number of samples each frame should overlap
 #' @param sr sample rate of data, only necessary if \code{x} is a vector
+#' @param window window to apply, must be a vector of length \code{nfft}.
+#'   If \code{NULL} (default), then a \link[signal]{hamming} window will
+#'    be used
 #' @param demean method of demeaning the signal, one of \code{'long'},
 #'   \code{'short'}, or \code{'none'}. Long subtracts the mean of the
 #'   entire signal \code{x}, short subtracts the mean of each individual
@@ -36,7 +39,7 @@
 #' @importFrom fftw planFFT FFT
 #' @importFrom signal hamming
 #'
-pwelch <- function(x, nfft, noverlap=0, sr=NULL, demean=c('long', 'short', 'none'), channel=1) {
+pwelch <- function(x, nfft, noverlap=0, sr=NULL, window=NULL, demean=c('long', 'short', 'none'), channel=1) {
     if(is.character(x) && file.exists(x)) {
         x <- readWave(x, toWaveMC=TRUE)
         # x <- fastReadWave(x, header=FALSE)
@@ -66,7 +69,9 @@ pwelch <- function(x, nfft, noverlap=0, sr=NULL, demean=c('long', 'short', 'none
     if(is.null(sr)) {
         stop('Must provide "sr" if "x" is a vector')
     }
-    window <- hamming(nfft)
+    if(is.null(window) || length(window) != nfft) {
+        window <- hamming(nfft)
+    }
     if(noverlap < 1) {
         noverlap <- noverlap * nfft
     }

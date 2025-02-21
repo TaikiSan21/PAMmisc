@@ -5,6 +5,8 @@
 * `matchEnvData` and `ncToData` were not returning failed files properly
 when `raw=TRUE`
 
+* Adding `window` option to `pwelch`
+
 # PAMmisc 1.12.3
 
 * Adding `nc='HYCOM'` option to make it easier to specify that you want
