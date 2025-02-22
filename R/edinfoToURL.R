@@ -47,15 +47,24 @@ edinfoToURL <- function(edinfo, ranges) {
     # WHY DOES ERDDAP SOMETIMES HAVE BACKWARDS COORDS
     # Only found for latitude so far, but including lon just in case
     for(d in c('Latitude', 'Longitude')) {
+        if(is.na(edinfo$spacing[[d]])) {
+            next
+        }
         if(edinfo$spacing[[d]] < 0) {
             ranges[[d]] <- rev(ranges[[d]])
+        }
+    }
+    ranges <- ranges[names(edinfo$limits)]
+    if(grepl('tabledap', edinfo$base)) {
+        for(i in seq_along(ranges)) {
+            names(ranges)[i] <- edinfo$originalNames[[names(ranges)[i]]]
         }
     }
     formatURL(base = edinfo$base,
               dataset = edinfo$dataset,
               fileType = edinfo$fileType,
               vars = edinfo$vars[edinfo$varSelect],
-              ranges = ranges[names(edinfo$limits)],
+              ranges = ranges,
               style = edinfo$source,
               stride = 1)
 }

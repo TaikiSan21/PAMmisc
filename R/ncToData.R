@@ -67,6 +67,10 @@ ncToData <- function(data, nc, var=NULL, buffer = c(0,0,0), FUN = c(mean),
     nc <- nc_open(nc)
     on.exit(nc_close(nc))
     nc <- romsCheck(nc)
+    if(isStationary(nc)) {
+        return(stationaryNcToData(data, nc, var, buffer, FUN, raw, keepMatch, progress, depth,
+                                  verbose, ...))
+    }
     oldNames <- colnames(data)
     colnames(data) <- standardCoordNames(oldNames)
     # if(all(is.na(data$Longitude)) ||
@@ -163,11 +167,6 @@ ncToData <- function(data, nc, var=NULL, buffer = c(0,0,0), FUN = c(mean),
     fnames <- names(FUN)
 
     for(v in varNames) {
-        # data[[paste0(v, '_mean')]] <- sapply(allVar[[v]], function(x) mean(x, na.rm=TRUE))
-        # # these two are currently much slower, may want option for just mean? or option for providing
-        # # funciton or list of functions and it appends that name???
-        # data[[paste0(v, '_median')]] <- sapply(allVar[[v]], function(x) median(x, na.rm=TRUE))
-        # data[[paste0(v, '_stdev')]] <- sapply(allVar[[v]], function(x) sd(x, na.rm=TRUE))
         for(f in seq_along(FUN)) {
             if(fnames[f] %in% c('mean', 'median', 'sd')) {
                 # FUN[[f]] <- function(x) FUN[[f]](x, na.rm=TRUE)
@@ -286,18 +285,6 @@ getVarData <- function(data, nc, var, buffer, depth=NULL, verbose=TRUE) {
                    }
             )
         }
-        # start <- c(xIx$start, yIx$start)
-        # count <- c(xIx$count, yIx$count)
-        # thisHasZ <- 'Depth' %in% names(thisVar$dim)
-        # if(thisHasZ) {
-        #     start <- c(start, zIx$start)
-        #     count <- c(count, zIx$count)
-        # }
-        # thisHasT <- 'UTC' %in% names(thisVar$dim)
-        # if(thisHasT) {
-        #     start <- c(start, tIx$start)
-        #     count <- c(count, tIx$count)
-        # }
         result[[v]] <- ncvar_get(nc, varid=v, start=start, count=count)
     }
     result$matchLong <- nc$dim$Longitude$vals[xIx$ix]
@@ -307,4 +294,170 @@ getVarData <- function(data, nc, var, buffer, depth=NULL, verbose=TRUE) {
         result$matchDepth <- zVals
     }
     result
+}
+# checking for very specific tabledap style data where corods are all in vars
+# and we can only deal with stationary versions of this
+isStationary <- function(nc) {
+    names(nc$dim) <- standardCoordNames(names(nc$dim))
+    if(all(c('UTC', 'Latitude', 'Longitude') %in%
+           names(nc$dim))) {
+        return(FALSE)
+    }
+    newVar <- standardCoordNames(names(nc$var))
+    if(!'UTC' %in% c(names(nc$dim), newVar)) {
+        # stop('No time data found in this file')
+        return(FALSE)
+    }
+    if('Longitude' %in% newVar) {
+        vals <- ncvar_get(nc, varid=names(nc$var)[newVar == 'Longitude'])
+        if(diff(range(vals)) > 1e-4) {
+            return(FALSE)
+        }
+    }
+    if('Latitude' %in% newVar) {
+        vals <- ncvar_get(nc, varid=names(nc$var)[newVar == 'Latitude'])
+        if(diff(range(vals)) > 1e-4) {
+            return(FALSE)
+        }
+    }
+    TRUE
+}
+
+stationaryNcToData <- function(data, nc, var=NULL, buffer = c(0,0,0), FUN = c(mean),
+                     raw = FALSE, keepMatch=TRUE, progress=TRUE, depth=0, verbose=TRUE, ...) {
+    oldNames <- colnames(data)
+    colnames(data) <- standardCoordNames(oldNames)
+    newVar <- standardCoordNames(names(nc$var))
+    names(nc$dim) <- standardCoordNames(names(nc$dim))
+    if(!'UTC' %in% names(nc$dim)) {
+        nc$dim$UTC <- list(
+            vals=ncvar_get(nc, varid=names(nc$var)[newVar == 'UTC']),
+            units=nc$var[[which(newVar == 'UTC')]]$units,
+            name='UTC'
+        )
+        nc$dim$UTC$len <- length(nc$dim$UTC$vals)
+    }
+    if(isFALSE(keepMatch)) {
+        warning('For stationary environmental sources it is recommended to use',
+                ' "keepMatch=TRUE" since matched distances may be far')
+    }
+    # also drop anything with no dimensions - we can't match them anyway and they cause errors
+    nDim <- lapply(nc$var, function(v) v$ndim)
+    dropVar <- names(nc$var)[newVar %in% c('Latitude', 'Longitude', 'Depth', 'UTC')]
+    dropVar <- c(dropVar, names(nc$var)[which(nDim == 0)])
+    varNames <- names(nc$var)[!(names(nc$var) %in% dropVar)]
+    if(!is.null(var)) {
+        hasVar <- var %in% varNames
+        if(!any(hasVar)) {
+            stop('None of the desired variables (',
+                 paste0(var, collapse=','),
+                 ') were present in the NC file.')
+        }
+        if(!all(hasVar)) {
+            warning('Some of the desired variables (',
+                    paste0(var[!hasVar], collapse=','),
+                    ') were missing from the NC file.')
+        }
+        varNames <- var[hasVar]
+    }
+    matchDims <- c('matchLong', 'matchLat', 'matchTime', 'matchDepth')[
+        c('Longitude', 'Latitude', 'UTC', 'Depth') %in% names(data)
+    ]
+    
+    allVar <- vector('list', length = length(varNames) + length(matchDims))
+    names(allVar) <- c(varNames, matchDims)
+    for(v in seq_along(allVar)) {
+        allVar[[v]] <- vector('list', length = nrow(data))
+    }
+
+    if('UTC' %in% names(nc$dim)) {
+        nc$dim$UTC$vals <- ncTimeToPosix(nc$dim$UTC)
+    }
+    if(progress) {
+        cat('Matching data...\n')
+        pb <- txtProgressBar(min=0, max=nrow(data), style=3)
+    }
+
+    possDims <- c('UTC', 'Latitude', 'Longitude', 'Depth')
+    hasDims <- names(data)[names(data) %in% possDims]
+    
+    matchList <- vector('list', length=length(matchDims))
+    names(matchList) <- matchDims
+    if('Longitude' %in% newVar) {
+        matchList[['matchLong']] <- ncvar_get(nc, 
+                                              varid=names(nc$var)[newVar == 'Longitude'],
+                                              start=1, 
+                                              count=1)
+    } else {
+        matchList[['matchLong']] <- NA
+    }
+    if('Latitude' %in% newVar) {
+        matchList[['matchLat']]<- ncvar_get(nc, 
+                                            varid=names(nc$var)[newVar == 'Latitude'],
+                                            start=1, 
+                                            count=1)
+    } else {
+        matchList[['matchLat']] <- NA
+    }
+    if('Depth' %in% newVar) {
+        matchList[['matchDepth']]<- ncvar_get(nc, 
+                                              varid=names(nc$var)[newVar == 'Depth'],
+                                              start=1, 
+                                              count=1)
+    } else {
+        matchList[['matchDepth']] <- NA
+    }
+    for(i in 1:nrow(data)) {
+        tIx <- dimToIx(data$UTC[i], nc$dim$UTC, buffer[3], verbose)
+        matchList[['matchTime']] <- nc$dim$UTC$vals[tIx$ix]
+        for(v in varNames) {
+            allVar[[v]][[i]] <- ncvar_get(nc, varid=v, start=tIx$start, count=tIx$count)
+        }
+        for(c in matchDims) {
+            allVar[[c]][[i]] <- matchList[[c]]
+        }
+        if(progress) {
+            setTxtProgressBar(pb, value=i)
+        }
+    }
+    if(raw) {
+        return(transpose(allVar))
+    }
+    
+    # if its a single function make a list for looping
+    if(is.list(FUN) &&
+       is.null(names(FUN))) {
+        names(FUN) <- as.character(substitute(FUN, env=parent.frame()))[-1]
+    } else if(is.function(FUN)) {
+        tmpName <- as.character(substitute(FUN, env=parent.frame()))
+        FUN <- list(FUN)
+        names(FUN) <- tmpName
+    }
+    fnames <- names(FUN)
+    
+    for(v in varNames) {
+        for(f in seq_along(FUN)) {
+            if(fnames[f] %in% c('mean', 'median', 'sd')) {
+                # FUN[[f]] <- function(x) FUN[[f]](x, na.rm=TRUE)
+                data[[paste0(v, '_', fnames[f])]] <- sapply(allVar[[v]], function(x) FUN[[f]](x, na.rm=TRUE))
+            } else {
+                data[[paste0(v, '_', fnames[f])]] <- sapply(allVar[[v]], FUN[[f]])
+            }
+        }
+    }
+    if(keepMatch) {
+        for(c in matchDims) {
+            data[[paste0(c, '_mean')]] <- sapply(allVar[[c]], function(x) mean(x, na.rm=TRUE))
+        }
+        if(!is.null(data$matchTime_mean) &&
+           !(all(is.na(data$matchTime_mean))) &&
+           max(abs(data$matchTime_mean), na.rm=TRUE) > 365) {
+            data$matchTime_mean <- as.POSIXct(data$matchTime_mean, origin = '1970-01-01 00:00:00', tz='UTC')
+        }
+    }
+    # data <- to180(data, inverse=!data180)
+    # change back to whatever they were using
+    colnames(data)[1:length(oldNames)] <- oldNames
+    data
+    
 }

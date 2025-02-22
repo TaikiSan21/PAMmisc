@@ -75,6 +75,22 @@ erddapToEdinfo <- function(dataset,
         names(data)[names(data) == 'Depth'] <- data$Depth[1, 2]
     }
     base <- dataset$base_url
+    dataType <- data$NC_GLOBAL$value[data$NC_GLOBAL$attribute_name == 'cdm_data_type']
+    switch(tolower(dataType),
+           'grid' = {
+               base <- gsub('/$', '', base)
+               base <- paste0(base, '/griddap/')
+           },
+           'timeseries' = {
+               base <- gsub('/$', '', base)
+               base <- paste0(base, '/tabledap/')
+           },
+           {
+               warning('Unkown cdm_data_type ', dataType, ', dataset may not load')
+               base <- gsub('/$', '', base)
+               base <- paste0(base, '/griddap/')
+           }
+    )
     # base <- gsub('/$', '', base)
     # base <- paste0(base, '/griddap/')
     result <- list(base = base)
@@ -118,6 +134,13 @@ erddapToEdinfo <- function(dataset,
     }
     longInfo <- getRangeParse(data$Longitude)
     latInfo <- getRangeParse(data$Latitude)
+    # tabledaps only supported for stationary
+    stationary <- abs(diff(longInfo$range)) <= 1e-4 &
+        abs(diff(latInfo$range)) <= 1e-4
+    if(grepl('tabledap', result$base) &&
+       !stationary) {
+        stop('Tabledap datasets only supported for stationary locations')
+    }
     result$limits <- list(
         Longitude = longInfo$range,
         Latitude = latInfo$range
@@ -138,6 +161,14 @@ erddapToEdinfo <- function(dataset,
     }
     result$is180 <- dataIs180(result$limits$Longitude)
     result$source <- 'erddap'
+    if(grepl('tabledap', result$base)) {
+        origNames <- vector('list', length=length(result$limits))
+        names(origNames) <- names(result$limits)
+        for(n in names(origNames)) {
+            origNames[[n]] <- data[[n]]$variable_name[1]
+        }
+        result$originalNames <- origNames
+    }
     if(isTRUE(chooseVars)) {
         result <- varSelect(result)
     } else if(is.character(chooseVars)) {

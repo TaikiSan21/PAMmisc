@@ -9,13 +9,13 @@ ncTimeToPosix <- function(vals, units) {
         units <- vals$units
         vals <- vals$vals
     }
-
+    
     if(inherits(vals, 'POSIXct')) {
         return(vals)
     }
     
     isNa <- is.na(vals)
-
+    
     if(grepl('hours? since', units, ignore.case=TRUE)) {
         or <- gsub('hours? since ', '', units, ignore.case=TRUE)
         or <- gsub('\\s{0,1}UTC', '', or)
@@ -51,14 +51,14 @@ ncTimeToPosix <- function(vals, units) {
         }
         return(out)
     }
-
+    
     if(units == 'count') {
         return(vals)
     }
     if(units == 'posix') {
         return(vals)
     }
-
+    
     stop('Dont know how to deal with time with units ', units)
 }
 
@@ -102,7 +102,7 @@ dimToIx <- function(data, dim, buffer=0, verbose=TRUE) {
         warning('Buffer for "', dim$name, '" made desired value less than minimum of dimension range. Using lowest value.')
         start <- 1
     }
-
+    
     # end <- max(ix) + buffer
     end <- max(ix)
     # end <- which.min(abs(dim$vals - (max(data) + buffer)))
@@ -221,11 +221,11 @@ getCoordNameMatch <- function() {
         current = c('lon', 'long', 'lat', 'time', 'longitude', 'latitude',
                     'utc', 'date', 'dayofyear', 'altitude', 'depth', 'level',
                     'lev', 'height_above_ground2', 'height_above_ground1',
-                    'time1', 'validtime6', 'validtime5', 'validtime9'),
+                    'time1', 'validtime6', 'validtime5', 'validtime9', 'z'),
         standard = c('Longitude', 'Longitude', 'Latitude', 'UTC', 'Longitude', 'Latitude',
                      'UTC', 'UTC', 'UTC', 'Depth', 'Depth', 'Depth',
                      'Depth', 'Depth', 'Depth',
-                     'UTC', 'UTC', 'UTC', 'UTC'),
+                     'UTC', 'UTC', 'UTC', 'UTC', 'Depth'),
         stringsAsFactors = FALSE
     )
 }
@@ -286,7 +286,13 @@ checkLimits <- function(data, edi, replace=FALSE, verbose=TRUE) {
         }
         dat
     }
+    isTable <- grepl('tabledap', edi$base)
     for(d in names(limits)) {
+        # dont check coords for tabledap - only works w stationary
+        if(isTable && 
+           d %in% c('Latitude', 'Longitude')) {
+            next
+        }
         data <- checkOneLim(data, limits, d, replace, verbose)
     }
     to180(data, inverse = !data180)
@@ -295,12 +301,12 @@ checkLimits <- function(data, edi, replace=FALSE, verbose=TRUE) {
 #' @importFrom tools R_user_dir
 #'
 getTempCacheDir <- function(create=TRUE) {
-  tempDir <- R_user_dir("PAMscapes", which = "cache")
-  if(create &&
-     !dir.exists(tempDir)) {
-    dir.create(tempDir, recursive=TRUE)
-  }
-  tempDir
+    tempDir <- R_user_dir("PAMscapes", which = "cache")
+    if(create &&
+       !dir.exists(tempDir)) {
+        dir.create(tempDir, recursive=TRUE)
+    }
+    tempDir
 }
 
 # does creating of temp directories/files if you need, adds a suffix to a file
@@ -335,13 +341,16 @@ checkDateline <- function(data) {
 # next one it wont get that)
 bufferToSpacing <- function(buffer, edinfo) {
     # buffer is XYT long lat time
-    if(buffer[1] < abs(edinfo$spacing$Longitude)) {
+    if(!is.na(edinfo$spacing$Longitude) &&
+       buffer[1] < abs(edinfo$spacing$Longitude)) {
         buffer[1] <- abs(edinfo$spacing$Longitude)
     }
-    if(buffer[2] < abs(edinfo$spacing$Latitude)) {
+    if(!is.na(edinfo$spacing$Latitude) &&
+       buffer[2] < abs(edinfo$spacing$Latitude)) {
         buffer[2] <- abs(edinfo$spacing$Latitude)
     }
     if(!is.null(edinfo$spacing$UTC) &&
+       !is.na(edinfo$spacing$UTC) &&
        buffer[3] < edinfo$spacing$UTC) {
         buffer[3] <- edinfo$spacing$UTC
     }
@@ -397,6 +406,11 @@ estDownloadSize <- function(x, edi, verbose=FALSE) {
     if(verbose) {
         cat('Lats :', nLats, '\nLongs:', nLongs, '\nTimes:', nTimes, '\nDepths:', nDepths)
     }
+    # cant est size for tabledaps, assume they are small relative to grids
+    if(grepl('tabledap', edi$base)) {
+        size <- 1
+        return(list(size=1, biggest='UTC'))
+    } 
     size <- nLats * nLongs * nTimes * nDepths * 8 / 1e6 * sum(edi$varSelect)
     list(size=size, biggest=c('Latitude', 'Longitude', 'UTC')[which.max(c(nLats, nLongs, nTimes))])
 }

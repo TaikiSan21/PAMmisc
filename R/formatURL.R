@@ -55,13 +55,54 @@ fmtURL_erddap <- function(base, dataset, fileType, vars, ranges, stride) {
     if(fileType == 'netcdf') {
         fileType <- 'nc'
     }
+    if(grepl('tabledap', base)) {
+        return(fmtURL_tabledap(base, dataset, fileType, vars, ranges))
+    }
     allRanges <- fmtRange_erddap(ranges, stride, html=FALSE)
-    base <- gsub('/$', '', base)
-    base <- paste0(base, '/griddap/')
+    # doing this in erddapToEdinfo now to acct for tabledaps
+    # base <- gsub('/$', '', base)
+    # base <- paste0(base, '/griddap/')
     paste0(base,
            dataset,
            '.', fileType, '?',
            paste0(vars, allRanges, collapse=',')
+    )
+}
+
+fmtURL_tabledap <- function(base, dataset, fileType, vars, ranges) {
+    # if(inherits(ranges, 'POSIXct')) {
+    #     fmtPsx8601(ranges$UTC, html=TRUE)
+    # }
+    varPart <- paste0(c(names(ranges), vars), collapse='%2C')
+    rangePart <- character(0)
+    for(r in names(ranges)) {
+        # only doing stationary so dont worry about coord subsetting
+        # will unintentionally rule out times where our data is just to side
+        # of stationary unit
+        if(standardCoordNames(r) %in% c('Latitude', 'Longitude')) {
+            next
+        }
+        if(inherits(ranges[[r]], 'POSIXct')) {
+            ranges[[r]] <- fmtPsx8601(ranges[[r]], html=TRUE)
+        }
+        first <- paste0('&',
+                        r,
+                        '%3E=',
+                        ranges[[r]][1]
+        )
+        second <- paste0('&',
+                         r,
+                         '%3C=',
+                         ranges[[r]][2]
+        )
+        rangePart <- paste0(rangePart, first, second)
+    }
+    paste0(
+        base,
+        dataset,
+        '.', fileType, '?',
+        varPart,
+        rangePart
     )
 }
 
