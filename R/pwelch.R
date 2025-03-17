@@ -109,7 +109,7 @@ pwelch <- function(x, nfft, noverlap=0, sr=NULL, window=NULL, demean=c('long', '
 # from stack overflow - break a vector "x" into a list of vectors of size "n"
 chunk <- function(x, length, hop=length) {
     mapply(function(a, b) (x[a:b]),
-           seq.int(from=1, to=length(x), by=hop),
-           pmin(seq.int(from=1, to=length(x), by=hop)+(length-1), length(x)),
+           seq.int(from=1, to=length(x)-length+1, by=hop),
+           pmin(seq.int(from=1, to=length(x)-length+1, by=hop)+(length-1), length(x)),
            SIMPLIFY=FALSE)
 }
