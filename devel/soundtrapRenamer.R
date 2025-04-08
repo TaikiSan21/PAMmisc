@@ -158,7 +158,7 @@ processStWavNames <- function(x, type=c('st', 'sm3m'), prefix=FALSE, suffix='wav
         return(as.POSIXct(gsub(pattern, '\\2', x), format=format, tz='UTC'))
     }
     if(inherits(x, 'POSIXct')) {
-        return(as.character(x, format=format))
+        return(format(x, format=format))
     }
     NULL
 }
