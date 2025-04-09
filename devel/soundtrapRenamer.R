@@ -16,6 +16,8 @@ library(xml2)
 #    because offloader timezone does not do DST and is sometimes wrong
 # Change on 2022-12-19:
 # 1) Adding check for Triton decimated files ending in .d##.wav
+# Change on 2025-04-08
+# 1) as.character() replaced with format() for character conversion
 #-------------------------#
 # This functions gets the hour difference needed to correct a file to
 # UTC time zone. First tries to checkthe file name against the
