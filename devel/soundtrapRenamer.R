@@ -33,7 +33,7 @@ getStTz <- function(x) {
     if(!is.null(utcChar) &&
        length(utcChar) > 0) {
         utcLog <- as.POSIXct(utcChar, format='%Y-%m-%dT%H:%M:%S', tz='UTC')
-        hourDiff <- round(as.numeric(difftime(utcLog, fileTime, units='hours')), 0)
+        hourDiff <- round(as.numeric(difftime(utcLog, fileTime, units='hours')), 1)
         if(!is.na(hourDiff)) {
             return(hourDiff)
         }
