@@ -41,8 +41,8 @@
 #'
 pwelch <- function(x, nfft, noverlap=0, sr=NULL, window=NULL, demean=c('long', 'short', 'none'), channel=1) {
     if(is.character(x) && file.exists(x)) {
-        x <- readWave(x, toWaveMC=TRUE)
-        # x <- fastReadWave(x, header=FALSE)
+        # x <- readWave(x, toWaveMC=TRUE)
+        x <- fastReadWave(x, header=FALSE)
     }
     if(inherits(x, 'Wave')) {
         sr <- x@samp.rate
