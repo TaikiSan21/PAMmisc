@@ -1,3 +1,8 @@
+# PAMmisc 1.12.5
+
+* `pwelch` accidentally using too many windows, now correctly stops at the last
+window that extends past the length of input
+
 # PAMmisc 1.12.4
 
 * `fastReadWave` with `header=TRUE` was not properly closing file connections
