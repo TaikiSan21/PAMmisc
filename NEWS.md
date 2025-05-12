@@ -1,3 +1,8 @@
+# PAMmisc 1.12.6
+
+* Small bug fix for `addPgEvent` not creating millisecond characters
+properly (character(0) text bug)
+
 # PAMmisc 1.12.5
 
 * `pwelch` accidentally using too many windows, now correctly stops at the last

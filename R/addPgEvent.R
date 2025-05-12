@@ -128,7 +128,7 @@ addPgEvent <- function(db, UIDs=NULL, binary, eventType, comment = NA,
             # }), binDf$millis)
             binDf$dbDate <- paste0(format(convertPgDate(binDf$date), format='%Y-%m-%d %H:%M:%S'), '.',
                                    paste0(sapply(nchar(binDf$millis), function(x) {
-                                       paste0(rep('0', max(3-x, 0), collapse=''))
+                                       paste0('', rep('0', max(3-x, 0), collapse=''))
                                    }), binDf$millis))
             clickAppend <- clickData[FALSE, ]
             clickAppend[1:nrow(binDf), ] <- NA
