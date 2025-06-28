@@ -82,6 +82,7 @@ SEXP load_wave_file(SEXP src, SEXP from, SEXP to, SEXP header)
         wav_fmt_t fmt;
         riff_chunk_t rc;
         unsigned int to_go = 0, has_fmt = 0;
+        unsigned int n_samples = 0;
         SEXP res = R_NilValue;
 
         if (!f)
@@ -164,10 +165,12 @@ SEXP load_wave_file(SEXP src, SEXP from, SEXP to, SEXP header)
 
                 res = Rf_allocVector(REALSXP, samples);
                 n = fread(d = REAL(res), st, samples, f);
-
+                
+                n_samples = n;
                 if (n < samples) {
-                    fclose(f);
-                    Rf_error("incomplete file 3");
+                    // res.resize(n);
+                    // fclose(f);
+                    // Rf_error("incomplete file 3");
                 }
                 if (to_go > samples * st) {
                     // Rf_warning("Data does not reach end of file");
@@ -232,6 +235,9 @@ SEXP load_wave_file(SEXP src, SEXP from, SEXP to, SEXP header)
 				INTEGER(dim)[1] = LENGTH(res) / fmt.chs;
 				Rf_setAttrib(res, R_DimSymbol, dim);
 			}
+			sym = Rf_protect(Rf_install("len"));
+			Rf_setAttrib(res, sym, Rf_ScalarInteger(n_samples));
+			Rf_unprotect(1);
 		}
 		Rf_unprotect(1);
 		return res;

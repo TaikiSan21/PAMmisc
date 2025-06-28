@@ -1,3 +1,8 @@
+# PAMmisc 1.12.7
+
+* Small bug fix for `fastReadWave` on incomplete wav files to no longer
+crash just return what it got
+
 # PAMmisc 1.12.6
 
 * Small bug fix for `addPgEvent` not creating millisecond characters

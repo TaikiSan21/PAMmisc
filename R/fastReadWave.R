@@ -37,6 +37,9 @@ fastReadWave <- function(where, from=0, to=NA_real_, header=FALSE, toWaveMC=FALS
         names(result) <- c('sample.rate', 'channels', 'bits', 'samples')
         return(result)
     }
+    if(length(result) != result$len) {
+        result <- result[1:result$len]
+    }
     if(is.null(dim(result))) {
         dim(result) <- c(1, length(result))
     }
