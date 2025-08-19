@@ -68,7 +68,7 @@ prepTzFix <- function(x, offset=NULL, suffix=c('wav', 'sud', 'log.xml', 'accel.c
     suffix <- paste0('\\.',suffix, '$', collapse='|')
     suffix <- paste0('(', suffix, ')')
     # wavList <- list.files(x, full.names=FALSE, recursive = FALSE, pattern=paste0('\\.',suffix, '$', collapse='|'))
-    wavList <- list.files(x, full.names=FALSE, recursive = FALSE, pattern=suffix)
+    wavList <- list.files(x, full.names=FALSE, recursive = TRUE, pattern=suffix)
     if(length(wavList) == 0) {
         stop('No files in this folder matching those suffixes')
     }
@@ -82,7 +82,7 @@ prepTzFix <- function(x, offset=NULL, suffix=c('wav', 'sud', 'log.xml', 'accel.c
     }
     tAdj$oldTime <- processStWavNames(tAdj$oldName, type=type, suffix=suffix)
     if(is.null(offset)) {
-        logList <- list.files(x, full.names=TRUE, recursive = FALSE, pattern = '\\.log\\.xml$')
+        logList <- list.files(x, full.names=TRUE, recursive = TRUE, pattern = '\\.log\\.xml$')
         tAdj$offset <- sapply(basename(tAdj$oldName), function(w) {
             w <- gsub(suffix, '', w)
             match <- which(gsub('\\.log\\.xml$', '', basename(logList)) %in% w)[1]
@@ -176,7 +176,7 @@ fixStTz <- function(dir, prep, reverse=FALSE, logname='STRenameLog') {
         revPrep$offset <- revPrep$offset * -1
         return(fixStTz(dir,revPrep, FALSE, logname='STReverseLog'))
     }
-    wavList <- list.files(dir, recursive=FALSE)
+    wavList <- list.files(dir, recursive=TRUE)
     if(!all(prep$oldName %in% wavList)) {
         warning('Not all wav files in prep file are in directory, run prep again')
         return(NULL)
