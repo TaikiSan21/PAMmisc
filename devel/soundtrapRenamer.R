@@ -169,12 +169,30 @@ processStWavNames <- function(x, type=c('st', 'sm3m'), prefix=FALSE, suffix='wav
 # proper UTC timezones. Creates a log file of what was changed, and also has
 # the ability to "undo" the change from "prepTzFix" if you think it was
 # in error.
-fixStTz <- function(dir, prep, reverse=FALSE, logname='STRenameLog') {
+fixStTz <- function(dir, prep=NULL, reverse=FALSE, logname='STRenameLog') {
     if(isTRUE(reverse)) {
+        if(is.null(prep)) {
+            prepFile <- list.files(dir, pattern='STRenameLog', full.names=TRUE)
+            if(length(prepFile) == 0) {
+                warning('Could not find "STRenameLog.csv" file, provide exact filename and run again')
+                return(NULL)
+            }
+            prep <- prepFile[1]
+        }
+        if(is.character(prep)) {
+            prep <- read.csv(prep, stringsAsFactors = FALSE)
+        }
         revPrep <- rename(prep, oldName=newName, oldTime=newTime, newName=oldName, newTime=oldTime)
         revPrep <- revPrep[!is.na(revPrep$oldName), ]
         revPrep$offset <- revPrep$offset * -1
         return(fixStTz(dir,revPrep, FALSE, logname='STReverseLog'))
+    }
+    if(is.null(prep)) {
+        warning('Must provide "prep" dataframe')
+        return(NULL)
+    }
+    if(is.character(prep)) {
+        prep <- read.csv(prep, stringsAsFactors = FALSE)
     }
     wavList <- list.files(dir, recursive=TRUE)
     if(!all(prep$oldName %in% wavList)) {
