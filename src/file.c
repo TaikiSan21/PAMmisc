@@ -103,7 +103,6 @@ SEXP load_wave_file(SEXP src, SEXP from, SEXP to, SEXP header)
                 Rf_error("incomplete file 1");
             }
             to_go -= n;
-            printf("%s", rc.rci);
             if (!memcmp(rc.rci, "fmt ", 4)) { /* format chunk */
                     if (to_go < 16) {
                         fclose(f);
