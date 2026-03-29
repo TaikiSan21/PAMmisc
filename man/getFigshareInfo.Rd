@@ -8,7 +8,7 @@ getFigshareInfo(token, id)
 }
 \arguments{
 \item{token}{Personal API token from users Figshare account, see
-\href{https://help.figshare.com/article/how-to-get-a-personal-token}{here}
+\href{https://info.figshare.com/user-guide/how-to-get-a-personal-token/}{here}
 for information on creating a token}
 
 \item{id}{Figshare article ID to download information for}
