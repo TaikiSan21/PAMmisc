@@ -103,6 +103,7 @@ SEXP load_wave_file(SEXP src, SEXP from, SEXP to, SEXP header)
                 Rf_error("incomplete file 1");
             }
             to_go -= n;
+            printf("%s", rc.rci);
             if (!memcmp(rc.rci, "fmt ", 4)) { /* format chunk */
                     if (to_go < 16) {
                         fclose(f);
@@ -116,6 +117,10 @@ SEXP load_wave_file(SEXP src, SEXP from, SEXP to, SEXP header)
                 }
                 to_go -= n;
                 has_fmt = 1;
+                if(fmt.len == 40) { /*skipping extensible formatting bits */
+                    to_go -= 24;
+                    fseek(f, 24, SEEK_CUR);
+                }
             } else if (!memcmp(rc.rci, "data", 4)) {
 
                 unsigned int samples = rc.len;
@@ -212,6 +217,7 @@ SEXP load_wave_file(SEXP src, SEXP from, SEXP to, SEXP header)
                 else
                     to_go -= n;
             } else { /* skip any chunks we don't know */
+
 				if (rc.len > to_go || fseek(f, rc.len, SEEK_CUR)) {
 					fclose(f);
 					Rf_error("incomplete file 4");

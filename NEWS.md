@@ -1,3 +1,7 @@
+# PAMmisc 1.13.0
+
+* Update to allow `fastReadWave` to read extensible wav without crashing
+
 # PAMmisc 1.12.7
 
 * Small bug fix for `fastReadWave` on incomplete wav files to no longer
