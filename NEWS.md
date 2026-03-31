@@ -2,6 +2,9 @@
 
 * Update to allow `fastReadWave` to read extensible wav without crashing
 
+* Update to read large files in chunks for `fastReadWave` to avoid unexplained
+crashes on certain computing platforms
+
 # PAMmisc 1.12.7
 
 * Small bug fix for `fastReadWave` on incomplete wav files to no longer
