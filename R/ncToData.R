@@ -205,13 +205,14 @@ ncToData <- function(data, nc, var=NULL, buffer = c(0,0,0), FUN = c(mean),
 }
 
 getVarData <- function(data, nc, var, buffer, depth=NULL, collapse=TRUE, verbose=TRUE) {
-    xIx <- dimToIx(data$Longitude, nc$dim$Longitude, buffer[1], verbose)
-    yIx <- dimToIx(data$Latitude, nc$dim$Latitude, buffer[2], verbose)
+    isFakeNc <- inherits(nc, 'fakenc')
+    xIx <- dimToIx(data$Longitude, nc$dim$Longitude, buffer[1], verbose, suppress=isFakeNc)
+    yIx <- dimToIx(data$Latitude, nc$dim$Latitude, buffer[2], verbose, suppress=isFakeNc)
     hasT <- 'UTC' %in% names(nc$dim)
     multiT <- sum(names(nc$dim) == 'UTC') > 1
     if(hasT &&
        !multiT) {
-        tIx <- dimToIx(data$UTC, nc$dim$UTC, buffer[3], verbose)
+        tIx <- dimToIx(data$UTC, nc$dim$UTC, buffer[3], verbose, suppress=isFakeNc)
         tVals <- ncTimeToPosix(nc$dim$UTC$vals[tIx$ix], units = nc$dim$UTC$units)
     }
     if(!hasT) {
@@ -222,14 +223,14 @@ getVarData <- function(data, nc, var, buffer, depth=NULL, collapse=TRUE, verbose
         if(is.null(depth)) {
             if('Depth' %in% colnames(data)) {
                 # no buffer for depth
-                zIx <- dimToIx(data$Depth, nc$dim$Depth, 0, verbose=FALSE)
+                zIx <- dimToIx(data$Depth, nc$dim$Depth, 0, verbose=FALSE, suppress=isFakeNc)
                 zVals <- nc$dim$Depth$vals[zIx$ix]
             } else {
                 zVals <- nc$dim$Depth$vals
                 zIx <- list(start=1, count=length(zVals))
             }
         } else {
-            zIx <- dimToIx(depth, nc$dim$Depth, 0, verbose=FALSE)
+            zIx <- dimToIx(depth, nc$dim$Depth, 0, verbose=FALSE, suppress=isFakeNc)
             zVals <- nc$dim$Depth$vals[zIx$ix]
         }
     }
@@ -277,7 +278,7 @@ getVarData <- function(data, nc, var, buffer, depth=NULL, collapse=TRUE, verbose
                    },
                    'UTC' = {
                        if(multiT) {
-                           tIx <- dimToIx(data$UTC, nc$dim[[thisDimId[d]]], buffer[3], verbose)
+                           tIx <- dimToIx(data$UTC, nc$dim[[thisDimId[d]]], buffer[3], verbose, suppress=isFakeNc)
                            tVals <- ncTimeToPosix(nc$dim[[thisDimId[d]]]$vals[tIx$ix],
                                                   units = nc$dim[[thisDimId[d]]]$units)
                            if(is.na(tIx$start) || is.na(tIx$count)) {

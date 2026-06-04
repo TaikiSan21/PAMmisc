@@ -73,7 +73,7 @@ ymd_hms_fast <- function(x) {
 #
 #' @importFrom lubridate yday
 #'
-dimToIx <- function(data, dim, buffer=0, verbose=TRUE) {
+dimToIx <- function(data, dim, buffer=0, verbose=TRUE, suppress=FALSE) {
     if(all(is.na(data))) {
         return(list(ix=NA, start=NA, count=NA, diff=NA))
     }
@@ -125,7 +125,8 @@ dimToIx <- function(data, dim, buffer=0, verbose=TRUE) {
     # if multiple values in dim, we can find the stride and see if we are out of bounds by more than one
     # stride and warn people, this means should prob increase lims of data request
     if(length(dim$vals) == 1 &&
-       maxDiff > 0) {
+       maxDiff > 0 &&
+       isFALSE(suppress)) {
         warnMsg <- paste0('Data are matched to the nearest value in the netcdf file, dimension ', dim$name,
                           ' had values up to ', diffMsg, ' apart from the nearest value present in the file.')
         warning(warnMsg)

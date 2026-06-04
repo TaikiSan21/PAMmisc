@@ -152,6 +152,10 @@ setMethod('matchEnvData', 'data.frame',
               if(nc$source == 'multi-hycom') {
                   selectedVars <- nc$vars[nc$varSelect]
                   # result <- vector('list', length=length(selectedVars))
+                  if(progress) {
+                      cat('Loading OPeNDAP data...\n')
+                      pb <- txtProgressBar(min=0, max=length(selectedVars), style=3)
+                  }
                   for(v in seq_along(selectedVars)) {
                       singleHy <- nc
                       thisVar <- selectedVars[v]
@@ -159,7 +163,10 @@ setMethod('matchEnvData', 'data.frame',
                       singleHy$vars <- thisVar
                       singleHy$varSelect <- TRUE
                       singleHy$source <- 'hycom'
-                      thisMatch <- matchEnvData(data, nc=singleHy, thisVar, buffer, FUN, fileName, progress, depth, ...)
+                      thisMatch <- matchEnvData(data, nc=singleHy, thisVar, buffer, FUN, fileName, progress=FALSE, depth, ...)
+                      if(progress) {
+                          setTxtProgressBar(pb, value=v)
+                      }
                       if(v == 1) {
                           result <- thisMatch
                           next
@@ -185,11 +192,18 @@ setMethod('matchEnvData', 'data.frame',
                   data <- split(data, plan)
                   result <- vector('list', length=length(data))
                   fixer <- numeric(0)
+                  if(progress) {
+                      cat('Loading OPeNDAP data...\n')
+                      pb <- txtProgressBar(min=0, max=length(result), style=3)
+                  }
                   for(i in seq_along(result)) {
                       url <- paste0(nc$base, nc$dataset)
                       result[[i]] <- ncToData(data=data[[i]], nc=url, var=var, buffer=buffer,
                                               FUN=FUN, progress=FALSE, depth=depth, loadAll=TRUE, ...)
                       fixer <- c(fixer, data[[i]]$ORIGIX)
+                      if(progress) {
+                          setTxtProgressBar(pb, value=i)
+                      }
                   }
                   fixer <- sort(fixer, index.return=TRUE)$ix
                   # not raw vs raw
