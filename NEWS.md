@@ -1,3 +1,10 @@
+# PAMmisc 1.14.0
+
+* Update to allow `matchEnvData` and `ncToData` handle OPenDAP URLs as input
+
+* Updating `hycomList` with new ESPC-D-V02 dataset to cover post-2024 data
+and also updating all to use OPeNDAP instead of previous slower THREDDS
+
 # PAMmisc 1.13.0
 
 * Update to allow `fastReadWave` to read extensible wav without crashing

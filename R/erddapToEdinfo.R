@@ -56,6 +56,9 @@ erddapToEdinfo <- function(dataset,
         if(grepl('^GLB.{4,6}/expt', dataset)) {
             return(hycomToEdinfo(dataset=dataset, chooseVars=chooseVars))
         }
+        if(grepl('^http', dataset)) {
+            return(opendapToEdinfo(dataset, chooseVars=chooseVars))
+        }
         for(i in seq_along(baseurl)) {
             tryDataset <- try(info(dataset, url = baseurl[i]), silent=TRUE)
             if(inherits(tryDataset, 'info')) {
@@ -283,4 +286,67 @@ whichHycom <- function(x, hycom) {
         return(NA)
     }
     unname(possHy[length(possHy)])
+}
+
+#' @export
+#' @rdname erddapToEdinfo
+#'
+opendapToEdinfo <- function(dataset, baseurl='https://tds.hycom.org/thredds/dodsC/', chooseVars=TRUE) {
+    url <- paste0(baseurl, dataset)
+    nc <- try(nc_open(url))
+    if(inherits(nc, 'try-error')) {
+        warning(url, ' does not appear to be an OPeNDAP dataset URL')
+        return(NULL)
+    }
+    on.exit(nc_close(nc))
+    dropVar <- c('latitude', 'longitude', 'month', 'day', 'year', 'lon', 'lat')
+    # also drop anything with no dimensions - we can't match them anyway and they cause errors
+    nDim <- lapply(nc$var, function(v) v$ndim)
+    dropVar <- c(dropVar, names(nc$var)[which(nDim == 0)])
+    varNames <- names(nc$var)[!(names(nc$var) %in% dropVar)]
+    usedDim <- unique(unlist(sapply(nc$var, function(x) x$dimids+1)))
+    usedDim <- usedDim[!is.na(usedDim)]
+    names(nc$dim)[usedDim] <- standardCoordNames(names(nc$dim)[usedDim])
+    dimOpts <- c('Longitude', 'Latitude', 'UTC', 'Depth')
+    dimOpts <- dimOpts[dimOpts %in% names(nc$dim)]
+    limits <- vector('list', length=length(dimOpts))
+    names(limits) <- dimOpts
+    spacing <- limits
+    if('UTC' %in% names(nc$dim)) {
+        nc$dim$UTC$vals <- ncTimeToPosix(nc$dim$UTC)
+    }
+    for(i in names(limits)) {
+        limits[[i]] <- range(nc$dim[[i]]$vals)
+    }
+    for(i in names(spacing)) {
+        spacing[[i]] <-
+            if(i == 'UTC') {
+                tbl <- table(diff(as.numeric(nc$dim$UTC$vals)))
+                as.numeric(names(tbl)[which.max(tbl)[1]])
+            } else if(i %in% c('Latitude', 'Longitude')) {
+                round(diff(range(nc$dim[[i]]$vals)) / (length(nc$dim[[i]]$vals) - 1), 2)
+            } else {
+                diff(range(nc$dim[[i]]$vals)) / (length(nc$dim[[i]]$vals) - 1)
+            }
+    }
+    nc180 <- ncIs180(nc)
+    result <- list(base = baseurl,
+                   dataset = dataset,
+                   fileType = 'netcdf4',
+                   vars = varNames,
+                   limits = limits,
+                   spacing = spacing,
+                   stride = 1,
+                   source='hycom',
+                   opendap=TRUE
+    )
+    result$is180 <- nc180
+   
+    if(isTRUE(chooseVars)) {
+        result <- varSelect(result)
+    } else if(is.character(chooseVars)) {
+        result <- varSelect(result, chooseVars)
+    }
+    class(result) <- c('edinfo', 'list')
+    result
 }

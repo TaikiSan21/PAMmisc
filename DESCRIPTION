@@ -1,6 +1,6 @@
 Package: PAMmisc
 Title: Miscellaneous Functions for Passive Acoustic Analysis
-Version: 1.13.0
+Version: 1.14.0
 Authors@R: c(
   TS = person("Taiki", "Sakai", email = "taiki.sakai@noaa.gov", role = c("aut", "cre")),
   JB = person("Jay", "Barlow", role = c("ctb")),
@@ -12,7 +12,6 @@ Description: A collection of miscellaneous functions for passive acoustics.
 License: GNU General Public License
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.3.2
 Imports:
     ggplot2,
     tuneR,
@@ -39,3 +38,4 @@ Suggests:
     testthat
 Depends: 
     R (>= 3.50)
+Config/roxygen2/version: 8.0.0

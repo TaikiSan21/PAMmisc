@@ -5,7 +5,7 @@
 #'
 #' @param data dataframe containing Longitude, Latitude, and UTC to extract matching
 #'   variables from the netcdf file
-#' @param nc name of a netcdf file
+#' @param nc file path of a netcdf file, OPenDAP URL, or existing ncdf4 connection
 #' @param var (optional) character vector of variable names to match. If \code{NULL}, all
 #'   variables present in \code{nc} will be used
 #' @param buffer vector of Longitude, Latitude, and Time (seconds) to buffer around
@@ -25,6 +25,8 @@
 #'   Variables will be summarised over the range of these depth values. \code{NULL}
 #'   uses all available depth values
 #' @param verbose logical flag to show warning messages for possible coordinate mismatch
+#' @param loadAll logical flag to preload all data before individually matching each row,
+#'   may be faster for small datasets
 #' @param \dots not used
 #'
 #' @return original dataframe with three attached columns for each variable in the netcdf
@@ -54,18 +56,20 @@
 #' @export
 #'
 ncToData <- function(data, nc, var=NULL, buffer = c(0,0,0), FUN = c(mean),
-                     raw = FALSE, keepMatch=TRUE, progress=TRUE, depth=0, verbose=TRUE, ...) {
-    if(!is.character(nc) ||
-       !file.exists(nc)) {
-        warning('"nc" ', nc, ' is not a valid file.')
+                     raw = FALSE, keepMatch=TRUE, progress=TRUE, depth=0, verbose=TRUE,
+                     loadAll=FALSE, ...) {
+    if(is.character(nc)) {
+        nc <- nc_open(nc)
+        on.exit(nc_close(nc))
+    }
+    if(!inherits(nc, 'ncdf4')) {
+        warning('nc must either be a NetCDF file, nc_open connection, or OPeNDAP URL')
         if(isTRUE(raw)) {
             return(vector('list', length=nrow(data)))
         } else {
             return(data)
         }
     }
-    nc <- nc_open(nc)
-    on.exit(nc_close(nc))
     nc <- romsCheck(nc)
     if(isStationary(nc)) {
         return(stationaryNcToData(data, nc, var, buffer, FUN, raw, keepMatch, progress, depth,
@@ -80,7 +84,7 @@ ncToData <- function(data, nc, var=NULL, buffer = c(0,0,0), FUN = c(mean),
     # this finds the name of the longitude coordinate from my list that matches lon/long/whatever to Longitude
     nc180 <- ncIs180(nc)
     data180 <- dataIs180(data)
-
+    
     if(nc180 != data180) {
         data <- to180(data, inverse = !nc180)
     }
@@ -109,7 +113,7 @@ ncToData <- function(data, nc, var=NULL, buffer = c(0,0,0), FUN = c(mean),
     usedDim <- unique(unlist(sapply(nc$var, function(x) x$dimids+1)))
     usedDim <- usedDim[!is.na(usedDim)]
     names(nc$dim)[usedDim] <- standardCoordNames(names(nc$dim)[usedDim])
-
+    
     if('Depth' %in% names(nc$dim)) {
         matchDims <- c('matchLong', 'matchLat', 'matchTime', 'matchDepth')
     } else {
@@ -138,9 +142,17 @@ ncToData <- function(data, nc, var=NULL, buffer = c(0,0,0), FUN = c(mean),
     }
     possDims <- c('UTC', 'Latitude', 'Longitude', 'Depth')
     hasDims <- names(data)[names(data) %in% possDims]
+    if(isTRUE(loadAll)) {
+        fakeNc <- makeFakeNc(data, nc, var=varNames, buffer=buffer, depth=depth)
+    }
     for(i in 1:nrow(data)) {
-        varData <- getVarData(data[hasDims][i,], nc=nc, var=varNames, buffer = buffer,
-                              depth=depth, verbose=verbose)
+        if(isTRUE(loadAll)) {
+            varData <- getVarData(data[hasDims][i,], nc=fakeNc, var=varNames, buffer = buffer,
+                                  depth=depth, verbose=verbose)
+        } else {
+            varData <- getVarData(data[hasDims][i,], nc=nc, var=varNames, buffer = buffer,
+                                  depth=depth, verbose=verbose)
+        }
         for(v in varNames) {
             allVar[[v]][[i]] <- varData[[v]]
         }
@@ -154,7 +166,7 @@ ncToData <- function(data, nc, var=NULL, buffer = c(0,0,0), FUN = c(mean),
     if(raw) {
         return(transpose(allVar))
     }
-
+    
     # if its a single function make a list for looping
     if(is.list(FUN) &&
        is.null(names(FUN))) {
@@ -165,7 +177,7 @@ ncToData <- function(data, nc, var=NULL, buffer = c(0,0,0), FUN = c(mean),
         names(FUN) <- tmpName
     }
     fnames <- names(FUN)
-
+    
     for(v in varNames) {
         for(f in seq_along(FUN)) {
             if(fnames[f] %in% c('mean', 'median', 'sd')) {
@@ -192,7 +204,7 @@ ncToData <- function(data, nc, var=NULL, buffer = c(0,0,0), FUN = c(mean),
     data
 }
 
-getVarData <- function(data, nc, var, buffer, depth=NULL, verbose=TRUE) {
+getVarData <- function(data, nc, var, buffer, depth=NULL, collapse=TRUE, verbose=TRUE) {
     xIx <- dimToIx(data$Longitude, nc$dim$Longitude, buffer[1], verbose)
     yIx <- dimToIx(data$Latitude, nc$dim$Latitude, buffer[2], verbose)
     hasT <- 'UTC' %in% names(nc$dim)
@@ -213,8 +225,8 @@ getVarData <- function(data, nc, var, buffer, depth=NULL, verbose=TRUE) {
                 zIx <- dimToIx(data$Depth, nc$dim$Depth, 0, verbose=FALSE)
                 zVals <- nc$dim$Depth$vals[zIx$ix]
             } else {
-                zIx <- list(start=1, count=-1)
                 zVals <- nc$dim$Depth$vals
+                zIx <- list(start=1, count=length(zVals))
             }
         } else {
             zIx <- dimToIx(depth, nc$dim$Depth, 0, verbose=FALSE)
@@ -285,7 +297,21 @@ getVarData <- function(data, nc, var, buffer, depth=NULL, verbose=TRUE) {
                    }
             )
         }
-        result[[v]] <- ncvar_get(nc, varid=v, start=start, count=count)
+        if(inherits(nc, 'ncdf4')) {
+            result[[v]] <- ncvar_get(nc, varid=v, start=start, count=count, collapse_degen = collapse)
+        }
+        if(inherits(nc, 'fakenc')) {
+            ixes <- vector('list', length=length(start)+1)
+            ixes[2:length(ixes)] <- lapply(seq_along(start), function(x) {
+                thisCount <- count[x]
+                if(thisCount == -1) {
+                    warning('Invalid fake dimension count -1')
+                }
+                start[x]:(start[x]+count[x]-1)
+            })
+            ixes[[1]] <- nc[[v]]
+            result[[v]] <- do.call(.subset, ixes)
+        }
     }
     result$matchLong <- nc$dim$Longitude$vals[xIx$ix]
     result$matchLat <- nc$dim$Latitude$vals[yIx$ix]
@@ -295,6 +321,49 @@ getVarData <- function(data, nc, var, buffer, depth=NULL, verbose=TRUE) {
     }
     result
 }
+
+makeFakeNc <- function(data, nc, var, buffer, depth) {
+    if(!inherits(nc, 'ncdf4')) {
+        nc <- nc_open(nc)
+        on.exit(nc_close(nc))
+    }
+    names(nc$dim) <- standardCoordNames(names(nc$dim))
+    nc180 <- ncIs180(nc)
+    data180 <- dataIs180(data)
+    
+    if(nc180 != data180) {
+        data <- to180(data, inverse = !nc180)
+    }
+    
+    result <- getVarData(data, nc=nc, var=var, buffer=buffer, depth=depth, collapse=FALSE)
+    # XYZT order
+    dimNames <- c('Longitude' = 'matchLong', 
+                  'Latitude' = 'matchLat',
+                  'Depth' = 'matchDepth',
+                  'UTC' = 'matchTime')
+    dimList <- list()
+    for(n in names(dimNames)) {
+        if(!dimNames[n] %in% names(result)) {
+            next
+        }
+        dimList[[n]] <- list(vals=result[[dimNames[n]]],
+                             name=n,
+                             len=length(result[[dimNames[n]]])
+        )
+        if(n == 'UTC') {
+            dimList[[n]]$units <- NA # already posix
+        }
+    }
+    result$dim <- dimList
+    varList <- list()
+    for(v in var) {
+        varList[[v]] <- list(dimids=which(names(dimList) %in% names(nc$var[[v]]$dim))-1)
+    }
+    result$var <- varList
+    class(result) <- c('list', 'fakenc')
+    result
+}
+
 # checking for very specific tabledap style data where corods are all in vars
 # and we can only deal with stationary versions of this
 isStationary <- function(nc) {
@@ -324,7 +393,7 @@ isStationary <- function(nc) {
 }
 
 stationaryNcToData <- function(data, nc, var=NULL, buffer = c(0,0,0), FUN = c(mean),
-                     raw = FALSE, keepMatch=TRUE, progress=TRUE, depth=0, verbose=TRUE, ...) {
+                               raw = FALSE, keepMatch=TRUE, progress=TRUE, depth=0, verbose=TRUE, ...) {
     oldNames <- colnames(data)
     colnames(data) <- standardCoordNames(oldNames)
     newVar <- standardCoordNames(names(nc$var))
@@ -369,7 +438,7 @@ stationaryNcToData <- function(data, nc, var=NULL, buffer = c(0,0,0), FUN = c(me
     for(v in seq_along(allVar)) {
         allVar[[v]] <- vector('list', length = nrow(data))
     }
-
+    
     if('UTC' %in% names(nc$dim)) {
         nc$dim$UTC$vals <- ncTimeToPosix(nc$dim$UTC)
     }
@@ -377,7 +446,7 @@ stationaryNcToData <- function(data, nc, var=NULL, buffer = c(0,0,0), FUN = c(me
         cat('Matching data...\n')
         pb <- txtProgressBar(min=0, max=nrow(data), style=3)
     }
-
+    
     possDims <- c('UTC', 'Latitude', 'Longitude', 'Depth')
     hasDims <- names(data)[names(data) %in% possDims]
     

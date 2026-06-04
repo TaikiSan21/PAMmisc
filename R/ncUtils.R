@@ -143,6 +143,7 @@ dimToIx <- function(data, dim, buffer=0, verbose=TRUE) {
             warning(warnMsg)
         }
     }
+    # we return start:end so that raw=TRUE can have coords
     list(ix=start:end, start=start, count=count, diff=diff)
 }
 
@@ -384,7 +385,7 @@ nowUTC <- function() {
     now
 }
 
-estDownloadSize <- function(x, edi, verbose=FALSE) {
+estDownloadSize <- function(x, edi, depth=NULL, verbose=FALSE) {
     spacing <- edi$spacing
     nLats <- floor(diff(range(x$Latitude, na.rm=TRUE)) / spacing$Latitude) + 3
     nLongs <- floor(diff(range(x$Longitude, na.rm=TRUE)) / spacing$Longitude) + 3
@@ -396,12 +397,16 @@ estDownloadSize <- function(x, edi, verbose=FALSE) {
     if(is.null(spacing$Depth) || is.na(spacing$Depth)) {
         nDepths <- 1
     } else {
-        if('Depth' %in% colnames(x) &&
-           edi$source != 'hycom') {
-            nDepths <- floor(diff(range(x$Depth, na.rm=TRUE)) / spacing$Depth) + 3
+        if(!is.null(depth)) {
+            dRange <- range(depth)
+            # normal hycom downloads must take full range of depths
+        } else if('Depth' %in% names(x) &&
+                  (edi$source != 'hycom' || isTRUE(edi$opendap))) {
+            dRange <- range(x$Depth, na.rm=TRUE)
         } else {
-            nDepths <- floor(diff(edi$limits$Depth) / spacing$Depth) + 3
+            dRange <- edi$limits$Depth
         }
+        nDepths <- floor(diff(dRange) / spacing$Depth) + 3
     }
     if(verbose) {
         cat('Lats :', nLats, '\nLongs:', nLongs, '\nTimes:', nTimes, '\nDepths:', nDepths)
@@ -415,13 +420,13 @@ estDownloadSize <- function(x, edi, verbose=FALSE) {
     list(size=size, biggest=c('Latitude', 'Longitude', 'UTC')[which.max(c(nLats, nLongs, nTimes))])
 }
 
-planDownload <- function(x, edi, last=0, thresh=50) {
+planDownload <- function(x, edi, last=0, thresh=50, opendap=FALSE, depth=NULL) {
     colnames(x) <- standardCoordNames(colnames(x))
     if(nrow(x) == 1) {
         return(last + 1)
     }
     # hycom requests to only subset 1 day at a time, doing that here
-    if(edi$source == 'hycom') {
+    if(edi$source == 'hycom' && isFALSE(opendap)) {
         # x$dayDiff <- 0
         x$dayDiff <- as.numeric(difftime(x$UTC, min(x$UTC), units='days'))
         x$dayDiff <- floor(x$dayDiff)
@@ -429,7 +434,7 @@ planDownload <- function(x, edi, last=0, thresh=50) {
         if(length(days) > 1) {
             out <- rep(NA, nrow(x))
             for(d in days) {
-                out[x$dayDiff == d] <- planDownload(x[x$dayDiff == d, ], edi, last, thresh)
+                out[x$dayDiff == d] <- planDownload(x[x$dayDiff == d, ], edi, last, thresh, opendap, depth)
                 if(!all(is.na(out))) {
                     last <- max(out, na.rm=TRUE)
                 }
@@ -438,14 +443,14 @@ planDownload <- function(x, edi, last=0, thresh=50) {
             return(out)
         }
     }
-    estSize <- estDownloadSize(x, edi)
+    estSize <- estDownloadSize(x, edi, depth=depth)
     if(estSize$size <= thresh) {
         return(rep(last + 1, nrow(x)))
     }
     whichLow <- x[[estSize$biggest]] <= mean(range(x[[estSize$biggest]], na.rm=TRUE))
     isNa <- is.na(whichLow)
-    lows <- planDownload(x[whichLow & !isNa, ], edi, last, thresh)
-    highs <- planDownload(x[!whichLow & !isNa, ], edi, max(lows), thresh)
+    lows <- planDownload(x[whichLow & !isNa, ], edi, last, thresh, opendap, depth)
+    highs <- planDownload(x[!whichLow & !isNa, ], edi, max(lows), thresh, opendap, depth)
     out <- rep(NA, nrow(x))
     out[whichLow & !isNa] <- lows
     out[!whichLow & !isNa] <- highs

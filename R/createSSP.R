@@ -45,7 +45,7 @@ createSSP <- function(x, f=30e3, nc=NULL, ncVars=c('salinity', 'water_temp'), dr
         nc$varSelect <- nc$vars %in% ncVars
     }
     result <- vector('list', length=nrow(x))
-    x <- matchEnvData(x, nc=nc, raw=TRUE, depth=NULL, progress=progress, ...)
+    x <- matchEnvData(x, nc=nc, raw=TRUE, depth=NULL, var=ncVars, progress=progress, ...)
     for(i in seq_along(result)) {
         ssp <- wasp(f=f, t=x[[i]][[ncVars[2]]], s=x[[i]][[ncVars[1]]], d=x[[i]]$matchDepth, medium='sea')
         if(dropNA) {

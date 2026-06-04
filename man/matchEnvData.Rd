@@ -33,7 +33,8 @@ matchEnvData(
 \item{data}{dataframe containing Longitude, Latitude, and UTC to extract matching
 variables from the netcdf file}
 
-\item{nc}{name of a netcdf file, ERDDAP dataset id, or an edinfo object}
+\item{nc}{file path of a netcdf file, ERDDAP dataset id, an edinfo object, or
+OPeNDAP URL}
 
 \item{var}{(optional) vector of variable names}
 

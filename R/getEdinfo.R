@@ -72,6 +72,9 @@ print.edinfo <- function(x, ...) {
        isTRUE(x$isCurrent)) {
         x$limits$UTC[2] <- nowUTC()
     }
+    if(x$source == 'multi-hycom') {
+        x$dataset <- paste0(x$dataset, collapse=';')
+    }
     cat('Dataset id ', x$dataset, ' has ', length(x$vars), ' variables:\n    ',
         paste0(x$vars, collapse=', '), '\n  With valid coordinate limts:\n    ',
         rngPrinter(x$limits), '\n  And average coordinate spacing:\n    ',

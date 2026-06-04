@@ -3,6 +3,7 @@
 \name{erddapToEdinfo}
 \alias{erddapToEdinfo}
 \alias{hycomToEdinfo}
+\alias{opendapToEdinfo}
 \title{Create an edinfo Object from an ERDDAP Dataset Id}
 \usage{
 erddapToEdinfo(
@@ -16,6 +17,12 @@ erddapToEdinfo(
 hycomToEdinfo(
   dataset = "GLBy0.08/expt_93.0",
   baseurl = "https://ncss.hycom.org/thredds/ncss/",
+  chooseVars = TRUE
+)
+
+opendapToEdinfo(
+  dataset,
+  baseurl = "https://tds.hycom.org/thredds/dodsC/",
   chooseVars = TRUE
 )
 }

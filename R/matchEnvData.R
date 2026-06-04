@@ -5,7 +5,8 @@
 #'
 #' @param data dataframe containing Longitude, Latitude, and UTC to extract matching
 #'   variables from the netcdf file
-#' @param nc name of a netcdf file, ERDDAP dataset id, or an edinfo object
+#' @param nc file path of a netcdf file, ERDDAP dataset id, an edinfo object, or
+#'   OPeNDAP URL
 #' @param var (optional) vector of variable names
 #' @param buffer vector of Longitude, Latitude, and Time (seconds) to buffer around
 #'   each datapoint. All values within the buffer will be used to report the mean,
@@ -80,8 +81,14 @@ setMethod('matchEnvData', 'data.frame',
                  !file.exists(nc)) {
                   nc <- try(erddapToEdinfo(nc, chooseVars = FALSE))
                   if(inherits(nc, 'try-error')) {
-                      stop(paste0(nc, ' must be a valid nc file or erddap dataset id.'))
+                      stop(paste0(nc, ' must be a valid nc file, erddap dataset id, or OPeNDAP URL.'))
                   }
+              }
+              if('Depth' %in% standardCoordNames(colnames(data)) &&
+                 !is.null(depth)) {
+                  warning('Depth column present in data, but "depth" parameter of ', depth,
+                          ' provided. All data will be matched to depth of ', depth,
+                          ', rerun with depth=NULL to use column value instead')
               }
               # browser()
               if(is.list(FUN) &&
@@ -142,9 +149,64 @@ setMethod('matchEnvData', 'data.frame',
                       return(result)
                   }
               }
+              if(nc$source == 'multi-hycom') {
+                  selectedVars <- nc$vars[nc$varSelect]
+                  # result <- vector('list', length=length(selectedVars))
+                  for(v in seq_along(selectedVars)) {
+                      singleHy <- nc
+                      thisVar <- selectedVars[v]
+                      singleHy$dataset <- singleHy$dataset[thisVar]
+                      singleHy$vars <- thisVar
+                      singleHy$varSelect <- TRUE
+                      singleHy$source <- 'hycom'
+                      thisMatch <- matchEnvData(data, nc=singleHy, thisVar, buffer, FUN, fileName, progress, depth, ...)
+                      if(v == 1) {
+                          result <- thisMatch
+                          next
+                      }
+                      if(is.data.frame(thisMatch)) {
+                          varOut <- grep(thisVar, names(thisMatch), value=TRUE)
+                          result[[varOut]] <- thisMatch[[varOut]]
+                      } else if(is.list(thisMatch)) {
+                          varOut <- grep(thisVar, names(thisMatch[[1]]), value=TRUE)
+                          for(i in seq_along(result)) {
+                              result[[i]][[varOut]] <- thisMatch[[i]][[varOut]]
+                          }
+                      }
+                      # change loop to index, if df add column for var
+                      # if list go through each el and and var
+                  }
+                  return(result)
+              }
+              # special handling for opendap data
+              if(isTRUE(nc$opendap)) {
+                  plan <- as.character(planDownload(data, nc, thresh=50, opendap=TRUE, depth=depth))
+                  data$ORIGIX <- 1:nrow(data)
+                  data <- split(data, plan)
+                  result <- vector('list', length=length(data))
+                  fixer <- numeric(0)
+                  for(i in seq_along(result)) {
+                      url <- paste0(nc$base, nc$dataset)
+                      result[[i]] <- ncToData(data=data[[i]], nc=url, var=var, buffer=buffer,
+                                              FUN=FUN, progress=FALSE, depth=depth, loadAll=TRUE, ...)
+                      fixer <- c(fixer, data[[i]]$ORIGIX)
+                  }
+                  fixer <- sort(fixer, index.return=TRUE)$ix
+                  # not raw vs raw
+                  if(is.data.frame(result[[1]])) {
+                      result <- bind_rows(result)
+                      result <- result[fixer, ]
+                      result$ORIGIX <- NULL
+                      return(result)
+                  } else if(is.list(result[[1]])) {
+                      result <- unlist(result, recursive = FALSE)
+                      result <- result[fixer]
+                      return(result)
+                  }
+              }
               # no filename provided means dont download all, do smaller
               if(is.null(fileName)) {
-                  plan <- as.character(planDownload(data, nc, thresh=20))
+                  plan <- as.character(planDownload(data, nc, thresh=20, depth=depth))
 
                   if(progress) {
                       cat('Downloading data...\n')
@@ -185,23 +247,32 @@ setMethod('matchEnvData', 'data.frame',
                   #     }
                   #     result[[i]] <- ncToData(data=data[i, ], nc=planFiles[[plan[i]]], var=var, buffer=buffer, FUN=FUN, progress=FALSE, depth=depth, ...)
                   # }
+                  data$ORIGIX <- 1:nrow(data)
                   data <- split(data, plan)
                   result <- vector('list', length=length(data))
+                  fixer <- numeric(0)
                   for(i in seq_along(result)) {
                       if(names(data)[i] == '-1') {
                           result[[i]] <- data[[i]]
+                          fixer <- c(fixer, data[[i]]$ORIGIX)
                           next
                       }
                       result[[i]] <- ncToData(data=data[[i]], nc=planFiles[[names(data)[i]]], var=var, buffer=buffer,
                                                         FUN=FUN, progress=FALSE, depth=depth, ...)
+                      fixer <- c(fixer, data[[i]]$ORIGIX)
+                      
                   }
+                  fixer <- sort(fixer, index.return=TRUE)$ix
                   if(progress) {
                       cat('\n')
                   }
                   if(is.data.frame(result[[1]])) {
                       result <- bind_rows(result)
+                      result$ORIGIX <- NULL
+                      result <- result[fixer, ]
                   } else if(is.list(result[[1]])) {
                       result <- unlist(result, recursive = FALSE)
+                      result <- result[fixer]
                   }
                   return(result)
               }

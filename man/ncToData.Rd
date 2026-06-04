@@ -15,6 +15,7 @@ ncToData(
   progress = TRUE,
   depth = 0,
   verbose = TRUE,
+  loadAll = FALSE,
   ...
 )
 }
@@ -22,7 +23,7 @@ ncToData(
 \item{data}{dataframe containing Longitude, Latitude, and UTC to extract matching
 variables from the netcdf file}
 
-\item{nc}{name of a netcdf file}
+\item{nc}{file path of a netcdf file, OPenDAP URL, or existing ncdf4 connection}
 
 \item{var}{(optional) character vector of variable names to match. If \code{NULL}, all
 variables present in \code{nc} will be used}
@@ -50,6 +51,9 @@ Variables will be summarised over the range of these depth values. \code{NULL}
 uses all available depth values}
 
 \item{verbose}{logical flag to show warning messages for possible coordinate mismatch}
+
+\item{loadAll}{logical flag to preload all data before individually matching each row,
+may be faster for small datasets}
 
 \item{\dots}{not used}
 }
