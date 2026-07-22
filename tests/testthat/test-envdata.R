@@ -47,7 +47,7 @@ test_that('Matching .nc data to a dataframe', {
     matchName <- ncToData(gps, nc, var='analysed_sst', progress=FALSE)
     expect_true('analysed_sst_mean' %in% colnames(matchName))
     expect_warning(ncToData(gps, nc, var=c('analysed_sst', 'extra_variable'), progress=FALSE), 'Some of')
-    expect_error(ncToData(gps, nc, var='wrong_variable', progress=FALSE), 'None of')
+    expect_warning(ncToData(gps, nc, var='wrong_variable', progress=FALSE), 'None of')
     # all within buffer
     raw <- ncToData(gps, nc, raw=TRUE, buffer=c(.01, .01, 86400), progress = FALSE)
     expect_is(raw, 'list')

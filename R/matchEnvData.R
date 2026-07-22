@@ -152,10 +152,10 @@ setMethod('matchEnvData', 'data.frame',
               if(nc$source == 'multi-hycom') {
                   selectedVars <- nc$vars[nc$varSelect]
                   # result <- vector('list', length=length(selectedVars))
-                  if(progress) {
-                      cat('Loading OPeNDAP data...\n')
-                      pb <- txtProgressBar(min=0, max=length(selectedVars), style=3)
-                  }
+                  # if(progress) {
+                  #     cat('Loading OPeNDAP data...\n')
+                  #     pb <- txtProgressBar(min=0, max=length(selectedVars), style=3)
+                  # }
                   for(v in seq_along(selectedVars)) {
                       singleHy <- nc
                       thisVar <- selectedVars[v]
@@ -163,10 +163,10 @@ setMethod('matchEnvData', 'data.frame',
                       singleHy$vars <- thisVar
                       singleHy$varSelect <- TRUE
                       singleHy$source <- 'hycom'
-                      thisMatch <- matchEnvData(data, nc=singleHy, thisVar, buffer, FUN, fileName, progress=FALSE, depth, ...)
-                      if(progress) {
-                          setTxtProgressBar(pb, value=v)
-                      }
+                      thisMatch <- matchEnvData(data, nc=singleHy, thisVar, buffer, FUN, fileName, progress=progress, depth, ...)
+                      # if(progress) {
+                      #     setTxtProgressBar(pb, value=v)
+                      # }
                       if(v == 1) {
                           result <- thisMatch
                           next

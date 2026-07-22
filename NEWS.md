@@ -1,3 +1,7 @@
+# PAMmisc 1.14.1
+
+* Update for `ncToData` to just warn not error if variables not present
+
 # PAMmisc 1.14.0
 
 * Update to allow `matchEnvData` and `ncToData` handle OPenDAP URLs as input

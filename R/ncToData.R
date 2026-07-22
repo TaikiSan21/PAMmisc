@@ -99,9 +99,14 @@ ncToData <- function(data, nc, var=NULL, buffer = c(0,0,0), FUN = c(mean),
     if(!is.null(var)) {
         hasVar <- var %in% varNames
         if(!any(hasVar)) {
-            stop('None of the desired variables (',
+            warning('None of the desired variables (',
                  paste0(var, collapse=','),
                  ') were present in the NC file.')
+            if(isTRUE(raw)) {
+                return(vector('list', length=nrow(data)))
+            } else {
+                return(data)
+            }
         }
         if(!all(hasVar)) {
             warning('Some of the desired variables (',
