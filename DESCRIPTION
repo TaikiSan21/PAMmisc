@@ -38,4 +38,4 @@ Suggests:
     testthat
 Depends: 
     R (>= 3.50)
-Config/roxygen2/version: 8.0.0
+Config/roxygen2/version: 8.1.0

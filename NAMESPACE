@@ -45,101 +45,137 @@ exportMethods(matchEnvData)
 import(dplyr)
 import(ggplot2)
 import(httr)
-importFrom(PamBinaries,convertPgDate)
-importFrom(PamBinaries,loadPamguardBinaryFile)
-importFrom(PamBinaries,pbToDf)
-importFrom(RSQLite,SQLite)
-importFrom(RSQLite,dbAppendTable)
-importFrom(RSQLite,dbClearResult)
-importFrom(RSQLite,dbConnect)
-importFrom(RSQLite,dbDisconnect)
-importFrom(RSQLite,dbListFields)
-importFrom(RSQLite,dbListTables)
-importFrom(RSQLite,dbReadTable)
-importFrom(RSQLite,dbRemoveTable)
-importFrom(RSQLite,dbSendQuery)
-importFrom(RcppRoll,roll_mean)
-importFrom(RcppRoll,roll_meanr)
-importFrom(RcppRoll,roll_sumr)
-importFrom(dplyr,all_of)
-importFrom(dplyr,arrange)
-importFrom(dplyr,bind_cols)
-importFrom(dplyr,bind_rows)
-importFrom(dplyr,desc)
-importFrom(dplyr,distinct)
-importFrom(dplyr,filter)
-importFrom(dplyr,mutate)
-importFrom(dplyr,rename)
-importFrom(dplyr,select)
-importFrom(dplyr,setdiff)
-importFrom(fftw,FFT)
-importFrom(fftw,IFFT)
-importFrom(fftw,planFFT)
+importFrom(PamBinaries,
+  convertPgDate,
+  loadPamguardBinaryFile,
+  pbToDf
+)
+importFrom(RSQLite,
+  SQLite,
+  dbAppendTable,
+  dbClearResult,
+  dbConnect,
+  dbDisconnect,
+  dbListFields,
+  dbListTables,
+  dbReadTable,
+  dbRemoveTable,
+  dbSendQuery
+)
+importFrom(RcppRoll,
+  roll_mean,
+  roll_meanr,
+  roll_sumr
+)
+importFrom(dplyr,
+  all_of,
+  arrange,
+  bind_cols,
+  bind_rows,
+  desc,
+  distinct,
+  filter,
+  mutate,
+  rename,
+  select,
+  setdiff
+)
+importFrom(fftw,
+  FFT,
+  IFFT,
+  planFFT
+)
 importFrom(geosphere,bearing)
-importFrom(ggplot2,aes)
-importFrom(ggplot2,geom_path)
-importFrom(ggplot2,ggplot)
-importFrom(ggplot2,scale_color_manual)
-importFrom(grDevices,dev.off)
-importFrom(grDevices,png)
-importFrom(graphics,axis)
-importFrom(graphics,axis.POSIXct)
-importFrom(graphics,image)
-importFrom(graphics,legend)
-importFrom(graphics,lines)
-importFrom(graphics,mtext)
-importFrom(graphics,par)
-importFrom(graphics,points)
-importFrom(graphics,text)
-importFrom(graphics,title)
+importFrom(ggplot2,
+  aes,
+  geom_path,
+  ggplot,
+  scale_color_manual
+)
+importFrom(grDevices,
+  dev.off,
+  png
+)
+importFrom(graphics,
+  axis,
+  axis.POSIXct,
+  image,
+  legend,
+  lines,
+  mtext,
+  par,
+  points,
+  text,
+  title
+)
 importFrom(httr,GET)
-importFrom(lubridate,floor_date)
-importFrom(lubridate,hour)
-importFrom(lubridate,minute)
-importFrom(lubridate,parse_date_time)
-importFrom(lubridate,period)
-importFrom(lubridate,with_tz)
-importFrom(lubridate,yday)
-importFrom(methods,setGeneric)
-importFrom(methods,setMethod)
-importFrom(ncdf4,nc_close)
-importFrom(ncdf4,nc_open)
-importFrom(ncdf4,ncatt_get)
-importFrom(ncdf4,ncvar_get)
-importFrom(purrr,reduce)
-importFrom(purrr,transpose)
+importFrom(lubridate,
+  floor_date,
+  hour,
+  minute,
+  parse_date_time,
+  period,
+  with_tz,
+  yday
+)
+importFrom(methods,
+  setGeneric,
+  setMethod
+)
+importFrom(ncdf4,
+  nc_close,
+  nc_open,
+  ncatt_get,
+  ncvar_get
+)
+importFrom(purrr,
+  reduce,
+  transpose
+)
 importFrom(rerddap,info)
 importFrom(rjson,fromJSON)
 importFrom(scales,viridis_pal)
-importFrom(seewave,bwfilter)
-importFrom(seewave,resamp)
-importFrom(seewave,wasp)
-importFrom(signal,butter)
-importFrom(signal,filtfilt)
-importFrom(signal,hamming)
-importFrom(stats,median)
-importFrom(stats,sd)
+importFrom(seewave,
+  bwfilter,
+  resamp,
+  wasp
+)
+importFrom(signal,
+  butter,
+  filtfilt,
+  hamming
+)
+importFrom(stats,
+  median,
+  sd
+)
 importFrom(suncalc,getSunlightTimes)
 importFrom(tcltk,tk_choose.dir)
 importFrom(tools,R_user_dir)
-importFrom(tuneR,Wave)
-importFrom(tuneR,WaveMC)
-importFrom(tuneR,bind)
-importFrom(tuneR,normalize)
-importFrom(tuneR,readWave)
-importFrom(tuneR,writeWave)
-importFrom(utils,menu)
-importFrom(utils,packageVersion)
-importFrom(utils,read.csv)
-importFrom(utils,read.table)
-importFrom(utils,setTxtProgressBar)
-importFrom(utils,txtProgressBar)
-importFrom(xml2,read_xml)
-importFrom(xml2,xml_attr)
-importFrom(xml2,xml_attrs)
-importFrom(xml2,xml_contents)
-importFrom(xml2,xml_find_all)
-importFrom(xml2,xml_find_first)
-importFrom(xml2,xml_ns_strip)
-importFrom(xml2,xml_text)
+importFrom(tuneR,
+  Wave,
+  WaveMC,
+  bind,
+  normalize,
+  readWave,
+  writeWave
+)
+importFrom(utils,
+  menu,
+  packageVersion,
+  read.csv,
+  read.table,
+  setTxtProgressBar,
+  txtProgressBar
+)
+importFrom(xml2,
+  read_xml,
+  xml_attr,
+  xml_attrs,
+  xml_contents,
+  xml_find_all,
+  xml_find_first,
+  xml_ns_strip,
+  xml_text
+)
 useDynLib(PAMmisc, .registration = TRUE)
