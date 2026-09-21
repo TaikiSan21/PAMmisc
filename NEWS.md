@@ -1,3 +1,7 @@
+# PAMmisc 1.14.2
+
+* Swapping `RcppRoll` dependency for `data.table`
+
 # PAMmisc 1.14.1
 
 * Update for `ncToData` to just warn not error if variables not present

@@ -62,10 +62,9 @@ importFrom(RSQLite,
   dbRemoveTable,
   dbSendQuery
 )
-importFrom(RcppRoll,
-  roll_mean,
-  roll_meanr,
-  roll_sumr
+importFrom(data.table,
+  frollmean,
+  frollsum
 )
 importFrom(dplyr,
   all_of,

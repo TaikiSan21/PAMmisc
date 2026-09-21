@@ -59,7 +59,7 @@
 #' peakTrough(seewave::spec(clickWave, plot=FALSE), plot=TRUE)
 #'
 #' @importFrom dplyr filter mutate
-#' @importFrom RcppRoll roll_mean
+#' @importFrom data.table frollmean
 #' @import ggplot2
 #' @export
 #'
@@ -82,8 +82,10 @@ peakTrough <- function(spec, freqBounds=c(10, 30), dbMin=-15, smooth=5, plot=FAL
     # normalizing dB level
     spec[,2] <- spec[,2] - max(spec[,2], na.rm = TRUE)
     extend <- floor(smooth/2)
-    spec[,2] <- roll_mean(c(rep(spec[1,2], extend), spec[,2], rep(spec[nrow(spec), 2], extend)), smooth)
-
+    # spec[,2] <- roll_mean(c(rep(spec[1,2], extend), spec[,2], rep(spec[nrow(spec), 2], extend)), smooth)
+    spec[,2] <- frollmean(c(rep(spec[1,2], extend), spec[,2], rep(spec[nrow(spec), 2], extend)),
+              n=smooth,
+              align='left', partial=TRUE, na.rm=TRUE)[1:nrow(spec)]
     # find peak but not first and last
     wherePeak <- which.max(spec[-1*c(1, nrow(spec)), 2]) + 1
     peak <- spec[wherePeak, 1]

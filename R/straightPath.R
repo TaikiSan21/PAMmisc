@@ -35,7 +35,7 @@
 #'
 #' straightPath(gps, nSmall=1, nLarge=4)
 #'
-#' @importFrom RcppRoll roll_meanr roll_sumr
+#' @importFrom data.table frollsum
 #' @importFrom ggplot2 ggplot aes geom_path scale_color_manual
 #' @importFrom geosphere bearing
 #' @export
@@ -55,10 +55,10 @@ straightPath<- function(gps, nSmall = 10, nLarge = 60, thresh = 10, plot = FALSE
     # }
     gps$realHead <- cos(gps$Heading * pi / 180)
     gps$imHead <- sin(gps$Heading * pi / 180)
-    smallLag <- Arg(complex(real=roll_sumr(gps$realHead, n=nSmall, fill=NA),
-                            imaginary=roll_sumr(gps$imHead, n = nSmall, fill = NA))) * 180 / pi
-    bigLag <- Arg(complex(real=roll_sumr(gps$realHead, n=nLarge, fill=NA),
-                          imaginary=roll_sumr(gps$imHead, n = nLarge, fill = NA))) * 180 / pi
+    smallLag <- Arg(complex(real=frollsum(gps$realHead, n=nSmall),
+                            imaginary=frollsum(gps$imHead, n = nSmall))) * 180 / pi
+    bigLag <- Arg(complex(real=frollsum(gps$realHead, n=nLarge),
+                          imaginary=frollsum(gps$imHead, n = nLarge))) * 180 / pi
 
     gps$timeDiff <- gps$UTC - c(gps$UTC[1], gps$UTC[1:(nrow(gps)-1)])
     # 1 knot = .51444 m/s, not currently using distance
