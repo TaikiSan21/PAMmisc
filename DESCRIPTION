@@ -17,7 +17,7 @@ Imports:
     tuneR,
     seewave,
     dplyr,
-    data.table,
+    data.table (>= 1.18.0),
     PamBinaries,
     RSQLite,
     lubridate,
